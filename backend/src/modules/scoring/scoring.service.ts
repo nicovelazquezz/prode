@@ -7,6 +7,7 @@ import { PhaseService } from './phase.service.js';
 import { classifyOutcome } from './classify-outcome.js';
 import {
   MatchAlreadyFinishedException,
+  MatchNotFinishedException,
   PhaseAlreadyPaidException,
 } from '../../common/exceptions/domain.exceptions.js';
 import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
@@ -164,6 +165,132 @@ export class ScoringService {
 
     this.logger.log(
       `Match ${matchId} finished: scored ${predictionsScored} predictions, multiplier=${multiplier}`,
+    );
+
+    return updated!;
+  }
+
+  /**
+   * Re-scores an already-FINISHED match after the admin corrected the
+   * scoreline. Same shape as `finishMatchAndScore` but with flipped guard
+   * rails:
+   *
+   *   - The match MUST be FINISHED (a never-finished match should go
+   *     through the regular `finishMatchAndScore` path).
+   *   - The phase MUST NOT have a paid PhaseWinner — once the prize is
+   *     out, the match is immutable.
+   *
+   * The audit row carries `before` and `after` so the trail answers
+   * "what changed and when" without re-reading a different table. The
+   * post-commit side effects mirror the finish path: refresh the
+   * leaderboard MV, fan-out a fresh `match-result` notification batch
+   * (the message body changes when the scoreline does), and re-trigger
+   * `maybeClosePhase` (idempotent — the phase's PhaseWinner row would
+   * already exist if the phase had previously closed).
+   *
+   * Note: we deliberately do NOT call `maybeClosePhase` from inside the
+   * TX. The spec's safe-guard against double-creation of `PhaseWinner`
+   * lives there (it findUnique's the row before inserting).
+   */
+  async recalculateMatch(
+    matchId: string,
+    scoreHome: number,
+    scoreAway: number,
+    adminUserId: string,
+  ): Promise<Match> {
+    // ── Pre-checks (outside TX) ────────────────────────────────────────
+    const matchPrev = await this.prisma.match.findUniqueOrThrow({
+      where: { id: matchId },
+    });
+    if (matchPrev.status !== 'FINISHED') {
+      throw new MatchNotFinishedException();
+    }
+    const phaseWinner = await this.prisma.phaseWinner.findUnique({
+      where: { phase: matchPrev.phase },
+    });
+    if (phaseWinner?.prizeStatus === 'PAID') {
+      throw new PhaseAlreadyPaidException();
+    }
+
+    const before = {
+      scoreHome: matchPrev.scoreHome,
+      scoreAway: matchPrev.scoreAway,
+    };
+
+    const rules = await this.scoringConfig.getRules();
+    const multipliers = await this.scoringConfig.getMultipliers();
+    const multiplier = multipliers[matchPrev.phase];
+
+    let predictionsScored = 0;
+    let updated: Match | null = null;
+    await this.prisma.$transaction(
+      async (tx) => {
+        // 1. Replace the score. We don't re-check status inside the TX
+        //    because the pre-check already proved status === FINISHED;
+        //    a concurrent recalculate writing the same row would race
+        //    on `updatedAt` but produce a deterministic last-writer-wins
+        //    outcome — both calls produce valid scoring states.
+        updated = await tx.match.update({
+          where: { id: matchId },
+          data: { scoreHome, scoreAway },
+        });
+
+        // 2. Re-score every prediction with the new result. The prior
+        //    points have to be cleared first via the same update path.
+        const predictions = await tx.prediction.findMany({
+          where: { matchId },
+        });
+        predictionsScored = predictions.length;
+
+        for (const p of predictions) {
+          const outcomeType = classifyOutcome(
+            { scoreHome: p.scoreHome, scoreAway: p.scoreAway },
+            { scoreHome, scoreAway },
+          );
+          const basePoints = rules[outcomeType] ?? 0;
+          const pointsEarned = Math.round(basePoints * multiplier);
+          await tx.prediction.update({
+            where: { id: p.id },
+            data: {
+              outcomeType,
+              basePoints,
+              multiplier,
+              pointsEarned,
+              evaluatedAt: new Date(),
+            },
+          });
+        }
+
+        // 3. Audit row with before/after — the differential is the
+        //    primary thing the admin panel will surface here.
+        await tx.auditLog.create({
+          data: {
+            userId: adminUserId,
+            action: 'match.recalculated',
+            entity: 'match',
+            entityId: matchId,
+            changes: {
+              before,
+              after: { scoreHome, scoreAway },
+              predictionsScored: predictions.length,
+            },
+          },
+        });
+      },
+      { timeout: 30_000 },
+    );
+
+    // ── POST-COMMIT side effects ──────────────────────────────────────
+    await this.enqueueLeaderboardRefresh();
+    await this.notificationsQueue.add(MATCH_RESULT_JOB, { matchId });
+    // maybeClosePhase is idempotent (skips if PhaseWinner already exists),
+    // but it MUST run for the rare case where recalculating swapped the
+    // outcome from "phase still pending" to "everyone finished".
+    await this.phaseService.maybeClosePhase(matchPrev.phase);
+
+    this.logger.log(
+      `Match ${matchId} recalculated: re-scored ${predictionsScored} predictions, ` +
+        `was ${before.scoreHome}-${before.scoreAway}, now ${scoreHome}-${scoreAway}`,
     );
 
     return updated!;

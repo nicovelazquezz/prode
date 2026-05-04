@@ -10,6 +10,7 @@ import { PhaseService } from './phase.service.js';
 import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
 import {
   MatchAlreadyFinishedException,
+  MatchNotFinishedException,
   PhaseAlreadyPaidException,
 } from '../../common/exceptions/domain.exceptions.js';
 
@@ -294,5 +295,120 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
     } finally {
       await prisma.phaseWinner.deleteMany({ where: { phase: 'GROUPS' } });
     }
+  });
+
+  describe('recalculateMatch', () => {
+    beforeEach(async () => {
+      // Ensure match is FINISHED with the original score so recalc has
+      // something to mutate. Re-finishing here is fine — the previous
+      // test ran finishMatchAndScore once, this gets us back to that state.
+      await prisma.phaseWinner.deleteMany({ where: { phase: 'GROUPS' } });
+      const cur = await prisma.match.findUniqueOrThrow({ where: { id: matchId } });
+      if (cur.status !== 'FINISHED') {
+        await scoring.finishMatchAndScore(matchId, RESULT_HOME, RESULT_AWAY, adminId);
+      }
+      queueAddSpy.mockReset();
+      phaseSpy.mockReset();
+      phaseSpy.mockResolvedValue(undefined);
+    });
+
+    it('refuses to recalculate a match that is not yet FINISHED', async () => {
+      // Reset to SCHEDULED to break the invariant.
+      await prisma.match.update({
+        where: { id: matchId },
+        data: {
+          status: 'SCHEDULED',
+          scoreHome: null,
+          scoreAway: null,
+          finishedAt: null,
+        },
+      });
+      try {
+        await expect(
+          scoring.recalculateMatch(matchId, 2, 1, adminId),
+        ).rejects.toBeInstanceOf(MatchNotFinishedException);
+      } finally {
+        // Restore for the following tests in this describe.
+        await scoring.finishMatchAndScore(matchId, RESULT_HOME, RESULT_AWAY, adminId);
+      }
+    });
+
+    it('refuses to recalculate when the phase prize is already paid', async () => {
+      const winnerUserId = Object.keys(expectations)[0];
+      await prisma.phaseWinner.create({
+        data: {
+          phase: 'GROUPS',
+          userId: winnerUserId,
+          pointsEarned: 99,
+          prizeStatus: 'PAID',
+        },
+      });
+      try {
+        await expect(
+          scoring.recalculateMatch(matchId, 4, 0, adminId),
+        ).rejects.toBeInstanceOf(PhaseAlreadyPaidException);
+      } finally {
+        await prisma.phaseWinner.deleteMany({ where: { phase: 'GROUPS' } });
+      }
+    });
+
+    it('re-scores predictions, writes a before/after audit row, and re-enqueues post-commit jobs', async () => {
+      // Original result was 3-1 (home wins by 2). New result: 2-2 (draw 2-2).
+      // After this recalc:
+      //   - The user who predicted (1,1) should flip from MISS to DRAW_DIFFERENT (basePoints=2).
+      //   - The user who predicted (3,1) — was EXACT — should now be MISS.
+      //   - The user who predicted (4,2) — was WINNER_AND_DIFF — should now be MISS.
+      //   - The user who predicted (5,0) — was WINNER_ONLY — should now be MISS.
+      //   - The user who predicted (0,2) — was MISS — should now also be MISS.
+      const NEW_HOME = 2;
+      const NEW_AWAY = 2;
+
+      const updated = await scoring.recalculateMatch(matchId, NEW_HOME, NEW_AWAY, adminId);
+      expect(updated.scoreHome).toBe(NEW_HOME);
+      expect(updated.scoreAway).toBe(NEW_AWAY);
+      expect(updated.status).toBe('FINISHED');
+
+      // Find the user who originally predicted (1,1) and is now DRAW_DIFFERENT.
+      const drawUserId = Object.entries(expectations).find(
+        ([, e]) => e.scoreHome === 1 && e.scoreAway === 1,
+      )?.[0];
+      expect(drawUserId).toBeDefined();
+      const drawPred = await prisma.prediction.findUniqueOrThrow({
+        where: { userId_matchId: { userId: drawUserId!, matchId } },
+      });
+      expect(drawPred.outcomeType).toBe('DRAW_DIFFERENT');
+      expect(drawPred.basePoints).toBe(2);
+      expect(drawPred.pointsEarned).toBe(2);
+
+      // The previously-EXACT prediction (3,1) is now a MISS.
+      const exactUserId = Object.entries(expectations).find(
+        ([, e]) => e.scoreHome === 3 && e.scoreAway === 1,
+      )?.[0];
+      expect(exactUserId).toBeDefined();
+      const exPred = await prisma.prediction.findUniqueOrThrow({
+        where: { userId_matchId: { userId: exactUserId!, matchId } },
+      });
+      expect(exPred.outcomeType).toBe('MISS');
+      expect(exPred.pointsEarned).toBe(0);
+
+      // Audit row carries before / after.
+      const auditRows = await prisma.auditLog.findMany({
+        where: { action: 'match.recalculated', entityId: matchId },
+      });
+      expect(auditRows).toHaveLength(1);
+      expect(auditRows[0].userId).toBe(adminId);
+      const changes = auditRows[0].changes as {
+        before: { scoreHome: number; scoreAway: number };
+        after: { scoreHome: number; scoreAway: number };
+      };
+      expect(changes.before).toEqual({ scoreHome: RESULT_HOME, scoreAway: RESULT_AWAY });
+      expect(changes.after).toEqual({ scoreHome: NEW_HOME, scoreAway: NEW_AWAY });
+
+      // Post-commit jobs enqueued (MV refresh + match-result + phase hook).
+      const jobNames = queueAddSpy.mock.calls.map((c) => c[0]);
+      expect(jobNames).toContain('leaderboard.refresh');
+      expect(jobNames).toContain('match-result');
+      expect(phaseSpy).toHaveBeenCalledWith('GROUPS');
+    });
   });
 });
