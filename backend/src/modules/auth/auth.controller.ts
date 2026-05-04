@@ -21,8 +21,11 @@ import {
 import { AuthService } from './auth.service.js';
 import { UsersService } from '../users/users.service.js';
 import { RefreshTokensService } from './refresh-tokens.service.js';
+import { PasswordResetsService } from './password-resets.service.js';
 import { AuditService } from '../audit/audit.service.js';
+import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { LoginDto } from './dto/login.dto.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { loadEnv } from '../../config/env.js';
 
 const REFRESH_COOKIE = 'refresh_token';
@@ -69,7 +72,9 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
     private readonly refreshTokens: RefreshTokensService,
+    private readonly passwordResets: PasswordResetsService,
     private readonly audit: AuditService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Public()
@@ -189,6 +194,58 @@ export class AuthController {
     });
 
     return { accessToken, user: pickPublicUser(user) };
+  }
+
+  /**
+   * Issues a password-reset token and queues a WhatsApp notification
+   * with a link to the frontend reset page. Always returns 200 — even
+   * when the DNI is unknown — to avoid leaking which DNIs are
+   * registered. The actual delivery is the Phase 4 WhatsApp worker's
+   * job; here we only persist the Notification row in PENDING state.
+   */
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }))
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+    @Req() req: Request,
+  ): Promise<{ ok: true }> {
+    const ctx = getRequestContext(req);
+    const user = await this.usersService.findByDni(dto.dni);
+    if (!user || user.status !== 'ACTIVE') {
+      // Stay quiet — don't reveal whether the DNI exists.
+      return { ok: true };
+    }
+
+    const { plain } = await this.passwordResets.create(user.id);
+    const link = `${this.env.FRONTEND_URL}/reset?token=${plain}`;
+
+    await this.prisma.notification.create({
+      data: {
+        userId: user.id,
+        toAddress: user.whatsapp,
+        type: 'PASSWORD_RESET',
+        channel: 'WHATSAPP',
+        status: 'PENDING',
+        title: 'Recuperá tu contraseña',
+        message:
+          `Hola ${user.firstName}, recibimos un pedido para recuperar tu contraseña del Prode. ` +
+          `Hacé click en el siguiente link para elegir una nueva (caduca en 30 minutos): ${link}`,
+      },
+    });
+
+    void this.audit.log({
+      userId: user.id,
+      action: 'auth.password_reset_requested',
+      entity: 'auth',
+      entityId: user.id,
+      changes: { dni: maskDni(dto.dni) },
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+    });
+
+    return { ok: true };
   }
 
   /**

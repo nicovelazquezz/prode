@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { AuthController } from './auth.controller.js';
 import { RefreshTokensService } from './refresh-tokens.service.js';
+import { PasswordResetsService } from './password-resets.service.js';
 import { UsersModule } from '../users/users.module.js';
 import { ACCESS_TOKEN_VERIFIER } from '../../common/guards/jwt-auth.guard.js';
 
@@ -17,8 +18,14 @@ import { ACCESS_TOKEN_VERIFIER } from '../../common/guards/jwt-auth.guard.js';
   providers: [
     AuthService,
     RefreshTokensService,
+    PasswordResetsService,
     { provide: ACCESS_TOKEN_VERIFIER, useExisting: AuthService },
   ],
-  exports: [AuthService, RefreshTokensService, ACCESS_TOKEN_VERIFIER],
+  exports: [
+    AuthService,
+    RefreshTokensService,
+    PasswordResetsService,
+    ACCESS_TOKEN_VERIFIER,
+  ],
 })
 export class AuthModule {}

@@ -269,3 +269,78 @@ describe('POST /auth/logout (integration)', () => {
     expect(refreshAttempt.status).toBe(401);
   });
 });
+
+describe('POST /auth/forgot-password (integration)', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  const ADMIN_DNI = process.env.ADMIN_DEFAULT_DNI ?? '00000000';
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    app.use(cookieParser());
+    await app.init();
+    prisma = app.get(PrismaService);
+  }, 30_000);
+
+  afterAll(async () => {
+    if (app) await app.close();
+  });
+
+  it('returns 200 OK for an unknown DNI and creates no records', async () => {
+    const before = await prisma.passwordReset.count();
+    const beforeNotif = await prisma.notification.count({
+      where: { type: 'PASSWORD_RESET' },
+    });
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ dni: '99999999' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true });
+
+    expect(await prisma.passwordReset.count()).toBe(before);
+    expect(
+      await prisma.notification.count({ where: { type: 'PASSWORD_RESET' } }),
+    ).toBe(beforeNotif);
+  });
+
+  it('issues a hashed reset token and a PENDING WhatsApp notification for a known user', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ dni: ADMIN_DNI });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true });
+
+    const admin = await prisma.user.findUniqueOrThrow({
+      where: { dni: ADMIN_DNI },
+    });
+    const reset = await prisma.passwordReset.findFirst({
+      where: { userId: admin.id, usedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(reset).not.toBeNull();
+    expect(reset!.tokenHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(reset!.expiresAt.getTime()).toBeGreaterThan(Date.now());
+
+    const notif = await prisma.notification.findFirst({
+      where: { userId: admin.id, type: 'PASSWORD_RESET' },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(notif).not.toBeNull();
+    expect(notif!.status).toBe('PENDING');
+    expect(notif!.channel).toBe('WHATSAPP');
+    expect(notif!.toAddress).toBe(admin.whatsapp);
+    // Plain token is in the message, but never in the DB row.
+    expect(notif!.message).toMatch(/\/reset\?token=[0-9a-f]{64}/);
+  });
+
+  it('returns 400 for malformed DNI', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ dni: 'abc' });
+    expect(res.status).toBe(400);
+  });
+});
