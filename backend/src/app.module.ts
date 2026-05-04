@@ -2,6 +2,8 @@ import { Module, ValidationPipe } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { AppController } from './app.controller.js';
 import { PrismaModule } from './shared/prisma/prisma.module.js';
+import { RedisModule } from './shared/redis/redis.module.js';
+import { BullMqModule } from './shared/bullmq/bullmq.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
@@ -20,7 +22,14 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter.
  *   GlobalExceptionFilter is the last-resort safety net.
  */
 @Module({
-  imports: [PrismaModule, AuditModule, UsersModule, AuthModule],
+  imports: [
+    PrismaModule,
+    RedisModule,
+    BullMqModule,
+    AuditModule,
+    UsersModule,
+    AuthModule,
+  ],
   controllers: [AppController],
   providers: [
     {
