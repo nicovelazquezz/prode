@@ -6,3 +6,484 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// ─── ENUMS ────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REFUNDED
+  ORPHANED
+}
+
+enum PaymentMethod {
+  MERCADOPAGO
+  CASH
+  TRANSFER
+}
+
+enum Phase {
+  GROUPS
+  ROUND_32
+  ROUND_16
+  QUARTERS
+  SEMIS
+  THIRD_PLACE
+  FINAL
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LOCKED
+  IN_PROGRESS
+  FINISHED
+  POSTPONED
+  CANCELLED
+}
+
+enum Confederation {
+  CONMEBOL
+  UEFA
+  CONCACAF
+  AFC
+  CAF
+  OFC
+}
+
+enum OutcomeType {
+  EXACT
+  WINNER_AND_DIFF
+  DRAW_DIFFERENT
+  WINNER_ONLY
+  MISS
+}
+
+enum NotificationType {
+  PAYMENT_CONFIRMED
+  REGISTRATION_PENDING_RECOVERY
+  MATCH_REMINDER
+  MATCH_RESULT
+  PHASE_WINNER
+  PASSWORD_RESET
+  ADMIN_BROADCAST
+}
+
+enum NotificationChannel {
+  WHATSAPP
+  EMAIL
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum PrizeStatus {
+  PENDING
+  PAID
+}
+
+// ─── USUARIOS Y AUTENTICACIÓN ─────────────────────────────
+
+model User {
+  id            String     @id @default(cuid())
+  dni           String     @unique
+  firstName     String
+  lastName      String
+  whatsapp      String     @unique
+  passwordHash  String
+  role          Role       @default(USER)
+  status        UserStatus @default(ACTIVE)
+  whatsappOptIn Boolean    @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
+
+  predictions       Prediction[]
+  specialPrediction SpecialPrediction?
+  payments          Payment[]
+  refreshTokens     RefreshToken[]
+  passwordResets    PasswordReset[]
+  phaseWins         PhaseWinner[]
+  leaguesOwned      League[]           @relation("LeagueOwner")
+  leagueMemberships LeagueMembership[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+
+  @@index([dni])
+  @@index([whatsapp])
+  @@index([status])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique // sha256 del token; el plano solo vive en cookie
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  userAgent String?
+  ipAddress String?
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique // sha256 del token; el plano solo viaja en WhatsApp
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("password_resets")
+}
+
+// ─── SELECCIONES Y JUGADORES ──────────────────────────────
+
+model Team {
+  id            String        @id @default(cuid())
+  fifaCode      String        @unique
+  name          String
+  shortName     String
+  flagUrl       String
+  confederation Confederation
+  groupCode     String?
+  fifaRanking   Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  matchesAsHome   Match[]             @relation("HomeTeam")
+  matchesAsAway   Match[]             @relation("AwayTeam")
+  championPicks   SpecialPrediction[] @relation("ChampionPick")
+  runnerUpPicks   SpecialPrediction[] @relation("RunnerUpPick")
+  thirdPlacePicks SpecialPrediction[] @relation("ThirdPlacePick")
+  players         Player[]
+
+  @@index([groupCode])
+  @@map("teams")
+}
+
+model Player {
+  id       String  @id @default(cuid())
+  fullName String
+  teamId   String?
+  team     Team?   @relation(fields: [teamId], references: [id])
+  position String?
+
+  topScorerPicks SpecialPrediction[] @relation("TopScorerPick")
+
+  @@index([teamId])
+  @@index([fullName])
+  @@map("players")
+}
+
+// ─── PARTIDOS ─────────────────────────────────────────────
+
+model Match {
+  id          String  @id @default(cuid())
+  matchNumber Int     @unique
+  phase       Phase
+  groupCode   String?
+
+  homeTeamId String?
+  homeTeam   Team?   @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeamId String?
+  awayTeam   Team?   @relation("AwayTeam", fields: [awayTeamId], references: [id])
+
+  homeTeamLabel String?
+  awayTeamLabel String?
+
+  kickoffAt         DateTime
+  predictionsLockAt DateTime
+  predictionsOpenAt DateTime?
+
+  status MatchStatus @default(SCHEDULED)
+
+  scoreHome  Int?
+  scoreAway  Int?
+  finishedAt DateTime?
+
+  venue   String?
+  city    String?
+  country String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  predictions Prediction[]
+
+  @@index([phase, status])
+  @@index([kickoffAt])
+  @@index([status, kickoffAt])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@map("matches")
+}
+
+// ─── CONFIGURACIÓN DE PUNTOS (FLEXIBILIDAD A) ─────────────
+
+model ScoringRule {
+  id          String      @id @default(cuid())
+  outcomeType OutcomeType @unique
+  basePoints  Int
+  description String
+  updatedAt   DateTime    @updatedAt
+  updatedBy   String?
+
+  @@map("scoring_rules")
+}
+
+model PhaseMultiplier {
+  id         String   @id @default(cuid())
+  phase      Phase    @unique
+  multiplier Decimal  @db.Decimal(3, 1)
+  updatedAt  DateTime @updatedAt
+  updatedBy  String?
+
+  @@map("phase_multipliers")
+}
+
+model SpecialPrizeRule {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  points      Int
+  description String
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  @@map("special_prize_rules")
+}
+
+// ─── PREDICCIONES ─────────────────────────────────────────
+
+model Prediction {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  scoreHome Int
+  scoreAway Int
+
+  outcomeType  OutcomeType?
+  basePoints   Int          @default(0)
+  multiplier   Decimal      @default(1) @db.Decimal(3, 1)
+  pointsEarned Int          @default(0)
+  evaluatedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, matchId])
+  @@index([matchId])
+  @@index([userId, evaluatedAt])
+  @@map("predictions")
+}
+
+model SpecialPrediction {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  championTeamId   String?
+  championTeam     Team?   @relation("ChampionPick", fields: [championTeamId], references: [id])
+  runnerUpTeamId   String?
+  runnerUpTeam     Team?   @relation("RunnerUpPick", fields: [runnerUpTeamId], references: [id])
+  thirdPlaceTeamId String?
+  thirdPlaceTeam   Team?   @relation("ThirdPlacePick", fields: [thirdPlaceTeamId], references: [id])
+
+  topScorerId   String?
+  topScorer     Player? @relation("TopScorerPick", fields: [topScorerId], references: [id])
+  topScorerName String?
+
+  totalGoals Int?
+
+  championPoints   Int       @default(0)
+  runnerUpPoints   Int       @default(0)
+  thirdPlacePoints Int       @default(0)
+  topScorerPoints  Int       @default(0)
+  totalGoalsPoints Int       @default(0)
+  totalPoints      Int       @default(0)
+  evaluatedAt      DateTime?
+
+  lockedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([championTeamId])
+  @@index([runnerUpTeamId])
+  @@index([thirdPlaceTeamId])
+  @@index([topScorerId])
+  @@map("special_predictions")
+}
+
+// ─── GANADORES POR FASE ──────────────────────────────────
+
+model PhaseWinner {
+  id           String      @id @default(cuid())
+  phase        Phase       @unique
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  pointsEarned Int
+  prizeAmount  Decimal?    @db.Decimal(10, 2)
+  prizeStatus  PrizeStatus @default(PENDING)
+  prizePaidAt  DateTime?
+  awardedAt    DateTime    @default(now())
+  notes        String?
+
+  @@index([userId])
+  @@map("phase_winners")
+}
+
+// ─── PAGOS ────────────────────────────────────────────────
+
+model Payment {
+  id String @id @default(cuid())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  amount Decimal       @db.Decimal(10, 2)
+  method PaymentMethod
+  status PaymentStatus @default(PENDING)
+
+  mpPreferenceId      String?
+  mpPaymentId         String? @unique
+  mpExternalReference String?
+  mpRawData           Json?
+
+  payerEmail String?
+  payerName  String?
+
+  // Magic link para completar registro post-pago
+  completionTokenHash String?   @unique // sha256; el plano viaja en email/url
+  tokenExpiresAt      DateTime? // TTL = 7 días desde APPROVED
+  completedAt         DateTime?
+
+  receivedBy String?
+  notes      String?
+
+  paidAt     DateTime?
+  refundedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([completionTokenHash])
+  @@index([mpPreferenceId])
+  @@map("payments")
+}
+
+// ─── MINI-LIGAS ───────────────────────────────────────────
+
+model League {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  inviteCode  String   @unique
+  ownerId     String
+  owner       User     @relation("LeagueOwner", fields: [ownerId], references: [id])
+  isPublic    Boolean  @default(false)
+  maxMembers  Int      @default(50)
+  createdAt   DateTime @default(now())
+
+  members LeagueMembership[]
+
+  @@index([ownerId])
+  @@map("leagues")
+}
+
+model LeagueMembership {
+  id       String   @id @default(cuid())
+  leagueId String
+  league   League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@unique([leagueId, userId])
+  @@index([userId])
+  @@map("league_memberships")
+}
+
+// ─── NOTIFICACIONES ───────────────────────────────────────
+
+model Notification {
+  id            String              @id @default(cuid())
+  userId        String?
+  user          User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toAddress     String? // null si MP no devolvió email del payer; service decide fallback
+  type          NotificationType
+  title         String
+  message       String              @db.Text
+  channel       NotificationChannel
+  status        NotificationStatus  @default(PENDING)
+  attempts      Int                 @default(0)
+  sentAt        DateTime?
+  failureReason String?
+  metadata      Json?
+  dedupKey      String?             @unique
+  createdAt     DateTime            @default(now())
+
+  @@index([userId])
+  @@index([status, channel])
+  @@map("notifications")
+}
+
+// ─── CONFIGURACIÓN GLOBAL (escalares) ─────────────────────
+
+model AppConfig {
+  key         String   @id
+  value       String   @db.Text
+  description String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  @@map("app_config")
+}
+
+// ─── AUDITORÍA ────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  changes   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
