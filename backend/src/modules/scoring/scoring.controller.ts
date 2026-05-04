@@ -60,4 +60,27 @@ export class ScoringController {
       user.id,
     );
   }
+
+  /**
+   * Re-score an already-FINISHED match after the admin corrected the
+   * scoreline. Body shape is identical to `finish`. Surfacing 4xx:
+   *   - 400 MATCH_NOT_FINISHED   — match isn't FINISHED (use finish)
+   *   - 409 PHASE_ALREADY_PAID   — phase prize already paid out
+   */
+  @Post(':id/recalculate')
+  async recalculate(
+    @Param('id') id: string,
+    @Body() dto: FinishMatchDto,
+    @CurrentUser() user: AuthenticatedUser | undefined,
+  ) {
+    if (!user?.id) {
+      throw new UnauthorizedException('Authenticated admin required');
+    }
+    return this.scoringService.recalculateMatch(
+      id,
+      dto.scoreHome,
+      dto.scoreAway,
+      user.id,
+    );
+  }
 }

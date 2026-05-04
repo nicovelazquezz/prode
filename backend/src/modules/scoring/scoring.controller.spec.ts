@@ -154,4 +154,79 @@ describe('POST /admin/matches/:id/finish (integration)', () => {
       await prisma.phaseWinner.deleteMany({ where: { phase: 'GROUPS' } });
     }
   });
+
+  describe('POST /admin/matches/:id/recalculate', () => {
+    it('returns 400 MATCH_NOT_FINISHED when the match is still SCHEDULED', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/admin/matches/${matchId}/recalculate`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ scoreHome: 1, scoreAway: 0 });
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('MATCH_NOT_FINISHED');
+    });
+
+    it('finishes then recalculates, persisting the new score and writing the recalc audit row', async () => {
+      // 1) Finish the match with one scoreline.
+      const finishRes = await request(app.getHttpServer())
+        .post(`/admin/matches/${matchId}/finish`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ scoreHome: 3, scoreAway: 1 });
+      expect(finishRes.status).toBe(201);
+
+      // 2) Recalculate with a different scoreline.
+      const recalcRes = await request(app.getHttpServer())
+        .post(`/admin/matches/${matchId}/recalculate`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ scoreHome: 0, scoreAway: 0 });
+      expect(recalcRes.status).toBe(201);
+      expect(recalcRes.body.scoreHome).toBe(0);
+      expect(recalcRes.body.scoreAway).toBe(0);
+      expect(recalcRes.body.status).toBe('FINISHED');
+
+      // The recalculate audit row carries before / after.
+      const audits = await prisma.auditLog.findMany({
+        where: { action: 'match.recalculated', entityId: matchId },
+      });
+      expect(audits).toHaveLength(1);
+      const changes = audits[0].changes as {
+        before: { scoreHome: number; scoreAway: number };
+        after: { scoreHome: number; scoreAway: number };
+      };
+      expect(changes.before).toEqual({ scoreHome: 3, scoreAway: 1 });
+      expect(changes.after).toEqual({ scoreHome: 0, scoreAway: 0 });
+    });
+
+    it('returns 409 PHASE_ALREADY_PAID on recalculate when phase prize is paid', async () => {
+      // Finish first, then drop a PAID PhaseWinner, then try to recalc.
+      const finishRes = await request(app.getHttpServer())
+        .post(`/admin/matches/${matchId}/finish`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ scoreHome: 2, scoreAway: 2 });
+      expect(finishRes.status).toBe(201);
+
+      const seededUser = await prisma.user.findFirstOrThrow({
+        where: { dni: ADMIN_DNI },
+      });
+      await prisma.phaseWinner.deleteMany({ where: { phase: 'GROUPS' } });
+      await prisma.phaseWinner.create({
+        data: {
+          phase: 'GROUPS',
+          userId: seededUser.id,
+          pointsEarned: 50,
+          prizeStatus: 'PAID',
+        },
+      });
+
+      try {
+        const res = await request(app.getHttpServer())
+          .post(`/admin/matches/${matchId}/recalculate`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ scoreHome: 9, scoreAway: 0 });
+        expect(res.status).toBe(409);
+        expect(res.body.code).toBe('PHASE_ALREADY_PAID');
+      } finally {
+        await prisma.phaseWinner.deleteMany({ where: { phase: 'GROUPS' } });
+      }
+    });
+  });
 });
