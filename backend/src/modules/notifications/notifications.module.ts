@@ -5,6 +5,7 @@ import { EmailModule } from '../../shared/email/email.module.js';
 import { NotificationsService } from './notifications.service.js';
 import { NotificationsProcessor } from './notifications.processor.js';
 import { OrphanAlertProcessor } from '../payments/orphan-alert.processor.js';
+import { MatchRemindersCron } from './match-reminders.cron.js';
 import { NOTIFICATIONS_QUEUE } from './notifications.constants.js';
 
 /**
@@ -24,7 +25,12 @@ import { NOTIFICATIONS_QUEUE } from './notifications.constants.js';
     WhatsappModule,
     EmailModule,
   ],
-  providers: [NotificationsService, NotificationsProcessor, OrphanAlertProcessor],
-  exports: [NotificationsService, OrphanAlertProcessor],
+  providers: [
+    NotificationsService,
+    NotificationsProcessor,
+    OrphanAlertProcessor,
+    MatchRemindersCron,
+  ],
+  exports: [NotificationsService, OrphanAlertProcessor, MatchRemindersCron],
 })
 export class NotificationsModule {}
