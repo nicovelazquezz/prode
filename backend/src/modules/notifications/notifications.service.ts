@@ -119,6 +119,31 @@ export class NotificationsService {
   }
 
   /**
+   * Enqueues the dedup'd `leaderboard.refresh` job on the shared
+   * notifications queue. Mirrors the post-commit helper in
+   * `ScoringService` (which keeps it private to the scoring module's
+   * locally-registered queue) so other producers — like the admin
+   * manual-refresh endpoint (Phase 9) — don't need to register their
+   * own BullMQ queue. Re-registering the queue via
+   * `BullModule.registerQueue` outside this module clobbers the local
+   * tokens registered by `ScoringModule`/`PaymentsModule` (the global
+   * ordering wins), so we centralise leaderboard refresh enqueueing
+   * here where the queue is already wired.
+   *
+   * Returns the job id (always the constant dedup id) so the caller
+   * can echo it to the user/log.
+   */
+  async enqueueLeaderboardRefresh(): Promise<string> {
+    const jobId = 'leaderboard_refresh';
+    await this.queue.add(
+      'leaderboard.refresh',
+      {},
+      { jobId, removeOnComplete: true },
+    );
+    return jobId;
+  }
+
+  /**
    * Internal: enqueue the BullMQ job. Uses dedupKey as jobId so a job
    * for an already-queued notification is rejected by BullMQ — second
    * line of defence on top of the DB unique index.
