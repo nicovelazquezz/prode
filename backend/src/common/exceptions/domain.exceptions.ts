@@ -75,3 +75,39 @@ export class SpecialPredictionLockedException extends BadRequestException {
     super({ statusCode: 400, code: 'SPECIAL_PREDICTION_LOCKED', message });
   }
 }
+
+/**
+ * Thrown when an admin tries to `finish` a match that's already FINISHED.
+ * The recalculate endpoint should be used instead. Spec section 6.3.
+ */
+export class MatchAlreadyFinishedException extends BadRequestException {
+  constructor(message = 'Match has already been finished') {
+    super({ statusCode: 400, code: 'MATCH_ALREADY_FINISHED', message });
+  }
+}
+
+/**
+ * Thrown when an admin tries to `recalculate` a match that's not yet
+ * FINISHED. The finish endpoint should be used instead. Spec section 6.3.
+ */
+export class MatchNotFinishedException extends BadRequestException {
+  constructor(message = 'Match has not been finished yet') {
+    super({ statusCode: 400, code: 'MATCH_NOT_FINISHED', message });
+  }
+}
+
+/**
+ * Thrown when an admin tries to mutate any match in a phase whose
+ * PhaseWinner row already carries `prizeStatus = 'PAID'`. The phase is
+ * effectively closed/immutable from that point on. Spec section 6.3.
+ *
+ * 409 Conflict (rather than 400) because the request shape is valid;
+ * it conflicts with state the server has already committed.
+ */
+export class PhaseAlreadyPaidException extends ConflictException {
+  constructor(
+    message = 'Phase prize already paid — match cannot be modified',
+  ) {
+    super({ statusCode: 409, code: 'PHASE_ALREADY_PAID', message });
+  }
+}
