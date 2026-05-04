@@ -175,6 +175,42 @@ describe('MatchesController (integration)', () => {
     });
   });
 
+  describe('GET /matches/by-phase/:phase', () => {
+    it('returns 72 GROUPS matches with team relations populated', async () => {
+      const res = await request(app.getHttpServer()).get(
+        '/matches/by-phase/GROUPS',
+      );
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect((res.body as unknown[]).length).toBe(72);
+      // The relations are present (possibly null) on each row.
+      for (const m of res.body as Array<{
+        phase: string;
+        homeTeam: unknown;
+        awayTeam: unknown;
+      }>) {
+        expect(m.phase).toBe('GROUPS');
+        expect(m).toHaveProperty('homeTeam');
+        expect(m).toHaveProperty('awayTeam');
+      }
+    });
+
+    it('returns ROUND_32 matches (16 matches per spec data)', async () => {
+      const res = await request(app.getHttpServer()).get(
+        '/matches/by-phase/ROUND_32',
+      );
+      expect(res.status).toBe(200);
+      expect((res.body as unknown[]).length).toBe(16);
+    });
+
+    it('returns 400 for an unknown phase string', async () => {
+      const res = await request(app.getHttpServer()).get(
+        '/matches/by-phase/NOT_A_PHASE',
+      );
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe('GET /admin/matches/:id', () => {
     it('returns full detail with team relations for admin', async () => {
       const sample = await prisma.match.findFirstOrThrow();

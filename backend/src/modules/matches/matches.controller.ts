@@ -1,9 +1,9 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   Inject,
-  NotFoundException,
   Param,
   Post,
   Put,
@@ -83,11 +83,23 @@ export class MatchesController {
     return fresh;
   }
 
+  /**
+   * Returns every match of a given phase with both team relations
+   * populated. Useful for the bracket / group-stage views: when a team
+   * isn't yet assigned, the relation is `null` but the row still carries
+   * `homeTeamLabel` / `awayTeamLabel` placeholders for display.
+   *
+   * Path validation is manual (rather than via a DTO) because Nest's
+   * `@Query` validators don't apply to path params; the explicit check
+   * keeps the 400 response shape consistent.
+   */
   @Public()
   @Get('by-phase/:phase')
   async byPhase(@Param('phase') phase: string) {
     if (!Object.values(Phase).includes(phase as Phase)) {
-      throw new NotFoundException(`Unknown phase: ${phase}`);
+      throw new BadRequestException(
+        `Unknown phase: ${phase}. Valid values: ${Object.values(Phase).join(', ')}`,
+      );
     }
     return this.matchesService.byPhase(phase as Phase);
   }
