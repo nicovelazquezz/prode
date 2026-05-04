@@ -6,14 +6,10 @@ import {
   Post,
   Req,
   Res,
-  UseGuards,
   UnauthorizedException,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Public } from '../../common/decorators/public.decorator.js';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -81,7 +77,6 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }))
   async login(
     @Body() dto: LoginDto,
     @Req() req: Request,
@@ -207,7 +202,6 @@ export class AuthController {
   @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }))
   async forgotPassword(
     @Body() dto: ForgotPasswordDto,
     @Req() req: Request,
@@ -257,7 +251,6 @@ export class AuthController {
   @Public()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }))
   async resetPassword(
     @Body() dto: ResetPasswordDto,
     @Req() req: Request,
@@ -304,8 +297,10 @@ export class AuthController {
    * cookie and clears it. Idempotent — repeated calls or calls without
    * a cookie still return 204. The access token cannot be revoked
    * server-side (stateless JWT); clients should drop it locally.
+   *
+   * No @Public() here: the global JwtAuthGuard will reject anonymous
+   * requests with 401.
    */
-  @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
   async logout(
