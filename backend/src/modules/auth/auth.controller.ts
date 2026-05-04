@@ -8,6 +8,7 @@ import {
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { Public } from '../../common/decorators/public.decorator.js';
 import {
@@ -86,6 +87,19 @@ export class AuthController {
   ) {}
 
   @Public()
+  @Throttle({
+    // 5/min per IP + per DNI combo, so a brute-forcer can't iterate across
+    // DNIs from one IP and a single DNI is also protected against being
+    // attacked from a botnet (each IP burns its own bucket on that DNI).
+    login: {
+      limit: 5,
+      ttl: 60_000,
+      getTracker: (req) => {
+        const dni = (req?.body as { dni?: string } | undefined)?.dni ?? 'unknown';
+        return `${req?.ip ?? 'unknown'}:${dni}`;
+      },
+    },
+  })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
@@ -211,6 +225,7 @@ export class AuthController {
    * job; here we only persist the Notification row in PENDING state.
    */
   @Public()
+  @Throttle({ 'auth-recovery': { limit: 3, ttl: 3_600_000 } })
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   async forgotPassword(
@@ -350,6 +365,7 @@ export class AuthController {
    * leave the system half-written.
    */
   @Public()
+  @Throttle({ 'auth-recovery': { limit: 3, ttl: 3_600_000 } })
   @Post('complete-registration')
   @HttpCode(HttpStatus.OK)
   async completeRegistration(

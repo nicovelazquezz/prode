@@ -21,6 +21,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter.js';
+import { AppThrottlerModule } from './common/throttler/throttler.module.js';
 
 /**
  * Wires the application-wide ValidationPipe, JwtAuthGuard, AuditInterceptor,
@@ -40,6 +41,7 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter.
     PrismaModule,
     RedisModule,
     BullMqModule,
+    AppThrottlerModule,
     AuditModule,
     NotificationsModule,
     AdminAlertsModule,

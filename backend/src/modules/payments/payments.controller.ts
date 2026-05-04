@@ -10,6 +10,7 @@ import {
   Post,
   Req,
 } from '@nestjs/common';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { PaymentsService } from './payments.service.js';
@@ -36,6 +37,7 @@ export class PaymentsController {
   ) {}
 
   @Public()
+  @Throttle({ 'payments-init': { limit: 5, ttl: 3_600_000 } })
   @Post('init')
   @HttpCode(HttpStatus.CREATED)
   async init(
@@ -62,6 +64,12 @@ export class PaymentsController {
    * + `request-id` + ts, NOT the full body, so we don't need rawBody here.
    */
   @Public()
+  @SkipThrottle({
+    default: true,
+    login: true,
+    'auth-recovery': true,
+    'payments-init': true,
+  })
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
   async webhook(
