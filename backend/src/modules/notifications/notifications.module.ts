@@ -4,6 +4,7 @@ import { WhatsappModule } from '../../shared/whatsapp/whatsapp.module.js';
 import { EmailModule } from '../../shared/email/email.module.js';
 import { NotificationsService } from './notifications.service.js';
 import { NotificationsProcessor } from './notifications.processor.js';
+import { OrphanAlertProcessor } from '../payments/orphan-alert.processor.js';
 import { NOTIFICATIONS_QUEUE } from './notifications.constants.js';
 
 /**
@@ -23,7 +24,7 @@ import { NOTIFICATIONS_QUEUE } from './notifications.constants.js';
     WhatsappModule,
     EmailModule,
   ],
-  providers: [NotificationsService, NotificationsProcessor],
-  exports: [NotificationsService],
+  providers: [NotificationsService, NotificationsProcessor, OrphanAlertProcessor],
+  exports: [NotificationsService, OrphanAlertProcessor],
 })
 export class NotificationsModule {}

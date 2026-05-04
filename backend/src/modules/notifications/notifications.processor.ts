@@ -8,6 +8,11 @@ import {
   NOTIFICATIONS_QUEUE,
   SEND_NOTIFICATION_JOB,
 } from './notifications.constants.js';
+import {
+  ADMIN_ORPHAN_ALERT_JOB,
+  OrphanAlertProcessor,
+  type OrphanAlertJobData,
+} from '../../modules/payments/orphan-alert.processor.js';
 
 export interface SendNotificationJobData {
   notificationId: string;
@@ -35,11 +40,19 @@ export class NotificationsProcessor extends WorkerHost {
     private readonly prisma: PrismaService,
     private readonly whatsapp: WhatsappService,
     private readonly email: EmailService,
+    private readonly orphanAlert: OrphanAlertProcessor,
   ) {
     super();
   }
 
-  async process(job: Job<SendNotificationJobData>): Promise<void> {
+  async process(job: Job): Promise<void> {
+    // Dispatch by job name. Multiple producers share this queue (the
+    // `send-notification` outbox + the delayed `admin-orphan-alert`); we
+    // route each to its handler so a single worker drains them all.
+    if (job.name === ADMIN_ORPHAN_ALERT_JOB) {
+      await this.orphanAlert.handle(job as Job<OrphanAlertJobData>);
+      return;
+    }
     if (job.name !== SEND_NOTIFICATION_JOB) {
       // Ignore unknown job names defensively; throwing here would burn retries
       // for jobs that may have been added by an older deploy.
@@ -47,7 +60,7 @@ export class NotificationsProcessor extends WorkerHost {
       return;
     }
 
-    const { notificationId } = job.data;
+    const { notificationId } = (job as Job<SendNotificationJobData>).data;
     const notif = await this.prisma.notification.findUnique({
       where: { id: notificationId },
     });

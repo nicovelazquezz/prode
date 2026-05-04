@@ -11,6 +11,7 @@ import {
 import type { ProviderPayment } from '../../shared/checkout/checkout.types.js';
 import { AdminAlertsService } from '../../shared/admin-alerts/admin-alerts.service.js';
 import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
+import { ADMIN_ORPHAN_ALERT_JOB } from './orphan-alert.processor.js';
 import { loadEnv, type Env } from '../../config/env.js';
 import {
   CompletionAlreadyUsedException,
@@ -30,8 +31,6 @@ const DEFAULT_AMOUNT_ARS = 15_000;
  */
 const COMPLETION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** BullMQ job name for the delayed admin-orphan-alert (Task 5.10). */
-export const ADMIN_ORPHAN_ALERT_JOB = 'admin-orphan-alert';
 /** Delay applied to the admin-orphan-alert job — 2 hours. */
 export const ADMIN_ORPHAN_ALERT_DELAY_MS = 2 * 60 * 60 * 1000;
 
