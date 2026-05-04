@@ -1,0 +1,57 @@
+[
+  { "fifaCode": "USA", "name": "Estados Unidos", "shortName": "USA", "flagUrl": "https://flagcdn.com/us.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": 16 },
+  { "fifaCode": "MEX", "name": "México", "shortName": "MEX", "flagUrl": "https://flagcdn.com/mx.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": 19 },
+  { "fifaCode": "CAN", "name": "Canadá", "shortName": "CAN", "flagUrl": "https://flagcdn.com/ca.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": 31 },
+
+  { "fifaCode": "ARG", "name": "Argentina", "shortName": "ARG", "flagUrl": "https://flagcdn.com/ar.svg", "confederation": "CONMEBOL", "groupCode": null, "fifaRanking": 1 },
+  { "fifaCode": "BRA", "name": "Brasil", "shortName": "BRA", "flagUrl": "https://flagcdn.com/br.svg", "confederation": "CONMEBOL", "groupCode": null, "fifaRanking": 5 },
+  { "fifaCode": "URU", "name": "Uruguay", "shortName": "URU", "flagUrl": "https://flagcdn.com/uy.svg", "confederation": "CONMEBOL", "groupCode": null, "fifaRanking": 11 },
+  { "fifaCode": "COL", "name": "Colombia", "shortName": "COL", "flagUrl": "https://flagcdn.com/co.svg", "confederation": "CONMEBOL", "groupCode": null, "fifaRanking": 14 },
+  { "fifaCode": "ECU", "name": "Ecuador", "shortName": "ECU", "flagUrl": "https://flagcdn.com/ec.svg", "confederation": "CONMEBOL", "groupCode": null, "fifaRanking": 23 },
+  { "fifaCode": "PAR", "name": "Paraguay", "shortName": "PAR", "flagUrl": "https://flagcdn.com/py.svg", "confederation": "CONMEBOL", "groupCode": null, "fifaRanking": 41 },
+
+  { "fifaCode": "FRA", "name": "Francia", "shortName": "FRA", "flagUrl": "https://flagcdn.com/fr.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 2 },
+  { "fifaCode": "ESP", "name": "España", "shortName": "ESP", "flagUrl": "https://flagcdn.com/es.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 3 },
+  { "fifaCode": "ENG", "name": "Inglaterra", "shortName": "ENG", "flagUrl": "https://flagcdn.com/gb-eng.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 4 },
+  { "fifaCode": "POR", "name": "Portugal", "shortName": "POR", "flagUrl": "https://flagcdn.com/pt.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 6 },
+  { "fifaCode": "NED", "name": "Países Bajos", "shortName": "NED", "flagUrl": "https://flagcdn.com/nl.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 7 },
+  { "fifaCode": "BEL", "name": "Bélgica", "shortName": "BEL", "flagUrl": "https://flagcdn.com/be.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 8 },
+  { "fifaCode": "GER", "name": "Alemania", "shortName": "GER", "flagUrl": "https://flagcdn.com/de.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 9 },
+  { "fifaCode": "CRO", "name": "Croacia", "shortName": "CRO", "flagUrl": "https://flagcdn.com/hr.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 10 },
+  { "fifaCode": "ITA", "name": "Italia", "shortName": "ITA", "flagUrl": "https://flagcdn.com/it.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 12 },
+  { "fifaCode": "SUI", "name": "Suiza", "shortName": "SUI", "flagUrl": "https://flagcdn.com/ch.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 17 },
+  { "fifaCode": "DEN", "name": "Dinamarca", "shortName": "DEN", "flagUrl": "https://flagcdn.com/dk.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 21 },
+  { "fifaCode": "AUT", "name": "Austria", "shortName": "AUT", "flagUrl": "https://flagcdn.com/at.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 25 },
+  { "fifaCode": "UKR", "name": "Ucrania", "shortName": "UKR", "flagUrl": "https://flagcdn.com/ua.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 27 },
+  { "fifaCode": "TUR", "name": "Turquía", "shortName": "TUR", "flagUrl": "https://flagcdn.com/tr.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 28 },
+  { "fifaCode": "SRB", "name": "Serbia", "shortName": "SRB", "flagUrl": "https://flagcdn.com/rs.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 33 },
+  { "fifaCode": "POL", "name": "Polonia", "shortName": "POL", "flagUrl": "https://flagcdn.com/pl.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 34 },
+
+  { "fifaCode": "JPN", "name": "Japón", "shortName": "JPN", "flagUrl": "https://flagcdn.com/jp.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 15 },
+  { "fifaCode": "IRN", "name": "Irán", "shortName": "IRN", "flagUrl": "https://flagcdn.com/ir.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 18 },
+  { "fifaCode": "KOR", "name": "Corea del Sur", "shortName": "KOR", "flagUrl": "https://flagcdn.com/kr.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 22 },
+  { "fifaCode": "AUS", "name": "Australia", "shortName": "AUS", "flagUrl": "https://flagcdn.com/au.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 26 },
+  { "fifaCode": "KSA", "name": "Arabia Saudita", "shortName": "KSA", "flagUrl": "https://flagcdn.com/sa.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 56 },
+  { "fifaCode": "QAT", "name": "Qatar", "shortName": "QAT", "flagUrl": "https://flagcdn.com/qa.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 58 },
+  { "fifaCode": "UZB", "name": "Uzbekistán", "shortName": "UZB", "flagUrl": "https://flagcdn.com/uz.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 57 },
+  { "fifaCode": "JOR", "name": "Jordania", "shortName": "JOR", "flagUrl": "https://flagcdn.com/jo.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 70 },
+
+  { "fifaCode": "MAR", "name": "Marruecos", "shortName": "MAR", "flagUrl": "https://flagcdn.com/ma.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 13 },
+  { "fifaCode": "SEN", "name": "Senegal", "shortName": "SEN", "flagUrl": "https://flagcdn.com/sn.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 20 },
+  { "fifaCode": "EGY", "name": "Egipto", "shortName": "EGY", "flagUrl": "https://flagcdn.com/eg.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 32 },
+  { "fifaCode": "NGA", "name": "Nigeria", "shortName": "NGA", "flagUrl": "https://flagcdn.com/ng.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 35 },
+  { "fifaCode": "ALG", "name": "Argelia", "shortName": "ALG", "flagUrl": "https://flagcdn.com/dz.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 36 },
+  { "fifaCode": "CIV", "name": "Costa de Marfil", "shortName": "CIV", "flagUrl": "https://flagcdn.com/ci.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 38 },
+  { "fifaCode": "TUN", "name": "Túnez", "shortName": "TUN", "flagUrl": "https://flagcdn.com/tn.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 42 },
+  { "fifaCode": "CMR", "name": "Camerún", "shortName": "CMR", "flagUrl": "https://flagcdn.com/cm.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 44 },
+  { "fifaCode": "GHA", "name": "Ghana", "shortName": "GHA", "flagUrl": "https://flagcdn.com/gh.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 70 },
+
+  { "fifaCode": "PAN", "name": "Panamá", "shortName": "PAN", "flagUrl": "https://flagcdn.com/pa.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": 39 },
+  { "fifaCode": "CRC", "name": "Costa Rica", "shortName": "CRC", "flagUrl": "https://flagcdn.com/cr.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": 47 },
+  { "fifaCode": "JAM", "name": "Jamaica", "shortName": "JAM", "flagUrl": "https://flagcdn.com/jm.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": 52 },
+
+  { "fifaCode": "NZL", "name": "Nueva Zelanda", "shortName": "NZL", "flagUrl": "https://flagcdn.com/nz.svg", "confederation": "OFC", "groupCode": null, "fifaRanking": 89 },
+
+  { "fifaCode": "PLA", "name": "Repechaje 1 (CONMEBOL/CONCACAF/AFC/OFC/CAF)", "shortName": "PL1", "flagUrl": "https://flagcdn.com/un.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": null },
+  { "fifaCode": "PLB", "name": "Repechaje 2 (CONMEBOL/CONCACAF/AFC/OFC/CAF)", "shortName": "PL2", "flagUrl": "https://flagcdn.com/un.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": null }
+]
