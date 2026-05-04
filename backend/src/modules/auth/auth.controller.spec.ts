@@ -198,3 +198,74 @@ describe('POST /auth/refresh (integration)', () => {
     expect(second.status).toBe(401);
   });
 });
+
+describe('POST /auth/logout (integration)', () => {
+  let app: INestApplication;
+  const ADMIN_DNI = process.env.ADMIN_DEFAULT_DNI ?? '00000000';
+  const ADMIN_PASSWORD =
+    process.env.ADMIN_DEFAULT_PASSWORD ?? 'ChangeMe_DevOnly!';
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    app.use(cookieParser());
+    await app.init();
+  }, 30_000);
+
+  afterAll(async () => {
+    if (app) await app.close();
+  });
+
+  /** Login and return both access token and refresh cookie. */
+  async function loginAndGrabPair(): Promise<{
+    accessToken: string;
+    refreshCookie: string;
+  }> {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ dni: ADMIN_DNI, password: ADMIN_PASSWORD });
+    expect(res.status).toBe(200);
+    const setCookie = res.headers['set-cookie'];
+    const cookies = Array.isArray(setCookie)
+      ? setCookie
+      : ([setCookie] as string[]);
+    const refresh = cookies.find((c) => c.startsWith('refresh_token='));
+    if (!refresh) throw new Error('No refresh cookie set on login');
+    return {
+      accessToken: res.body.accessToken,
+      refreshCookie: refresh.split(';')[0]!,
+    };
+  }
+
+  it('returns 401 without an access token', async () => {
+    const res = await request(app.getHttpServer()).post('/auth/logout');
+    expect(res.status).toBe(401);
+  });
+
+  it('clears the refresh cookie and revokes the row', async () => {
+    const { accessToken, refreshCookie } = await loginAndGrabPair();
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/logout')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Cookie', [refreshCookie]);
+
+    expect(res.status).toBe(204);
+    const setCookie = res.headers['set-cookie'];
+    const cookies = Array.isArray(setCookie)
+      ? setCookie
+      : ([setCookie] as string[]);
+    const cleared = cookies.find((c) => c.startsWith('refresh_token='));
+    expect(cleared).toBeDefined();
+    // express clearCookie sets Expires in the past
+    expect(cleared).toMatch(/Expires=Thu, 01 Jan 1970/i);
+
+    // Same refresh cookie cannot be used afterwards.
+    const refreshAttempt = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', [refreshCookie]);
+    expect(refreshAttempt.status).toBe(401);
+  });
+});

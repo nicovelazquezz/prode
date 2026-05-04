@@ -6,12 +6,18 @@ import {
   Post,
   Req,
   Res,
+  UseGuards,
   UnauthorizedException,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Public } from '../../common/decorators/public.decorator.js';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import {
+  CurrentUser,
+  type AuthenticatedUser,
+} from '../../common/decorators/current-user.decorator.js';
 import { AuthService } from './auth.service.js';
 import { UsersService } from '../users/users.service.js';
 import { RefreshTokensService } from './refresh-tokens.service.js';
@@ -183,5 +189,31 @@ export class AuthController {
     });
 
     return { accessToken, user: pickPublicUser(user) };
+  }
+
+  /**
+   * Authenticated logout: revokes the refresh token presented in the
+   * cookie and clears it. Idempotent — repeated calls or calls without
+   * a cookie still return 204. The access token cannot be revoked
+   * server-side (stateless JWT); clients should drop it locally.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @CurrentUser() _user: AuthenticatedUser,
+  ): Promise<void> {
+    const cookies = (req as Request & { cookies?: Record<string, string> })
+      .cookies;
+    const plain = cookies?.[REFRESH_COOKIE];
+    if (plain) {
+      const existing = await this.refreshTokens.findValidByPlain(plain);
+      if (existing) {
+        await this.refreshTokens.revoke(existing.id);
+      }
+    }
+    res.clearCookie(REFRESH_COOKIE, { path: '/' });
   }
 }
