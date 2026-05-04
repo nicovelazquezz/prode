@@ -6,6 +6,7 @@ import {
   MatchesController,
 } from './matches.controller.js';
 import { MatchesService } from './matches.service.js';
+import { MatchesCron } from './matches.cron.js';
 
 /**
  * Wires match listing + admin management.
@@ -19,7 +20,7 @@ import { MatchesService } from './matches.service.js';
 @Module({
   imports: [PrismaModule, CacheModule.register()],
   controllers: [MatchesController, AdminMatchesController],
-  providers: [MatchesService],
-  exports: [MatchesService],
+  providers: [MatchesService, MatchesCron],
+  exports: [MatchesService, MatchesCron],
 })
 export class MatchesModule {}
