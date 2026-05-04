@@ -23,7 +23,17 @@ import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { CompleteRegistrationDto } from './dto/complete-registration.dto.js';
 import { loadEnv } from '../../config/env.js';
+import { AdminAlertsService } from '../../shared/admin-alerts/admin-alerts.service.js';
+import {
+  CompletionAlreadyUsedException,
+  CompletionTokenExpiredException,
+  DniAlreadyExistsException,
+  InvalidCompletionTokenException,
+  PaymentNotApprovedException,
+  WhatsappAlreadyExistsException,
+} from '../../common/exceptions/domain.exceptions.js';
 
 const REFRESH_COOKIE = 'refresh_token';
 const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -72,6 +82,7 @@ export class AuthController {
     private readonly passwordResets: PasswordResetsService,
     private readonly audit: AuditService,
     private readonly prisma: PrismaService,
+    private readonly adminAlerts: AdminAlertsService,
   ) {}
 
   @Public()
@@ -318,5 +329,149 @@ export class AuthController {
       }
     }
     res.clearCookie(REFRESH_COOKIE, { path: '/' });
+  }
+
+  /**
+   * Closes the public payment flow: consumes the magic-link token,
+   * creates the User, links the existing Payment, and emits a fresh
+   * access/refresh pair so the frontend can drop the user straight into
+   * the app.
+   *
+   * Validation order (spec section 6.1):
+   *   1) Token must exist (sha256 lookup) → 404 InvalidCompletionToken
+   *   2) Payment must be APPROVED            → 400 PaymentNotApproved
+   *   3) Token not already used (`completedAt IS NULL`) → 410 already used
+   *   4) Token not expired (`tokenExpiresAt > now()`)    → 410 expired
+   *   5) DNI free → otherwise 409 + admin alert
+   *   6) WhatsApp free → otherwise 409
+   *
+   * The User-create + Payment-update happens inside a TX so a uniqueness
+   * race (two concurrent submissions with the same DNI / whatsapp) cannot
+   * leave the system half-written.
+   */
+  @Public()
+  @Post('complete-registration')
+  @HttpCode(HttpStatus.OK)
+  async completeRegistration(
+    @Body() dto: CompleteRegistrationDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const ctx = getRequestContext(req);
+    const tokenHash = this.authService.hashToken(dto.token);
+
+    // 1-4: token + payment status preconditions (read-only, outside TX).
+    const payment = await this.prisma.payment.findUnique({
+      where: { completionTokenHash: tokenHash },
+    });
+    if (!payment) throw new InvalidCompletionTokenException();
+    if (payment.status !== 'APPROVED') throw new PaymentNotApprovedException();
+    if (payment.completedAt) throw new CompletionAlreadyUsedException();
+    if (!payment.tokenExpiresAt || payment.tokenExpiresAt < new Date()) {
+      throw new CompletionTokenExpiredException();
+    }
+
+    // 5-6: explicit pre-checks for clearer error mapping. The unique
+    // constraint at the DB level is the actual safeguard against races —
+    // we re-check inside the TX too.
+    const existingDni = await this.prisma.user.findUnique({
+      where: { dni: dto.dni },
+    });
+    if (existingDni) {
+      // Audit + admin alert before throwing — this is one of the cases
+      // listed in spec section 9.4 ("DNI duplicado al completar").
+      void this.audit.log({
+        action: 'auth.registration_dni_duplicate',
+        entity: 'payment',
+        entityId: payment.id,
+        changes: { dni: maskDni(dto.dni) },
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+      });
+      await this.adminAlerts.notify({
+        type: 'DNI_DUPLICATE',
+        message:
+          `Intento de completar registro con DNI ya existente. ` +
+          `Pago: ${payment.id}. DNI: ${maskDni(dto.dni)}. ` +
+          `Contactá al usuario manualmente.`,
+      });
+      throw new DniAlreadyExistsException();
+    }
+    const existingWa = await this.prisma.user.findUnique({
+      where: { whatsapp: dto.whatsapp },
+    });
+    if (existingWa) {
+      void this.audit.log({
+        action: 'auth.registration_whatsapp_duplicate',
+        entity: 'payment',
+        entityId: payment.id,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+      });
+      throw new WhatsappAlreadyExistsException();
+    }
+
+    // Hash password outside the TX — bcrypt is CPU-bound and we don't
+    // want to hold a DB connection while it runs.
+    const passwordHash = await this.authService.hashPassword(dto.password);
+
+    const user = await this.prisma.$transaction(async (tx) => {
+      // Re-validate the payment state under the TX in case a concurrent
+      // submission reached step 7 first (would hit unique violation on
+      // payment.userId since we set it below). Belt-and-suspenders.
+      const fresh = await tx.payment.findUnique({
+        where: { id: payment.id },
+      });
+      if (!fresh) throw new InvalidCompletionTokenException();
+      if (fresh.completedAt) throw new CompletionAlreadyUsedException();
+
+      const created = await tx.user.create({
+        data: {
+          dni: dto.dni,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          whatsapp: dto.whatsapp,
+          passwordHash,
+          role: 'USER',
+          status: 'ACTIVE',
+        },
+      });
+
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: { userId: created.id, completedAt: new Date() },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: created.id,
+          action: 'auth.registration_completed',
+          entity: 'user',
+          entityId: created.id,
+          changes: { paymentId: payment.id },
+          ipAddress: ctx.ipAddress ?? null,
+          userAgent: ctx.userAgent ?? null,
+        },
+      });
+
+      return created;
+    });
+
+    // Mint the same login pair we'd issue from /auth/login.
+    const accessToken = this.authService.signAccessToken({
+      sub: user.id,
+      role: user.role,
+    });
+    const { plain } = await this.refreshTokens.create(user.id, ctx);
+
+    res.cookie(REFRESH_COOKIE, plain, {
+      httpOnly: true,
+      secure: this.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: REFRESH_TTL_MS,
+      path: '/',
+    });
+
+    return { accessToken, user: pickPublicUser(user) };
   }
 }
