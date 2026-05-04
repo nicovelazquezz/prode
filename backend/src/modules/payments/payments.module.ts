@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from '../../shared/prisma/prisma.module.js';
 import { PaymentsController } from './payments.controller.js';
 import { PaymentsService } from './payments.service.js';
+import { PaymentsCron } from './payments.cron.js';
 import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
 
 /**
@@ -25,7 +26,7 @@ import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js
     BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE }),
   ],
   controllers: [PaymentsController],
-  providers: [PaymentsService],
-  exports: [PaymentsService],
+  providers: [PaymentsService, PaymentsCron],
+  exports: [PaymentsService, PaymentsCron],
 })
 export class PaymentsModule {}

@@ -1,5 +1,6 @@
 import { Module, ValidationPipe } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller.js';
 import { PrismaModule } from './shared/prisma/prisma.module.js';
 import { RedisModule } from './shared/redis/redis.module.js';
@@ -27,6 +28,10 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter.
  */
 @Module({
   imports: [
+    // ScheduleModule.forRoot() enables `@Cron`-based jobs (Tasks 5.8/5.9
+    // and the match-related crons in later phases). Stays here so the
+    // root context exposes the scheduler to feature modules.
+    ScheduleModule.forRoot(),
     PrismaModule,
     RedisModule,
     BullMqModule,
