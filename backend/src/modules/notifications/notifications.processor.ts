@@ -22,6 +22,11 @@ import {
   MatchResultProcessor,
   type MatchResultJobData,
 } from './match-result.processor.js';
+import {
+  PHASE_WINNER_JOB,
+  PhaseWinnerProcessor,
+  type PhaseWinnerJobData,
+} from './phase-winner.processor.js';
 
 export interface SendNotificationJobData {
   notificationId: string;
@@ -52,6 +57,7 @@ export class NotificationsProcessor extends WorkerHost {
     private readonly orphanAlert: OrphanAlertProcessor,
     private readonly leaderboardRefresh: LeaderboardRefreshProcessor,
     private readonly matchResult: MatchResultProcessor,
+    private readonly phaseWinner: PhaseWinnerProcessor,
   ) {
     super();
   }
@@ -73,10 +79,13 @@ export class NotificationsProcessor extends WorkerHost {
       await this.matchResult.handle(job as Job<MatchResultJobData>);
       return;
     }
+    if (job.name === PHASE_WINNER_JOB) {
+      await this.phaseWinner.handle(job as Job<PhaseWinnerJobData>);
+      return;
+    }
     if (job.name !== SEND_NOTIFICATION_JOB) {
       // Ignore unknown job names defensively; throwing here would burn retries
-      // for jobs that may have been added by an older deploy. `phase-winner`
-      // is the remaining placeholder until Task 11.4 wires it.
+      // for jobs that may have been added by an older deploy.
       this.logger.warn(`Unknown job name on ${NOTIFICATIONS_QUEUE}: ${job.name}`);
       return;
     }
