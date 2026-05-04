@@ -17,6 +17,11 @@ import {
   LEADERBOARD_REFRESH_JOB,
   LeaderboardRefreshProcessor,
 } from '../leaderboard/leaderboard.processor.js';
+import {
+  MATCH_RESULT_JOB,
+  MatchResultProcessor,
+  type MatchResultJobData,
+} from './match-result.processor.js';
 
 export interface SendNotificationJobData {
   notificationId: string;
@@ -46,6 +51,7 @@ export class NotificationsProcessor extends WorkerHost {
     private readonly email: EmailService,
     private readonly orphanAlert: OrphanAlertProcessor,
     private readonly leaderboardRefresh: LeaderboardRefreshProcessor,
+    private readonly matchResult: MatchResultProcessor,
   ) {
     super();
   }
@@ -53,8 +59,8 @@ export class NotificationsProcessor extends WorkerHost {
   async process(job: Job): Promise<void> {
     // Dispatch by job name. Multiple producers share this queue (the
     // `send-notification` outbox, the delayed `admin-orphan-alert`, the
-    // `leaderboard.refresh` MV refresher); we route each to its handler
-    // so a single worker drains them all.
+    // `leaderboard.refresh` MV refresher, the `match-result` recap fan-out);
+    // we route each to its handler so a single worker drains them all.
     if (job.name === ADMIN_ORPHAN_ALERT_JOB) {
       await this.orphanAlert.handle(job as Job<OrphanAlertJobData>);
       return;
@@ -63,11 +69,14 @@ export class NotificationsProcessor extends WorkerHost {
       await this.leaderboardRefresh.handle(job);
       return;
     }
+    if (job.name === MATCH_RESULT_JOB) {
+      await this.matchResult.handle(job as Job<MatchResultJobData>);
+      return;
+    }
     if (job.name !== SEND_NOTIFICATION_JOB) {
       // Ignore unknown job names defensively; throwing here would burn retries
-      // for jobs that may have been added by an older deploy. `match-result`
-      // and `phase-winner` jobs are handled in Phase 11 — until then they
-      // land here and get logged + dropped.
+      // for jobs that may have been added by an older deploy. `phase-winner`
+      // is the remaining placeholder until Task 11.4 wires it.
       this.logger.warn(`Unknown job name on ${NOTIFICATIONS_QUEUE}: ${job.name}`);
       return;
     }

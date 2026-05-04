@@ -6,6 +6,7 @@ import { NotificationsService } from './notifications.service.js';
 import { NotificationsProcessor } from './notifications.processor.js';
 import { OrphanAlertProcessor } from '../payments/orphan-alert.processor.js';
 import { MatchRemindersCron } from './match-reminders.cron.js';
+import { MatchResultProcessor } from './match-result.processor.js';
 import { NOTIFICATIONS_QUEUE } from './notifications.constants.js';
 
 /**
@@ -30,7 +31,13 @@ import { NOTIFICATIONS_QUEUE } from './notifications.constants.js';
     NotificationsProcessor,
     OrphanAlertProcessor,
     MatchRemindersCron,
+    MatchResultProcessor,
   ],
-  exports: [NotificationsService, OrphanAlertProcessor, MatchRemindersCron],
+  exports: [
+    NotificationsService,
+    OrphanAlertProcessor,
+    MatchRemindersCron,
+    MatchResultProcessor,
+  ],
 })
 export class NotificationsModule {}
