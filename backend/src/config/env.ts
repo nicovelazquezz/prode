@@ -27,6 +27,10 @@ const envSchema = z.object({
 
   TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
   SENTRY_DSN: z.string().url().optional(),
+
+  // Admin bootstrap (consumed by seed-config.ts only). Optional at runtime.
+  ADMIN_DEFAULT_DNI: z.string().regex(/^\d{7,9}$/).optional(),
+  ADMIN_DEFAULT_PASSWORD: z.string().min(8).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
