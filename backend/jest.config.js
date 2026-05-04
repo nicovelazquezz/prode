@@ -6,6 +6,7 @@ export default {
   testMatch: ['**/*.spec.ts'],
   rootDir: '.',
   roots: ['<rootDir>/src'],
+  setupFiles: ['<rootDir>/jest.setup.js'],
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
