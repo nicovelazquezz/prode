@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: prode-postgres
+    environment:
+      POSTGRES_USER: prode
+      POSTGRES_PASSWORD: prode_dev_pwd
+      POSTGRES_DB: prode
+      TZ: America/Argentina/Buenos_Aires
+    ports:
+      - '5433:5432'
+    volumes:
+      - prode_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U prode']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: prode-redis
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  prode_pg:
