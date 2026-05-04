@@ -1,9 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { generateUniqueInviteCode } from './invite-code.js';
 import type { CreateLeagueDto } from './dto/create-league.dto.js';
 import type { League } from '../../../generated/prisma/client.js';
+import {
+  AlreadyLeagueMemberException,
+  LeagueFullException,
+} from '../../common/exceptions/domain.exceptions.js';
 
 interface AuditContext {
   ipAddress?: string;
@@ -122,5 +126,77 @@ export class LeaguesService {
         isOwner: rest.ownerId === userId,
       };
     });
+  }
+
+  /**
+   * Joins the caller to the league identified by `inviteCode`. The DTO
+   * already upper-cases + validates shape; here we just look up + check
+   * the four invariants that demand a DB round-trip:
+   *
+   *   1. League exists                      → 404
+   *   2. memberCount < maxMembers           → 409 LEAGUE_FULL
+   *   3. caller not already a member        → 409 ALREADY_LEAGUE_MEMBER
+   *   4. otherwise insert the membership row
+   *
+   * Implementation notes:
+   *   - Uses a single `findUnique` on `inviteCode` with an inline
+   *     `_count` to avoid a separate count query; the index on
+   *     `inviteCode` (unique) makes this cheap.
+   *   - The capacity + duplicate-member checks happen in JS before the
+   *     insert. There IS a race window where two concurrent joins could
+   *     both clear the cap check — mitigation: the `(leagueId, userId)`
+   *     unique constraint catches duplicates, and the `maxMembers` race
+   *     can at worst result in `members === maxMembers + 1` for one
+   *     transaction. Acceptable at the spec's scale; tightening would
+   *     require advisory locks (overkill for <200 leagues).
+   *   - Audit log via {@link AuditService.log} (not the @Audit
+   *     interceptor) for the same reason as `createLeague`: we want
+   *     `entityId` set to the league id, not the membership id.
+   */
+  async joinLeague(
+    userId: string,
+    inviteCode: string,
+    ctx: AuditContext = {},
+  ): Promise<League> {
+    const league = await this.prisma.league.findUnique({
+      where: { inviteCode },
+      include: { _count: { select: { members: true } } },
+    });
+    if (!league) {
+      throw new NotFoundException('League not found for the given invite code');
+    }
+
+    if (league._count.members >= league.maxMembers) {
+      throw new LeagueFullException();
+    }
+
+    const existingMembership = await this.prisma.leagueMembership.findUnique({
+      where: { leagueId_userId: { leagueId: league.id, userId } },
+      select: { id: true },
+    });
+    if (existingMembership) {
+      throw new AlreadyLeagueMemberException();
+    }
+
+    await this.prisma.leagueMembership.create({
+      data: { leagueId: league.id, userId },
+    });
+
+    void this.audit.log({
+      userId,
+      action: 'league.joined',
+      entity: 'league',
+      entityId: league.id,
+      changes: { inviteCode },
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+    });
+
+    // Strip the `_count` key so the public payload matches the shape
+    // returned by `createLeague` (a plain `League`, not the include
+    // result).
+    const { _count, ...rest } = league;
+    void _count;
+    return rest;
   }
 }

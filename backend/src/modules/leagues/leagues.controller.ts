@@ -13,6 +13,7 @@ import {
 } from '../../common/decorators/current-user.decorator.js';
 import { LeaguesService } from './leagues.service.js';
 import { CreateLeagueDto } from './dto/create-league.dto.js';
+import { JoinLeagueDto } from './dto/join-league.dto.js';
 
 /**
  * Resolves IP + user-agent from the express request for downstream
@@ -69,5 +70,22 @@ export class LeaguesController {
   async listMine(@CurrentUser() user: AuthenticatedUser | undefined) {
     const me = this.requireUser(user);
     return this.leagues.listForUser(me.id);
+  }
+
+  /**
+   * Joins the caller to a league via its invite code. Surfaces the
+   * domain exceptions from the service (404 if the code doesn't match,
+   * 409 if the league is full or the user is already a member). The DTO
+   * normalises lowercase input to uppercase before validation runs.
+   */
+  @Post('join')
+  async join(
+    @Body() dto: JoinLeagueDto,
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Req() req: Request,
+  ) {
+    const me = this.requireUser(user);
+    const ctx = getRequestContext(req);
+    return this.leagues.joinLeague(me.id, dto.inviteCode, ctx);
   }
 }

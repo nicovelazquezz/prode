@@ -111,3 +111,26 @@ export class PhaseAlreadyPaidException extends ConflictException {
     super({ statusCode: 409, code: 'PHASE_ALREADY_PAID', message });
   }
 }
+
+/**
+ * Thrown when a user tries to join a mini-league whose member count has
+ * already reached `maxMembers`. Spec section 5.2 / Phase 10. 409
+ * Conflict because the request is well-formed; the server-side state
+ * just doesn't have room.
+ */
+export class LeagueFullException extends ConflictException {
+  constructor(message = 'League has reached its member cap') {
+    super({ statusCode: 409, code: 'LEAGUE_FULL', message });
+  }
+}
+
+/**
+ * Thrown when a user tries to join a league they're already a member
+ * of. Surfaces the same 409 shape so the frontend can route both
+ * "league full" and "already in" through a single error handler.
+ */
+export class AlreadyLeagueMemberException extends ConflictException {
+  constructor(message = 'Already a member of this league') {
+    super({ statusCode: 409, code: 'ALREADY_LEAGUE_MEMBER', message });
+  }
+}
