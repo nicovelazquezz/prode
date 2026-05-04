@@ -231,4 +231,16 @@ export class PredictionsService {
       },
     });
   }
+
+  /**
+   * Counts how many users have submitted a prediction for the given match.
+   * Used by the public `GET /matches/:matchId/predictions/count` endpoint
+   * (Task 7.5) to fuel "X usuarios ya predijeron este partido" badges in
+   * the frontend. Returns 0 if the match doesn't exist — choosing not to
+   * 404 keeps the call safe behind a 60 s cache and avoids leaking match
+   * existence to unauthenticated callers.
+   */
+  async countForMatch(matchId: string): Promise<number> {
+    return this.prisma.prediction.count({ where: { matchId } });
+  }
 }
