@@ -18,7 +18,15 @@ import type { Match } from '../../../generated/prisma/client.js';
  * the `LeaderboardRefreshProcessor` registered there in Task 8.9).
  */
 export const LEADERBOARD_REFRESH_JOB = 'leaderboard.refresh';
+/**
+ * BullMQ rejects custom job ids that contain `:` because it reserves
+ * that character for its internal Redis key namespacing. The spec calls
+ * the dedup key `leaderboard:refresh`; we keep the human-readable name
+ * here for the audit trail and use {@link LEADERBOARD_REFRESH_JOB_ID}
+ * (with `_` swapped in) as the actual job id passed to BullMQ.
+ */
 export const LEADERBOARD_REFRESH_DEDUP_KEY = 'leaderboard:refresh';
+export const LEADERBOARD_REFRESH_JOB_ID = 'leaderboard_refresh';
 export const MATCH_RESULT_JOB = 'match-result';
 
 /**
@@ -170,7 +178,7 @@ export class ScoringService {
       LEADERBOARD_REFRESH_JOB,
       {},
       {
-        jobId: LEADERBOARD_REFRESH_DEDUP_KEY,
+        jobId: LEADERBOARD_REFRESH_JOB_ID,
         removeOnComplete: true,
       },
     );

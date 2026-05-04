@@ -252,7 +252,7 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
     const lbCall = queueAddSpy.mock.calls.find((c) => c[0] === 'leaderboard.refresh');
     expect(lbCall).toBeDefined();
     const [, , opts] = lbCall as [string, unknown, { jobId?: string } | undefined];
-    expect(opts?.jobId).toBe('leaderboard:refresh');
+    expect(opts?.jobId).toBe('leaderboard_refresh');
 
     // Phase service notified of the phase to maybe-close.
     expect(phaseSpy).toHaveBeenCalledWith('GROUPS');
