@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { PrismaModule } from '../../shared/prisma/prisma.module.js';
 import { LeaderboardRefreshProcessor } from './leaderboard.processor.js';
 import { LeaderboardRepository } from './leaderboard.repository.js';
+import { LeaderboardService } from './leaderboard.service.js';
 
 /**
  * Hosts the leaderboard worker (Phase 8 — `LeaderboardRefreshProcessor`)
@@ -15,7 +16,15 @@ import { LeaderboardRepository } from './leaderboard.repository.js';
 @Global()
 @Module({
   imports: [PrismaModule],
-  providers: [LeaderboardRefreshProcessor, LeaderboardRepository],
-  exports: [LeaderboardRefreshProcessor, LeaderboardRepository],
+  providers: [
+    LeaderboardRefreshProcessor,
+    LeaderboardRepository,
+    LeaderboardService,
+  ],
+  exports: [
+    LeaderboardRefreshProcessor,
+    LeaderboardRepository,
+    LeaderboardService,
+  ],
 })
 export class LeaderboardModule {}

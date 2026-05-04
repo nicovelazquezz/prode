@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import type { Job } from 'bullmq';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
+import { LeaderboardService } from './leaderboard.service.js';
 
 /**
  * Job name produced by `ScoringService.finishMatchAndScore` /
@@ -40,7 +41,15 @@ export const LEADERBOARD_REFRESH_JOB = 'leaderboard.refresh';
 export class LeaderboardRefreshProcessor {
   private readonly logger = new Logger(LeaderboardRefreshProcessor.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    // forwardRef because LeaderboardService (Phase 9) lives in the same
+    // module — without it Nest's metadata resolver complains about a
+    // circular reference at module-init time even though the runtime
+    // graph is acyclic.
+    @Inject(forwardRef(() => LeaderboardService))
+    private readonly leaderboardService: LeaderboardService,
+  ) {}
 
   async handle(job: Job): Promise<void> {
     if (job.name !== LEADERBOARD_REFRESH_JOB) return;
@@ -52,6 +61,18 @@ export class LeaderboardRefreshProcessor {
     // each statement in an implicit single-statement transaction, so
     // we don't need to wrap it explicitly.
     await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_global`;
+
+    // Drop the Phase 9 cache so the next `/leaderboard/*` GET reflects
+    // the new MV state immediately. Best-effort — the 60 s TTL is a
+    // backstop if the invalidation throws (e.g. transient Redis flap).
+    try {
+      await this.leaderboardService.invalidate();
+    } catch (err) {
+      this.logger.warn(
+        `Cache invalidation failed after MV refresh: ${(err as Error).message}`,
+      );
+    }
+
     const ms = Date.now() - start;
     this.logger.log(`Refreshed leaderboard_global in ${ms}ms (job=${job.id})`);
   }
