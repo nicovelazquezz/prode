@@ -5,6 +5,7 @@ import { PrismaModule } from '../../shared/prisma/prisma.module.js';
 import { ScoringConfigService } from './scoring-config.service.js';
 import { ScoringService } from './scoring.service.js';
 import { PhaseService } from './phase.service.js';
+import { MatchProgressionService } from './match-progression.service.js';
 import { ScoringController } from './scoring.controller.js';
 import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
 
@@ -30,7 +31,17 @@ import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js
     BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE }),
   ],
   controllers: [ScoringController],
-  providers: [ScoringConfigService, ScoringService, PhaseService],
-  exports: [ScoringConfigService, ScoringService, PhaseService],
+  providers: [
+    ScoringConfigService,
+    ScoringService,
+    PhaseService,
+    MatchProgressionService,
+  ],
+  exports: [
+    ScoringConfigService,
+    ScoringService,
+    PhaseService,
+    MatchProgressionService,
+  ],
 })
 export class ScoringModule {}
