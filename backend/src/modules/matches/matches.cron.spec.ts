@@ -142,3 +142,144 @@ describe('MatchesCron.autoLockMatches (integration)', () => {
     expect(after.status).toBe('FINISHED');
   });
 });
+
+/**
+ * Integration test for `MatchesCron.lockSpecialPredictions`. Mirrors the
+ * shape of the auto-lock test: spin up the app, snapshot match #1, push
+ * its lock into the past, create a SpecialPrediction with `lockedAt=null`,
+ * call the method, assert the row got stamped.
+ *
+ * SpecialPrediction has a unique constraint on `userId`, so we create a
+ * one-off user inside the test and tear it down on completion.
+ */
+describe('MatchesCron.lockSpecialPredictions (integration)', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  let cron: MatchesCron;
+
+  // Track resources we create so afterAll can clean up reliably.
+  const createdUserIds: string[] = [];
+  type Match1Snapshot = {
+    id: string;
+    predictionsLockAt: Date;
+    kickoffAt: Date;
+    status: string;
+  };
+  let m1Snapshot: Match1Snapshot | null = null;
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    await app.init();
+    prisma = app.get(PrismaService);
+    cron = app.get(MatchesCron);
+
+    const m1 = await prisma.match.findUniqueOrThrow({
+      where: { matchNumber: 1 },
+    });
+    m1Snapshot = {
+      id: m1.id,
+      predictionsLockAt: m1.predictionsLockAt,
+      kickoffAt: m1.kickoffAt,
+      status: m1.status,
+    };
+  }, 30_000);
+
+  afterAll(async () => {
+    if (prisma) {
+      await prisma.specialPrediction.deleteMany({
+        where: { userId: { in: createdUserIds } },
+      });
+      await prisma.user.deleteMany({
+        where: { id: { in: createdUserIds } },
+      });
+      if (m1Snapshot) {
+        await prisma.match.update({
+          where: { id: m1Snapshot.id },
+          data: {
+            predictionsLockAt: m1Snapshot.predictionsLockAt,
+            kickoffAt: m1Snapshot.kickoffAt,
+            status: m1Snapshot.status as Match1Snapshot['status'],
+          },
+        });
+      }
+    }
+    if (app) await app.close();
+  }, 30_000);
+
+  it('locks SpecialPrediction rows once match #1 lock has elapsed', async () => {
+    // Force match #1 into the locked window.
+    if (!m1Snapshot) throw new Error('m1Snapshot not initialised');
+    await prisma.match.update({
+      where: { id: m1Snapshot.id },
+      data: {
+        predictionsLockAt: new Date(Date.now() - 60 * 1000),
+        // kickoff just behind the lock so the row stays internally consistent
+        kickoffAt: new Date(Date.now() - 50 * 1000),
+      },
+    });
+
+    // Create a user + SpecialPrediction with lockedAt = null.
+    const suffix = Date.now().toString();
+    const user = await prisma.user.create({
+      data: {
+        dni: `9${suffix.slice(-7)}`,
+        whatsapp: `+5491100${suffix.slice(-6)}`,
+        firstName: 'Special',
+        lastName: 'Test',
+        passwordHash: 'placeholder-not-used-here',
+        status: 'ACTIVE',
+      },
+    });
+    createdUserIds.push(user.id);
+    await prisma.specialPrediction.create({
+      data: { userId: user.id, lockedAt: null },
+    });
+
+    const flipped = await cron.lockSpecialPredictions();
+    expect(flipped).toBeGreaterThanOrEqual(1);
+
+    const after = await prisma.specialPrediction.findUniqueOrThrow({
+      where: { userId: user.id },
+    });
+    expect(after.lockedAt).not.toBeNull();
+  });
+
+  it('returns 0 when match #1 lock is still in the future', async () => {
+    if (!m1Snapshot) throw new Error('m1Snapshot not initialised');
+    await prisma.match.update({
+      where: { id: m1Snapshot.id },
+      data: {
+        predictionsLockAt: new Date(Date.now() + 24 * 3600 * 1000),
+        kickoffAt: new Date(Date.now() + 25 * 3600 * 1000),
+      },
+    });
+
+    // Create a fresh special prediction for a different user.
+    const suffix = (Date.now() + 1).toString();
+    const user = await prisma.user.create({
+      data: {
+        dni: `8${suffix.slice(-7)}`,
+        whatsapp: `+5491101${suffix.slice(-6)}`,
+        firstName: 'Special',
+        lastName: 'Pending',
+        passwordHash: 'placeholder-not-used-here',
+        status: 'ACTIVE',
+      },
+    });
+    createdUserIds.push(user.id);
+    await prisma.specialPrediction.create({
+      data: { userId: user.id, lockedAt: null },
+    });
+
+    const flipped = await cron.lockSpecialPredictions();
+    expect(flipped).toBe(0);
+
+    const after = await prisma.specialPrediction.findUniqueOrThrow({
+      where: { userId: user.id },
+    });
+    expect(after.lockedAt).toBeNull();
+  });
+});

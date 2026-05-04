@@ -47,4 +47,34 @@ export class MatchesCron {
     }
     return result.count;
   }
+
+  /**
+   * Locks every still-open `SpecialPrediction` once the inaugural match
+   * (matchNumber=1) crosses its `predictionsLockAt`. The lock is binary
+   * across the whole user base — there's no per-user kickoff for special
+   * picks (champion / topScorer / total goals / etc.).
+   *
+   * Returns the count of rows actually flipped. Skips work cheaply when
+   * either (a) match #1 isn't seeded yet, or (b) its lock hasn't elapsed.
+   * After the inaugural match has locked once, this fires every minute
+   * but the `lockedAt: null` predicate short-circuits to zero rows.
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async lockSpecialPredictions(): Promise<number> {
+    const m1 = await this.prisma.match.findUnique({
+      where: { matchNumber: 1 },
+      select: { predictionsLockAt: true },
+    });
+    if (!m1 || m1.predictionsLockAt > new Date()) {
+      return 0;
+    }
+    const result = await this.prisma.specialPrediction.updateMany({
+      where: { lockedAt: null },
+      data: { lockedAt: new Date() },
+    });
+    if (result.count > 0) {
+      this.logger.log(`Auto-locked ${result.count} special prediction(s)`);
+    }
+    return result.count;
+  }
 }
