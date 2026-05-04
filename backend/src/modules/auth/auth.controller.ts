@@ -26,6 +26,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { loadEnv } from '../../config/env.js';
 
 const REFRESH_COOKIE = 'refresh_token';
@@ -241,6 +242,56 @@ export class AuthController {
       entity: 'auth',
       entityId: user.id,
       changes: { dni: maskDni(dto.dni) },
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+    });
+
+    return { ok: true };
+  }
+
+  /**
+   * Consumes a reset token and sets a new password. On success, every
+   * existing refresh token for the user is also revoked so any active
+   * session on a stolen device is forced to re-authenticate.
+   */
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }))
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+    @Req() req: Request,
+  ): Promise<{ ok: true }> {
+    const ctx = getRequestContext(req);
+    const reset = await this.passwordResets.findValidByPlain(dto.token);
+    if (!reset) {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+
+    const newHash = await this.authService.hashPassword(dto.newPassword);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: reset.userId },
+        data: { passwordHash: newHash },
+      }),
+      this.prisma.passwordReset.update({
+        where: { id: reset.id },
+        data: { usedAt: new Date() },
+      }),
+      // Revoke any refresh tokens still alive for this user — a password
+      // reset implies the previous credentials are no longer trusted.
+      this.prisma.refreshToken.updateMany({
+        where: { userId: reset.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
+
+    void this.audit.log({
+      userId: reset.userId,
+      action: 'auth.password_reset_completed',
+      entity: 'auth',
+      entityId: reset.userId,
       ipAddress: ctx.ipAddress,
       userAgent: ctx.userAgent,
     });

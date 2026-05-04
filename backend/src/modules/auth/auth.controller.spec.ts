@@ -4,6 +4,8 @@ import request from 'supertest';
 import cookieParser from 'cookie-parser';
 import { AppModule } from '../../app.module.js';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
+import { PasswordResetsService } from './password-resets.service.js';
+import { AuthService } from './auth.service.js';
 
 /**
  * Integration test against the real Postgres instance running in
@@ -342,5 +344,189 @@ describe('POST /auth/forgot-password (integration)', () => {
       .post('/auth/forgot-password')
       .send({ dni: 'abc' });
     expect(res.status).toBe(400);
+  });
+});
+
+describe('POST /auth/reset-password (integration)', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  let passwordResets: PasswordResetsService;
+  let authService: AuthService;
+  let testUserId: string;
+  // The seed admin password is what we restore after each mutating test
+  // so the suite stays idempotent regardless of test ordering.
+  const ADMIN_DNI = process.env.ADMIN_DEFAULT_DNI ?? '00000000';
+  const ADMIN_PASSWORD =
+    process.env.ADMIN_DEFAULT_PASSWORD ?? 'ChangeMe_DevOnly!';
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    app.use(cookieParser());
+    await app.init();
+    prisma = app.get(PrismaService);
+    passwordResets = app.get(PasswordResetsService);
+    authService = app.get(AuthService);
+
+    // Use a dedicated user so we don't disturb the admin password and
+    // can clean up between tests without race conditions.
+    const dniSuffix = Date.now().toString().slice(-7);
+    const passwordHash = await authService.hashPassword('OldPassword1');
+    const user = await prisma.user.create({
+      data: {
+        dni: `1${dniSuffix}`,
+        firstName: 'Reset',
+        lastName: 'Test',
+        whatsapp: `54911${dniSuffix}`,
+        passwordHash,
+        role: 'USER',
+        status: 'ACTIVE',
+      },
+    });
+    testUserId = user.id;
+  }, 30_000);
+
+  afterAll(async () => {
+    if (testUserId) {
+      await prisma.refreshToken.deleteMany({ where: { userId: testUserId } });
+      await prisma.passwordReset.deleteMany({ where: { userId: testUserId } });
+      await prisma.auditLog.deleteMany({ where: { userId: testUserId } });
+      await prisma.notification.deleteMany({ where: { userId: testUserId } });
+      await prisma.user.delete({ where: { id: testUserId } }).catch(() => {});
+    }
+    if (app) await app.close();
+  });
+
+  it('rejects an unknown token with 401', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({
+        token: 'a'.repeat(64),
+        newPassword: 'NewPassword1',
+      });
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a malformed token / weak password with 400', async () => {
+    expect(
+      (
+        await request(app.getHttpServer())
+          .post('/auth/reset-password')
+          .send({ token: 'short', newPassword: 'NewPassword1' })
+      ).status,
+    ).toBe(400);
+
+    expect(
+      (
+        await request(app.getHttpServer())
+          .post('/auth/reset-password')
+          .send({ token: 'a'.repeat(64), newPassword: 'noNumbers' })
+      ).status,
+    ).toBe(400);
+
+    expect(
+      (
+        await request(app.getHttpServer())
+          .post('/auth/reset-password')
+          .send({ token: 'a'.repeat(64), newPassword: 'short1' })
+      ).status,
+    ).toBe(400);
+  });
+
+  it('updates the password, marks the token used, and revokes refresh tokens', async () => {
+    // Issue a real reset token for our test user.
+    const { plain, record } = await passwordResets.create(testUserId);
+
+    // Also seed an active refresh token; it should get revoked on reset.
+    const refreshHash = authService.hashToken('some-active-refresh');
+    const refreshRow = await prisma.refreshToken.create({
+      data: {
+        userId: testUserId,
+        tokenHash: refreshHash,
+        expiresAt: new Date(Date.now() + 24 * 3600 * 1000),
+      },
+    });
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({ token: plain, newPassword: 'BrandNewPass2' });
+    expect(res.status).toBe(200);
+
+    // Token row marked used.
+    const consumed = await prisma.passwordReset.findUnique({
+      where: { id: record.id },
+    });
+    expect(consumed!.usedAt).not.toBeNull();
+
+    // Existing refresh token revoked.
+    const refreshAfter = await prisma.refreshToken.findUnique({
+      where: { id: refreshRow.id },
+    });
+    expect(refreshAfter!.revokedAt).not.toBeNull();
+
+    // New password works on /auth/login.
+    const loginNew = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ dni: (await prisma.user.findUniqueOrThrow({
+        where: { id: testUserId },
+      })).dni, password: 'BrandNewPass2' });
+    expect(loginNew.status).toBe(200);
+
+    // Old password no longer works.
+    const loginOld = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ dni: (await prisma.user.findUniqueOrThrow({
+        where: { id: testUserId },
+      })).dni, password: 'OldPassword1' });
+    expect(loginOld.status).toBe(401);
+  });
+
+  it('rejects a token that was already used', async () => {
+    const { plain } = await passwordResets.create(testUserId);
+    // Consume it.
+    expect(
+      (
+        await request(app.getHttpServer())
+          .post('/auth/reset-password')
+          .send({ token: plain, newPassword: 'AnotherPass3' })
+      ).status,
+    ).toBe(200);
+    // Re-using must fail.
+    expect(
+      (
+        await request(app.getHttpServer())
+          .post('/auth/reset-password')
+          .send({ token: plain, newPassword: 'AnotherPass3' })
+      ).status,
+    ).toBe(401);
+  });
+
+  it('writes auth.password_reset_completed audit row', async () => {
+    const { plain } = await passwordResets.create(testUserId);
+    const res = await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({ token: plain, newPassword: 'YetAnotherPass4' });
+    expect(res.status).toBe(200);
+
+    await new Promise((r) => setTimeout(r, 200));
+    const audit = await prisma.auditLog.findFirst({
+      where: {
+        userId: testUserId,
+        action: 'auth.password_reset_completed',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(audit).not.toBeNull();
+
+    // Sanity: the seed admin login still works (we never touched its row).
+    expect(
+      (
+        await request(app.getHttpServer())
+          .post('/auth/login')
+          .send({ dni: ADMIN_DNI, password: ADMIN_PASSWORD })
+      ).status,
+    ).toBe(200);
   });
 });
