@@ -3,6 +3,7 @@ import { PrismaModule } from '../../shared/prisma/prisma.module.js';
 import { LeaderboardRefreshProcessor } from './leaderboard.processor.js';
 import { LeaderboardRepository } from './leaderboard.repository.js';
 import { LeaderboardService } from './leaderboard.service.js';
+import { LeaderboardController } from './leaderboard.controller.js';
 
 /**
  * Hosts the leaderboard worker (Phase 8 — `LeaderboardRefreshProcessor`)
@@ -16,6 +17,7 @@ import { LeaderboardService } from './leaderboard.service.js';
 @Global()
 @Module({
   imports: [PrismaModule],
+  controllers: [LeaderboardController],
   providers: [
     LeaderboardRefreshProcessor,
     LeaderboardRepository,
