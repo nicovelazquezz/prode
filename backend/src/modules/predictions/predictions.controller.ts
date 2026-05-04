@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Post,
   Put,
@@ -9,6 +10,8 @@ import {
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from '@nestjs/cache-manager';
 import type { Request } from 'express';
 import {
   CurrentUser,
@@ -19,6 +22,7 @@ import { SpecialPredictionsService } from './special-predictions.service.js';
 import { UpsertMatchPredictionDto } from './dto/upsert-match-prediction.dto.js';
 import { UpsertSpecialPredictionDto } from './dto/upsert-special-prediction.dto.js';
 import { ListMyPredictionsDto } from './dto/list-my-predictions.dto.js';
+import { matchPredictionCountCacheKey } from './match-predictions-public.controller.js';
 
 function getRequestContext(req: Request): {
   ipAddress?: string;
@@ -43,7 +47,18 @@ export class PredictionsController {
   constructor(
     private readonly predictionsService: PredictionsService,
     private readonly specialPredictionsService: SpecialPredictionsService,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
+
+  /**
+   * Drops the per-match count cache so the next public GET sees the new
+   * total immediately (the writer's badge bumps without waiting for the
+   * 60 s TTL). Best-effort — a failed delete is logged downstream and the
+   * stale entry expires naturally.
+   */
+  private async invalidateMatchCount(matchId: string): Promise<void> {
+    await this.cache.del(matchPredictionCountCacheKey(matchId));
+  }
 
   /**
    * Resolves and asserts the current user. The global guard rejects
@@ -67,12 +82,14 @@ export class PredictionsController {
   ) {
     const me = this.requireUser(user);
     const ctx = getRequestContext(req);
-    return this.predictionsService.upsertMatchPrediction(
+    const result = await this.predictionsService.upsertMatchPrediction(
       me.id,
       matchId,
       dto,
       ctx,
     );
+    await this.invalidateMatchCount(matchId);
+    return result;
   }
 
   @Put('match/:matchId')
@@ -84,12 +101,14 @@ export class PredictionsController {
   ) {
     const me = this.requireUser(user);
     const ctx = getRequestContext(req);
-    return this.predictionsService.upsertMatchPrediction(
+    const result = await this.predictionsService.upsertMatchPrediction(
       me.id,
       matchId,
       dto,
       ctx,
     );
+    await this.invalidateMatchCount(matchId);
+    return result;
   }
 
   @Get('me')

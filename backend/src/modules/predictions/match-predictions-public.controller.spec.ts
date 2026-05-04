@@ -101,4 +101,67 @@ describe('GET /matches/:matchId/predictions/count (public)', () => {
     );
     expect(res.status).not.toBe(401);
   });
+
+  it('cache invalidates on POST /predictions/match/:matchId (Task 7.6)', async () => {
+    // Pick a fresh match (matchNumber 101) so we can observe the count
+    // jumping from 0 → 1 within the 60 s TTL. If the writer didn't
+    // invalidate the cache, the second GET would still report 0.
+    const fresh = await prisma.match.findFirstOrThrow({
+      where: { matchNumber: 101 },
+    });
+    const newId = fresh.id;
+
+    // Prime the cache: count = 0.
+    const first = await request(app.getHttpServer()).get(
+      `/matches/${newId}/predictions/count`,
+    );
+    expect(first.status).toBe(200);
+    expect(first.body.count).toBe(0);
+
+    // Mint a fresh user + token (the suite's existing users already wrote
+    // for matchId, not newId, so we need a clean writer).
+    const stamp = (Date.now() + 99) % 90_000_000;
+    const passwordHash = await bcrypt.hash('cache-invalidation-test', 4);
+    const writer = await prisma.user.create({
+      data: {
+        dni: String(40_000_000 + stamp).slice(-8),
+        firstName: 'Cache',
+        lastName: 'Writer',
+        whatsapp: `549${String(4_000_000_000 + stamp).slice(-9)}`.slice(0, 13),
+        passwordHash,
+      },
+    });
+    userIds.push(writer.id);
+    const login = await request(app.getHttpServer()).post('/auth/login').send({
+      dni: writer.dni,
+      password: 'cache-invalidation-test',
+    });
+    expect(login.status).toBe(200);
+    const writerToken: string = login.body.accessToken;
+
+    // Force the lock window into the future just in case the seed put
+    // matchNumber=101 in the past.
+    if (fresh.predictionsLockAt.getTime() <= Date.now()) {
+      await prisma.match.update({
+        where: { id: newId },
+        data: {
+          predictionsLockAt: new Date(Date.now() + 24 * 3600 * 1000),
+        },
+      });
+    }
+
+    const post = await request(app.getHttpServer())
+      .post(`/predictions/match/${newId}`)
+      .set('Authorization', `Bearer ${writerToken}`)
+      .send({ scoreHome: 2, scoreAway: 0 });
+    expect(post.status).toBe(201);
+
+    // Even though the GET would normally serve the cached 0 for 60 s, the
+    // controller blew the key away — the next GET hits the DB and sees 1.
+    const second = await request(app.getHttpServer()).get(
+      `/matches/${newId}/predictions/count`,
+    );
+    expect(second.status).toBe(200);
+    expect(second.body.count).toBe(1);
+  });
 });
