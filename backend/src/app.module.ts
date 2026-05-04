@@ -14,6 +14,7 @@ import { CheckoutModule } from './shared/checkout/checkout.module.js';
 import { PaymentsModule } from './modules/payments/payments.module.js';
 import { MatchesModule } from './modules/matches/matches.module.js';
 import { PredictionsModule } from './modules/predictions/predictions.module.js';
+import { ScoringModule } from './modules/scoring/scoring.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
@@ -46,6 +47,7 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter.
     PaymentsModule,
     MatchesModule,
     PredictionsModule,
+    ScoringModule,
   ],
   controllers: [AppController],
   providers: [
