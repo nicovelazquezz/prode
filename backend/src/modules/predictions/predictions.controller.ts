@@ -15,7 +15,9 @@ import {
   type AuthenticatedUser,
 } from '../../common/decorators/current-user.decorator.js';
 import { PredictionsService } from './predictions.service.js';
+import { SpecialPredictionsService } from './special-predictions.service.js';
 import { UpsertMatchPredictionDto } from './dto/upsert-match-prediction.dto.js';
+import { UpsertSpecialPredictionDto } from './dto/upsert-special-prediction.dto.js';
 import { ListMyPredictionsDto } from './dto/list-my-predictions.dto.js';
 
 function getRequestContext(req: Request): {
@@ -38,7 +40,10 @@ function getRequestContext(req: Request): {
  */
 @Controller('predictions')
 export class PredictionsController {
-  constructor(private readonly predictionsService: PredictionsService) {}
+  constructor(
+    private readonly predictionsService: PredictionsService,
+    private readonly specialPredictionsService: SpecialPredictionsService,
+  ) {}
 
   /**
    * Resolves and asserts the current user. The global guard rejects
@@ -107,5 +112,43 @@ export class PredictionsController {
   ) {
     const me = this.requireUser(user);
     return this.predictionsService.findUserPrediction(me.id, matchId);
+  }
+
+  // ── Special predictions ────────────────────────────────────────────
+
+  @Post('special')
+  async createSpecial(
+    @Body() dto: UpsertSpecialPredictionDto,
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Req() req: Request,
+  ) {
+    const me = this.requireUser(user);
+    const ctx = getRequestContext(req);
+    return this.specialPredictionsService.upsertSpecialPrediction(
+      me.id,
+      dto,
+      ctx,
+    );
+  }
+
+  @Put('special')
+  async updateSpecial(
+    @Body() dto: UpsertSpecialPredictionDto,
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Req() req: Request,
+  ) {
+    const me = this.requireUser(user);
+    const ctx = getRequestContext(req);
+    return this.specialPredictionsService.upsertSpecialPrediction(
+      me.id,
+      dto,
+      ctx,
+    );
+  }
+
+  @Get('special/me')
+  async getMySpecial(@CurrentUser() user: AuthenticatedUser | undefined) {
+    const me = this.requireUser(user);
+    return this.specialPredictionsService.findForUser(me.id);
   }
 }
