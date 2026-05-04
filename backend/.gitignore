@@ -4,8 +4,6 @@ node_modules/
 # Build outputs
 dist/
 build/
-.next/
-out/
 generated/
 
 # Env files
@@ -16,13 +14,9 @@ generated/
 # Logs
 *.log
 npm-debug.log*
-pnpm-debug.log*
 
 # Editor / OS
 .DS_Store
-.idea/
-.vscode/
-*.swp
 
 # Testing
 coverage/
@@ -30,7 +24,3 @@ coverage/
 
 # Prisma generated client
 prisma/generated/
-
-# Misc
-*.pem
-.turbo/
