@@ -8,6 +8,7 @@ import { OrphanAlertProcessor } from '../payments/orphan-alert.processor.js';
 import { MatchRemindersCron } from './match-reminders.cron.js';
 import { MatchResultProcessor } from './match-result.processor.js';
 import { PhaseWinnerProcessor } from './phase-winner.processor.js';
+import { OutboxSafetyNetCron } from './outbox-safety-net.cron.js';
 import { NOTIFICATIONS_QUEUE } from './notifications.constants.js';
 
 /**
@@ -34,6 +35,7 @@ import { NOTIFICATIONS_QUEUE } from './notifications.constants.js';
     MatchRemindersCron,
     MatchResultProcessor,
     PhaseWinnerProcessor,
+    OutboxSafetyNetCron,
   ],
   exports: [
     NotificationsService,
@@ -41,6 +43,7 @@ import { NOTIFICATIONS_QUEUE } from './notifications.constants.js';
     MatchRemindersCron,
     MatchResultProcessor,
     PhaseWinnerProcessor,
+    OutboxSafetyNetCron,
   ],
 })
 export class NotificationsModule {}
