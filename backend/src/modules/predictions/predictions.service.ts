@@ -8,6 +8,7 @@ import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { PredictionLockedException } from '../../common/exceptions/domain.exceptions.js';
 import type { Prediction } from '../../../generated/prisma/client.js';
+import type { Phase } from '../../../generated/prisma/enums.js';
 
 /**
  * DTO-shape consumed by `upsertMatchPrediction`. The controller's class-
@@ -32,6 +33,24 @@ interface AuditContext {
  * the DTO validator. Spec section 5.2.
  */
 const MAX_SCORE = 99;
+
+/** Default and maximum page sizes for `GET /predictions/me`. */
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 200;
+
+export interface ListUserPredictionsParams {
+  page?: number;
+  pageSize?: number;
+  phase?: Phase;
+}
+
+export interface PaginatedUserPredictions {
+  data: unknown[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
 
 /**
  * Service backing `/predictions/match/:matchId` (Phase 7 task 7.1). Owns:
@@ -145,5 +164,71 @@ export class PredictionsService {
     });
 
     return upserted;
+  }
+
+  /**
+   * Lists every prediction the user has loaded, joined with the underlying
+   * match (and both team relations) so the frontend can render score +
+   * opponent in a single payload. Sorted by `match.kickoffAt` ASC so the
+   * caller sees their own predictions in chronological order.
+   */
+  async listUserPredictions(
+    userId: string,
+    params: ListUserPredictionsParams = {},
+  ): Promise<PaginatedUserPredictions> {
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.min(
+      MAX_PAGE_SIZE,
+      Math.max(1, params.pageSize ?? DEFAULT_PAGE_SIZE),
+    );
+
+    // Filtering by phase requires going through the match relation. Prisma
+    // supports the nested `match: { phase }` filter natively.
+    const where: { userId: string; match?: { phase: Phase } } = { userId };
+    if (params.phase) {
+      where.match = { phase: params.phase };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.prediction.findMany({
+        where,
+        include: {
+          match: {
+            include: { homeTeam: true, awayTeam: true },
+          },
+        },
+        orderBy: { match: { kickoffAt: 'asc' } },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.prediction.count({ where }),
+    ]);
+
+    return {
+      data,
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    };
+  }
+
+  /**
+   * Returns the user's prediction for a single match — `null` if they
+   * haven't loaded one yet. The frontend uses this to pre-fill the input
+   * when the user revisits a match's prediction page.
+   */
+  async findUserPrediction(
+    userId: string,
+    matchId: string,
+  ): Promise<Prediction | null> {
+    return this.prisma.prediction.findUnique({
+      where: { userId_matchId: { userId, matchId } },
+      include: {
+        match: {
+          include: { homeTeam: true, awayTeam: true },
+        },
+      },
+    });
   }
 }
