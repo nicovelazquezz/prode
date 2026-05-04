@@ -7,6 +7,7 @@ import { BullMqModule } from './shared/bullmq/bullmq.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
@@ -27,6 +28,7 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter.
     RedisModule,
     BullMqModule,
     AuditModule,
+    NotificationsModule,
     UsersModule,
     AuthModule,
   ],
