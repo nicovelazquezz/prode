@@ -250,6 +250,11 @@ enum NotificationStatus {
   SKIPPED
 }
 
+enum PrizeStatus {
+  PENDING
+  PAID
+}
+
 // ─── USUARIOS Y AUTENTICACIÓN ─────────────────────────────
 
 model User {
@@ -286,7 +291,7 @@ model User {
 
 model RefreshToken {
   id          String    @id @default(cuid())
-  token       String    @unique
+  tokenHash   String    @unique  // sha256 del token; el plano solo vive en cookie
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt   DateTime
@@ -301,7 +306,7 @@ model RefreshToken {
 
 model PasswordReset {
   id          String    @id @default(cuid())
-  token       String    @unique
+  tokenHash   String    @unique  // sha256 del token; el plano solo viaja en WhatsApp
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt   DateTime
@@ -496,15 +501,15 @@ model SpecialPrediction {
 // ─── GANADORES POR FASE ──────────────────────────────────
 
 model PhaseWinner {
-  id              String      @id @default(cuid())
-  phase           Phase       @unique
+  id              String       @id @default(cuid())
+  phase           Phase        @unique
   userId          String
-  user            User        @relation(fields: [userId], references: [id])
+  user            User         @relation(fields: [userId], references: [id])
   pointsEarned    Int
-  prizeAmount     Decimal?    @db.Decimal(10, 2)
-  prizeStatus     String      @default("pending")
+  prizeAmount     Decimal?     @db.Decimal(10, 2)
+  prizeStatus     PrizeStatus  @default(PENDING)
   prizePaidAt     DateTime?
-  awardedAt       DateTime    @default(now())
+  awardedAt       DateTime     @default(now())
   notes           String?
 
   @@index([userId])
@@ -528,24 +533,26 @@ model Payment {
   mpExternalReference String?
   mpRawData           Json?
 
-  payerEmail          String?
-  payerName           String?
+  payerEmail              String?
+  payerName               String?
 
-  completionToken     String?         @unique
-  tokenExpiresAt      DateTime?
-  completedAt         DateTime?
+  // Magic link para completar registro post-pago
+  completionTokenHash     String?     @unique  // sha256; el plano viaja en email/url
+  tokenExpiresAt          DateTime?            // TTL = 7 días desde APPROVED
+  completedAt             DateTime?
 
-  receivedBy          String?
-  notes               String?
+  receivedBy              String?
+  notes                   String?
 
-  paidAt              DateTime?
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  paidAt                  DateTime?
+  refundedAt              DateTime?
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
 
   @@index([userId])
   @@index([status])
-  @@index([completionToken])
-  @@index([mpPaymentId])
+  @@index([completionTokenHash])
+  @@index([mpPreferenceId])
   @@map("payments")
 }
 
@@ -587,7 +594,7 @@ model Notification {
   id              String              @id @default(cuid())
   userId          String?
   user            User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  toAddress       String
+  toAddress       String?             // null si MP no devolvió email del payer; service decide fallback
   type            NotificationType
   title           String
   message         String              @db.Text
@@ -639,7 +646,18 @@ model AuditLog {
 }
 ```
 
-### 5.3 Materialized view de leaderboard
+### 5.3 Invariantes de dominio (no expresadas en el schema)
+
+Estas reglas se enforzan en services + tests, no en la BD:
+
+- `Match.predictionsLockAt = Match.kickoffAt - 10 min`. Si `kickoffAt` se actualiza, `predictionsLockAt` se recomputa en el mismo update (helper `recomputeLockAt(match)`).
+- `Prediction.evaluatedAt !== null ⇒ Prediction.outcomeType !== null`. Validado en service y test unitario.
+- `SpecialPrediction.lockedAt`: se setea cuando `now() ≥ predictionsLockAt` del `Match.matchNumber=1` (kickoff inaugural). Cron de auto-lock (cada 1 min) detecta esa condición y lockea **todas** las `SpecialPrediction` existentes en una sola UPDATE. Después de eso, cualquier intento de update tira `SpecialPredictionLockedException`.
+- `Payment.tokenExpiresAt = paidAt + 7 días`. Después de eso, el cron de orphan cleanup marca como `ORPHANED`.
+- `League.inviteCode`: 6 caracteres alfanuméricos (regex `[A-Z0-9]{6}`), generado con `crypto.randomBytes` + base32. Helper `generateInviteCode()` en `LeaguesService`. Reintenta si colisiona.
+- `RefreshToken.tokenHash`, `PasswordReset.tokenHash`, `Payment.completionTokenHash`: el plano se genera con `crypto.randomBytes(32).toString('hex')`, se manda al destinatario, y solo el `sha256(plano)` queda en BD.
+
+### 5.4 Materialized view de leaderboard
 
 ```sql
 -- prisma/migrations/xxx_leaderboard_view/migration.sql
@@ -665,11 +683,11 @@ CREATE INDEX leaderboard_global_total_points_idx
   ON leaderboard_global (total_points DESC, exact_count DESC, hits_count DESC);
 ```
 
-**Refresh:** `REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_global` dentro de la transacción que carga el resultado de un partido.
+**Refresh:** se ejecuta **fuera de la transacción de scoring**, encolado como BullMQ job `leaderboard.refresh` con `dedupKey="leaderboard:refresh"` (si hay uno pendiente, no se duplica). El worker corre `REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_global` en su propia conexión. Justificación: meterlo en la TX del scoring tiene tres problemas — (a) Postgres acquiere `SHARE UPDATE EXCLUSIVE` lock sobre la MV durante todo el TX, serializando refrescos concurrentes; (b) `prisma.$transaction` tiene timeout default de 5s; (c) si la TX rollbackea, el refresh también queda al medio. Para volumen <200 users, el delay de 1-2s entre commit y refresh es aceptable.
 
 **Acceso desde Prisma:** raw query tipada (`prisma.$queryRaw`), no es modelo Prisma.
 
-### 5.4 Resumen de índices estratégicos
+### 5.5 Resumen de índices estratégicos
 
 | Tabla | Índice | Para |
 |-------|--------|------|
@@ -682,8 +700,9 @@ CREATE INDEX leaderboard_global_total_points_idx
 | `predictions` | `(userId, matchId)` único | Upsert |
 | `predictions` | `matchId` | Calcular puntos al cargar resultado |
 | `predictions` | `(userId, evaluatedAt)` | "Mis predicciones evaluadas" |
-| `payments` | `mpPaymentId` único | Idempotencia webhook |
-| `payments` | `completionToken` único | Magic link |
+| `payments` | `mpPaymentId` único | Búsqueda por id de MP |
+| `payments` | `mpPreferenceId` | Lookup desde webhook |
+| `payments` | `completionTokenHash` único | Magic link |
 | `payments` | `status` | Admin: ver pendientes/huérfanos |
 | `audit_logs` | `(entity, entityId)` | "Quién tocó este partido" |
 | `audit_logs` | `createdAt` | Time-series de eventos |
@@ -765,45 +784,86 @@ Admin                 Backend
 
 ```typescript
 async finishMatchAndScore(matchId, scoreHome, scoreAway, adminUserId) {
-  await prisma.$transaction(async (tx) => {
-    const rules = await this.scoringConfigService.getRules(); // cacheado
-    const multipliers = await this.scoringConfigService.getMultipliers();
+  // Pre-checks fuera de TX
+  const matchPrev = await prisma.match.findUniqueOrThrow({ where: { id: matchId } });
+  if (matchPrev.status === 'FINISHED') {
+    throw new MatchAlreadyFinishedException();
+  }
+  // Si la fase del match ya tiene premio pagado, no se permite escribir
+  const phaseWinner = await prisma.phaseWinner.findUnique({ where: { phase: matchPrev.phase } });
+  if (phaseWinner?.prizeStatus === 'PAID') {
+    throw new PhaseAlreadyPaidException();
+  }
 
+  const rules = await this.scoringConfigService.getRules();
+  const multipliers = await this.scoringConfigService.getMultipliers();
+
+  await prisma.$transaction(async (tx) => {
+    // 1. Update match con guard de status (bloquea concurrentes)
     const match = await tx.match.update({
-      where: { id: matchId },
+      where: { id: matchId, status: { not: 'FINISHED' } },
       data: { scoreHome, scoreAway, status: 'FINISHED', finishedAt: new Date() },
     });
 
+    // 2. Cargar predictions del match
     const predictions = await tx.prediction.findMany({ where: { matchId } });
 
-    const updates = predictions.map(p => {
+    // 3. Recorrer secuencial (NO Promise.all — Prisma TX comparte 1 conn)
+    for (const p of predictions) {
       const outcomeType = classifyOutcome(p, scoreHome, scoreAway);
       const basePoints = rules[outcomeType];
       const multiplier = multipliers[match.phase];
       const pointsEarned = Math.round(basePoints * multiplier);
-      return tx.prediction.update({
+      await tx.prediction.update({
         where: { id: p.id },
         data: { outcomeType, basePoints, multiplier, pointsEarned, evaluatedAt: new Date() },
       });
-    });
-    await Promise.all(updates);
+    }
 
+    // 4. Audit
     await tx.auditLog.create({
       data: {
         userId: adminUserId,
         action: 'match.finished',
         entity: 'match',
         entityId: matchId,
-        changes: { score: { home: scoreHome, away: scoreAway } },
+        changes: { score: { home: scoreHome, away: scoreAway }, predictionsScored: predictions.length },
       },
     });
+  }, { timeout: 30_000 }); // explicit timeout: ~200 predictions max
 
-    await tx.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_global`;
-  });
-
+  // 5. POST-COMMIT: refresh MV async + invalidar cache + cierre de fase + notifs
+  await this.notificationsQueue.add(
+    'leaderboard.refresh',
+    {},
+    { jobId: 'leaderboard:refresh', removeOnComplete: true } // dedup automático
+  );
   await this.cacheService.invalidate('leaderboard:*');
-  await this.notificationsQueue.enqueue('match-result', { matchId });
-  await this.phaseService.maybeClosePhase(match.phase);
+  await this.notificationsQueue.add('match-result', { matchId });
+  await this.phaseService.maybeClosePhase(matchPrev.phase);  // único trigger de cierre de fase
+}
+```
+
+**Worker `leaderboard.refresh`:**
+
+```typescript
+@Processor('notifications')
+class LeaderboardRefreshProcessor {
+  async process(job: Job<{}, void, 'leaderboard.refresh'>) {
+    await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_global`;
+  }
+}
+```
+
+**Recálculo de un resultado (admin se equivocó):**
+
+```typescript
+async recalculateMatch(matchId, scoreHome, scoreAway, adminUserId) {
+  const match = await prisma.match.findUniqueOrThrow({ where: { id: matchId } });
+  if (match.status !== 'FINISHED') throw new MatchNotFinishedException();
+  const phaseWinner = await prisma.phaseWinner.findUnique({ where: { phase: match.phase } });
+  if (phaseWinner?.prizeStatus === 'PAID') throw new PhaseAlreadyPaidException();
+  // ... lógica análoga a finishMatchAndScore con audit antes/después
 }
 ```
 
@@ -823,37 +883,86 @@ function classifyOutcome(p: { scoreHome: number, scoreAway: number },
 }
 ```
 
-**Recálculo:** endpoint admin `POST /admin/matches/:id/recalculate`. Bloqueado si `PhaseWinner.prizePaidAt` ya está seteado para la fase del match.
+**Recálculo:** endpoint admin `POST /admin/matches/:id/recalculate`. Bloqueado si `PhaseWinner.prizeStatus === 'PAID'` para la fase del match (fase ya cerrada con premio entregado = inmutable).
 
 ### 6.4 Transición entre fases (eliminatorias)
 
-Lógica **semi-automática** con override del admin.
+Lógica **semi-automática** con override del admin. **Único trigger:** `phaseService.maybeClosePhase(phase)` invocado al final de `finishMatchAndScore` (no hay cron paralelo). Esto evita la race condition de doble creación de `PhaseWinner`.
 
-**Al cierre de una fase:**
+**`maybeClosePhase(phase)`:**
 
-1. Cron / trigger detecta que todos los matches de la fase están FINISHED
-2. Calcula ganador de la fase (mayor sum de `pointsEarned` en matches de esa fase)
-3. Crea `PhaseWinner` y notifica al ganador
-4. Si la fase alimenta a otra (GROUPS → ROUND_32), populate los matches siguientes asignando `homeTeamId`/`awayTeamId` según resultados
-5. Setea `predictionsOpenAt = now()` en los matches recién pobladas → habilita carga en frontend
+```typescript
+async maybeClosePhase(phase: Phase) {
+  const pending = await prisma.match.count({
+    where: { phase, status: { not: 'FINISHED' } },
+  });
+  if (pending > 0) return;
 
-**Override del admin:** endpoint `PUT /admin/matches/:id` para asignar equipos manualmente si la lógica falla (ej: criterio raro de FIFA, descalificación).
+  // Idempotente: si ya existe PhaseWinner, salir
+  const existing = await prisma.phaseWinner.findUnique({ where: { phase } });
+  if (existing) return;
 
-### 6.5 Webhook MP con idempotencia
+  // Calcular ganador de la fase con criterios de desempate
+  const winner = await this.computePhaseWinner(phase);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.phaseWinner.create({
+      data: { phase, userId: winner.userId, pointsEarned: winner.points },
+    });
+    await tx.auditLog.create({
+      data: { action: 'phase.closed', entity: 'phase', entityId: phase, changes: { winner } },
+    });
+  });
+
+  // Populate la siguiente fase
+  if (phase === 'GROUPS')   await this.populateRound32Matches();
+  if (phase === 'ROUND_32') await this.populateRound16Matches();
+  // ... etc
+
+  // Notificar al ganador
+  await this.notificationsQueue.add('phase-winner', { phase, userId: winner.userId });
+}
+```
+
+**`populateRound32Matches()`** (y análogos):
+- Lee tabla de posiciones de cada grupo desde los `Match.score*`
+- Determina los 32 clasificados según reglas FIFA 2026
+- Asigna `homeTeamId`/`awayTeamId` a cada `Match` de `phase=ROUND_32`
+- Setea `predictionsOpenAt = now()` → habilita carga en frontend
+
+**Override del admin:** endpoint `PUT /admin/matches/:id` permite asignar equipos manualmente si la lógica falla (descalificación, criterio raro de FIFA). Queda en `audit_logs` con action `match.team_assigned`.
+
+### 6.5 Webhook MP con idempotencia y firma
+
+**Setup en `main.ts`:** la app se levanta con `rawBody: true` (NestJS expone `req.rawBody` como `Buffer`). El controller del webhook usa `@Req() req: RawBodyRequest<Request>` y pasa `req.rawBody` al verificador, NO el body parseado. Si la firma falla, devuelve 401 inmediatamente.
+
+**Firma MP (esquema oficial):** el header `x-signature` viene como `ts=TIMESTAMP,v1=HEX_HASH`. El manifest es `id:DATA_ID;request-id:REQUEST_ID;ts:TIMESTAMP;` (no el body completo). HMAC-SHA256 con `MP_WEBHOOK_SECRET`. Comparación constant-time.
 
 ```typescript
 @Public()
 @Post('webhook')
 async handleWebhook(
+  @Req() req: RawBodyRequest<Request>,
   @Body() body: any,
   @Headers('x-signature') signature: string,
   @Headers('x-request-id') requestId: string,
 ) {
-  this.checkoutProvider.verifyWebhookSignature(signature, requestId, body);
+  // 1. Firma sobre dataId + requestId + ts (no sobre body)
+  this.checkoutProvider.verifyWebhookSignature({
+    signatureHeader: signature,
+    requestId,
+    dataId: body?.data?.id,
+  });
+
+  // 2. Solo procesamos type=payment
   if (body.type !== 'payment') return { received: true };
 
+  // 3. Resolver el pago en MP
   const mpPayment = await this.checkoutProvider.getPayment(body.data.id);
+  const newStatus = MP_STATUS_MAP[mpPayment.status];
 
+  // 4. Update con guard atómico (resuelve race condition de webhooks dup)
+  let didTransition = false;
   await prisma.$transaction(async (tx) => {
     const local = await tx.payment.findFirst({
       where: { mpPreferenceId: mpPayment.preferenceId },
@@ -863,52 +972,95 @@ async handleWebhook(
       return;
     }
 
-    if (['APPROVED', 'REJECTED', 'REFUNDED'].includes(local.status)) {
-      return; // idempotente
-    }
-
-    const newStatus = MP_STATUS_MAP[mpPayment.status];
-
-    await tx.payment.update({
-      where: { id: local.id },
+    // Update con condición de status — si race, el segundo update afecta 0 rows
+    const result = await tx.payment.updateMany({
+      where: {
+        id: local.id,
+        status: { in: ['PENDING'] }, // solo transicionar desde PENDING
+      },
       data: {
         status: newStatus,
         mpPaymentId: String(mpPayment.id),
-        mpRawData: mpPayment,
-        payerEmail: mpPayment.payer?.email,
-        payerName: mpPayment.payer?.first_name,
+        mpRawData: mpPayment as unknown as Prisma.InputJsonValue,
+        payerEmail: mpPayment.payer?.email ?? null,
+        payerName: mpPayment.payer?.first_name ?? null,
         paidAt: newStatus === 'APPROVED' ? new Date() : null,
+        refundedAt: newStatus === 'REFUNDED' ? new Date() : null,
       },
     });
+    if (result.count === 0) return; // idempotente: ya transicionó
+    didTransition = true;
 
     if (newStatus === 'APPROVED') {
-      await tx.notification.create({
-        data: {
-          toAddress: mpPayment.payer.email,
+      // Recuperar el token plano desde la metadata de la preferencia MP
+      const tokenPlain = mpPayment.metadata?.completion_token as string | undefined;
+
+      // Notification con upsert (no falla si ya existe por dedup)
+      await tx.notification.upsert({
+        where: { dedupKey: `recovery:${local.id}` },
+        create: {
+          toAddress: mpPayment.payer?.email ?? null,
           type: 'REGISTRATION_PENDING_RECOVERY',
           title: 'Tu inscripción está casi lista',
-          message: `Completá tu registro: ${env.FRONTEND_URL}/completar-registro?token=${local.completionToken}`,
+          message: tokenPlain
+            ? `Completá tu registro: ${env.FRONTEND_URL}/completar-registro?token=${tokenPlain}`
+            : 'Tu pago se confirmó pero hay un problema técnico para generar el link. Te contactará el admin del club.',
           channel: 'EMAIL',
           dedupKey: `recovery:${local.id}`,
         },
+        update: {}, // no-op si ya existe
       });
 
-      // Schedule delayed alert (2hs después)
-      await this.notificationsQueue.add('admin-orphan-alert', { paymentId: local.id }, { delay: 2 * 3600 * 1000 });
-    }
-
-    // Refund/chargeback: NO desactivar User automáticamente, solo alertar al admin
-    if (newStatus === 'REFUNDED') {
-      await this.adminAlertsService.notify({
-        type: 'CHARGEBACK',
-        message: `Chargeback recibido: payment ${local.id}, monto $${local.amount}`,
-      });
+      // Si MP no devolvió email del payer → alerta inmediata al admin (no podemos mandar magic link)
+      if (!mpPayment.payer?.email) {
+        await this.adminAlertsService.notify({
+          type: 'PAYMENT_NO_EMAIL',
+          message: `Pago ${local.id} aprobado sin email de payer. ID MP: ${mpPayment.id}. Contactá al usuario manualmente.`,
+        });
+      }
     }
   });
+
+  // 5. POST-COMMIT (jobs y alertas que NO deben ser parte de la TX del webhook)
+  if (didTransition && newStatus === 'APPROVED') {
+    // Delayed alert: si en 2hs el payment.completedAt sigue null → WhatsApp al admin
+    await this.notificationsQueue.add(
+      'admin-orphan-alert',
+      { paymentId: body.data.id },
+      { delay: 2 * 3600 * 1000, jobId: `orphan-alert:${body.data.id}` },
+    );
+  }
+  if (didTransition && newStatus === 'REFUNDED') {
+    await this.adminAlertsService.notify({
+      type: 'CHARGEBACK',
+      message: `Chargeback/refund recibido: payment MP ${body.data.id}. Decidí qué hacer manualmente.`,
+    });
+  }
 
   return { received: true };
 }
 ```
+
+**Manejo del `completionToken` (plano vs hash):**
+
+El token plano nunca queda persistido en nuestra BD. El mecanismo escogido es **embedderlo en `metadata.completion_token` de la preferencia MP** al crear el pago — esto lo hace roundtrippear hasta el webhook sin necesidad de Redis ni almacenamiento adicional.
+
+Flujo concreto:
+
+1. `POST /payments/init`:
+   - `tokenPlain = crypto.randomBytes(32).toString('hex')`
+   - `tokenHash = sha256(tokenPlain)`
+   - Crea `Payment { completionTokenHash: tokenHash, tokenExpiresAt: now() + 7 días }`
+   - Crea preferencia MP con:
+     - `metadata: { completion_token: tokenPlain, payment_id: payment.id }`
+     - `back_urls.success: ${FRONTEND_URL}/inscripcion/success?token=${tokenPlain}`
+     - `external_reference: payment.id`
+   - Devuelve `initPoint` al frontend
+2. Usuario paga → MP redirige a `back_urls.success?token=...` con el plano en la URL
+3. Si el usuario cierra el browser antes del redirect, el webhook llega y el handler lee el plano de `mpPayment.metadata.completion_token` para armar el email del magic link
+4. `POST /auth/complete-registration` recibe el plano del frontend, calcula `sha256(plano)`, busca `Payment by completionTokenHash`
+
+Riesgo asumido: el plano vive en los registros de MP (metadata visible en su dashboard). En el threat model esto es aceptable porque (a) la metadata está scoped al payment, (b) si alguien compromete la cuenta MP del club, el daño es ya mayor que un magic link, (c) la hash en BD es la única autoridad para validar el token.
 
 **Interface agnóstica del provider de checkout:**
 
@@ -917,7 +1069,7 @@ async handleWebhook(
 export interface CheckoutProvider {
   createPreference(params: CreatePreferenceParams): Promise<{ id: string; initPoint: string }>;
   getPayment(externalId: string): Promise<ProviderPayment>;
-  verifyWebhookSignature(signature: string, requestId: string, body: unknown): void;
+  verifyWebhookSignature(params: { signatureHeader: string; requestId: string; dataId: string }): void;
 }
 ```
 
@@ -941,13 +1093,31 @@ Cache es aceleración, no verdad. Si Redis cae, queries van directo a Postgres.
 
 ### 7.2 Colas (BullMQ)
 
-Una cola: `notifications`. Workers procesan según `channel`.
+Una cola: `notifications`. Workers procesan según el job name.
 
 ```typescript
 { attempts: 3, backoff: { type: 'exponential', delay: 5000 } }
 ```
 
-Outbox simplificado: la `Notification` se crea en la TX del evento de dominio. Worker la lee, manda, actualiza status.
+**Patrón outbox event-driven (no polling):**
+
+1. En la misma TX donde se crea la `Notification` (vía `tx.notification.create` o `upsert`), también se invoca `notificationsQueue.add('send-notification', { notificationId })` — pero **fuera del TX, después del commit**, vía un mecanismo `runOnCommit`. Si el commit falla, no se encola; si encolar falla después del commit, hay un cron de respaldo (cada 5 min) que detecta `Notification` con `status=PENDING` sin job pendiente y las re-encola.
+2. El worker recibe el job, lee la `Notification` por id, intenta enviar (WhatsApp/email), y actualiza `status` a `SENT` o `FAILED`.
+3. El uso de `dedupKey` único garantiza que llamadas duplicadas a `notification.upsert` no creen filas duplicadas.
+
+Jobs principales:
+
+| Job name | Payload | Trigger |
+|----------|---------|---------|
+| `send-notification` | `{ notificationId }` | Cualquier `Notification.create` |
+| `leaderboard.refresh` | `{}` | Post-commit de `finishMatchAndScore` |
+| `match-result` | `{ matchId }` | Post-commit de `finishMatchAndScore` |
+| `phase-winner` | `{ phase, userId }` | `maybeClosePhase` |
+| `admin-orphan-alert` | `{ paymentId }` | Webhook APPROVED, delayed 2hs |
+| `match-reminders` | `{}` | Cron cada 15 min |
+| `auto-lock-matches` | `{}` | Cron cada 1 min |
+| `daily-orphan-summary` | `{}` | Cron diario 9am hora Argentina |
+| `cleanup-expired-tokens` | `{}` | Cron diario 4am hora Argentina |
 
 ### 7.3 Cron tasks
 
@@ -1005,8 +1175,19 @@ Outbox simplificado: la `Notification` se crea en la TX del evento de dominio. W
 - Helmet con CSP configurado
 - CORS solo permite `FRONTEND_URL`, `credentials: true`
 - HSTS forzado en producción
+- `NestFactory.create(AppModule, { rawBody: true })` para que el webhook MP pueda verificar firma sobre `req.rawBody`
 
-### 8.6 Excepciones de dominio
+### 8.6 Anti-bot en endpoint público
+
+`POST /payments/init` es público y cada llamada pega contra MP API (consume rate limit de la cuenta del club). Defensa en capas:
+
+- **Cloudflare Turnstile** (gratis, privacy-friendly) en el frontend antes del POST. El backend valida el token de Turnstile contra la API de Cloudflare como gate previo a cualquier acción.
+- **Throttler** 5/h por IP como segunda barrera
+- **Honeypot field** opcional en el form
+
+Esto evita que un atacante consuma cuota MP del club spameando creación de preferencias.
+
+### 8.7 Excepciones de dominio
 
 ```typescript
 PredictionLockedException        // 400 — partido cerrado
@@ -1025,11 +1206,29 @@ PaymentNotApprovedException      // 400
 Decorator `@Audit({ action, entity })` aplicado a endpoints sensibles. Interceptor inserta `AuditLog` async (no bloquea respuesta) con `before`/`after`.
 
 **Acciones obligatoriamente auditadas:**
-- `match.finished`, `match.recalculated`, `match.team_assigned`
-- `phase.closed`, `phase_winner.created`, `prize.paid`
-- `user.created_manually`, `user.banned`, `user.password_reset`
-- `payment.confirmed_manually`, `payment.marked_orphaned`
-- `config.updated` (cualquier cambio de scoring/phase/app config)
+
+Cuentas y autenticación:
+- `auth.login_success`, `auth.login_failed` (con DNI parcial enmascarado)
+- `auth.password_reset_requested`, `auth.password_reset_completed`
+- `auth.registration_completed` (flujo público post-pago)
+- `user.created_manually` (alta manual del admin)
+- `user.banned`, `user.unbanned`, `user.deactivated`
+- `user.password_changed_by_admin`
+- `user.promoted_to_admin`
+
+Predicciones:
+- `prediction.created`, `prediction.updated` (registro de cambios pre-lock)
+- `special_prediction.created`, `special_prediction.updated`
+
+Partidos y fases:
+- `match.finished`, `match.recalculated`, `match.team_assigned`, `match.kickoff_updated`, `match.postponed`, `match.cancelled`
+- `phase.closed`, `phase_winner.created`, `phase_winner.prize_paid`
+
+Pagos:
+- `payment.confirmed_manually`, `payment.marked_orphaned`, `payment.refund_received`
+
+Configuración:
+- `config.scoring_rule_updated`, `config.phase_multiplier_updated`, `config.special_prize_rule_updated`, `config.app_config_updated`
 
 ### 9.2 Logging
 
@@ -1104,6 +1303,11 @@ const envSchema = z.object({
 
 App falla rápido al startup si falta cualquier env crítica.
 
+**Notas:**
+- `MP_PUBLIC_KEY` no se usa en este backend (es para el frontend SDK), pero se valida acá por conveniencia operativa.
+- **Zona horaria del proceso:** todos los cron specs (`'0 3 * * *'`, etc.) se interpretan en la TZ del proceso. El contenedor del backend corre con `TZ=America/Argentina/Buenos_Aires` (env var del Docker) para que "3am" signifique 3am hora Argentina, no UTC. Las fechas en BD siguen siendo UTC; solo los crons se interpretan en zona local.
+- Falta opcional: `TURNSTILE_SECRET_KEY` para validar el captcha de Cloudflare en el endpoint `/payments/init`.
+
 ## 12. Deployment
 
 - **Plataforma:** Dokploy en VPS propio
@@ -1126,8 +1330,8 @@ App falla rápido al startup si falta cualquier env crítica.
 5. **Sin auto-registro vía form clásico** — solo dos vías: MP público + admin manual
 6. **MercadoPago solo con acreditación inmediata** — excluir Pago Fácil/Rapipago/ATM
 7. **Sin email del usuario** — solo trabajamos con el `payerEmail` que da MP automáticamente
-8. **Admin tipea password manualmente** y la pasa por WhatsApp (decisión explícita del cliente, "es solo un prode")
-9. **Materialized view refrescada en TX del scoring** (volumen chico justifica consistencia inmediata)
+8. **Admin tipea password manualmente** y la pasa por WhatsApp (decisión explícita del cliente, *"es solo un prode"*). **Disclaimer asumido:** el cliente acepta el riesgo de que passwords transmitidas por WhatsApp queden en el historial del chat de ambas partes; las contraseñas no expiran ni fuerzan cambio en primer login.
+9. **Materialized view refrescada async post-commit** vía BullMQ job dedupicado. La TX del scoring NO incluye el refresh — evita el lock `SHARE UPDATE EXCLUSIVE` y los problemas con timeout de Prisma TX.
 10. **Transición entre fases semi-automática con override admin**
 11. **`CheckoutProvider` interface agnóstica** del SDK de MP, con mock para tests
 12. **WhatsApp al admin para eventos críticos** (orphans, errores, chargebacks, DNI dup)
