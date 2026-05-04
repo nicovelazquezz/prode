@@ -10,6 +10,7 @@ import { UsersModule } from './modules/users/users.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { AdminAlertsModule } from './shared/admin-alerts/admin-alerts.module.js';
 import { CheckoutModule } from './shared/checkout/checkout.module.js';
+import { PaymentsModule } from './modules/payments/payments.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
@@ -35,6 +36,7 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter.
     CheckoutModule,
     UsersModule,
     AuthModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [
