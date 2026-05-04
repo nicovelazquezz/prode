@@ -12,6 +12,11 @@ import type { ProviderPayment } from '../../shared/checkout/checkout.types.js';
 import { AdminAlertsService } from '../../shared/admin-alerts/admin-alerts.service.js';
 import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
 import { loadEnv, type Env } from '../../config/env.js';
+import {
+  CompletionAlreadyUsedException,
+  CompletionTokenExpiredException,
+  InvalidCompletionTokenException,
+} from '../../common/exceptions/domain.exceptions.js';
 
 /**
  * Default inscription price (ARS) used when `AppConfig.inscripcion_precio`
@@ -340,5 +345,54 @@ export class PaymentsService {
         `Failed to enqueue admin-orphan-alert for ${paymentId}: ${(err as Error).message}`,
       );
     }
+  }
+
+  // ── Public token lookup ──────────────────────────────────────────────
+
+  /**
+   * Resolves the public state of a Payment given the **plain** completion
+   * token. Used by the frontend's `/completar-registro` page to decide
+   * whether to render the form or an error state.
+   *
+   * Returns the same shape regardless of branch (status / expiresAt /
+   * completed / hasPayer) — never leaks payer email, name, amount, or
+   * any internal id.
+   *
+   * Error mapping (spec section 13.7):
+   *   - unknown token  → 404 InvalidCompletionTokenException
+   *   - expired token  → 410 CompletionTokenExpiredException
+   *   - already used   → 410 CompletionAlreadyUsedException
+   */
+  async findByToken(plainToken: string): Promise<{
+    status: string;
+    expiresAt: Date | null;
+    completed: boolean;
+    hasPayer: boolean;
+  }> {
+    const tokenHash = this.authService.hashToken(plainToken);
+    const payment = await this.prisma.payment.findUnique({
+      where: { completionTokenHash: tokenHash },
+      select: {
+        status: true,
+        completedAt: true,
+        tokenExpiresAt: true,
+        payerEmail: true,
+      },
+    });
+    if (!payment) {
+      throw new InvalidCompletionTokenException();
+    }
+    if (payment.completedAt) {
+      throw new CompletionAlreadyUsedException();
+    }
+    if (payment.tokenExpiresAt && payment.tokenExpiresAt < new Date()) {
+      throw new CompletionTokenExpiredException();
+    }
+    return {
+      status: payment.status,
+      expiresAt: payment.tokenExpiresAt,
+      completed: false,
+      hasPayer: !!payment.payerEmail,
+    };
   }
 }

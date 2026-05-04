@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Get,
   Headers,
   HttpCode,
   HttpStatus,
   Inject,
+  Param,
   Post,
   Req,
 } from '@nestjs/common';
@@ -73,5 +75,25 @@ export class PaymentsController {
       dataId: String(body?.data?.id ?? ''),
     });
     return this.paymentsService.processWebhook(body);
+  }
+
+  /**
+   * Public read endpoint that resolves a magic-link token to its current
+   * payment state. Returns no payer info — only what the form page needs
+   * to decide which branch to render.
+   *
+   *   - 200: pending / approved-but-not-yet-completed token
+   *   - 404: token unknown
+   *   - 410: token expired or already used
+   */
+  @Public()
+  @Get('by-token/:token')
+  async byToken(@Param('token') token: string): Promise<{
+    status: string;
+    expiresAt: Date | null;
+    completed: boolean;
+    hasPayer: boolean;
+  }> {
+    return this.paymentsService.findByToken(token);
   }
 }
