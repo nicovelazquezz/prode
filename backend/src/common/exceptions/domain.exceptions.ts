@@ -48,3 +48,30 @@ export class WhatsappAlreadyExistsException extends ConflictException {
     super({ statusCode: 409, code: 'WHATSAPP_ALREADY_EXISTS', message });
   }
 }
+
+/**
+ * Thrown when a user tries to create or update a `Prediction` for a `Match`
+ * whose `predictionsLockAt` has already passed (10 min before kickoff). Spec
+ * section 8.7. The 400 status mirrors how class-validator failures surface,
+ * so the frontend can route both through the same toast component.
+ */
+export class PredictionLockedException extends BadRequestException {
+  constructor(
+    message = 'Las predicciones para este partido ya están cerradas',
+  ) {
+    super({ statusCode: 400, code: 'PREDICTION_LOCKED', message });
+  }
+}
+
+/**
+ * Thrown when a user tries to upsert their `SpecialPrediction` after the
+ * tournament-wide lock has fired (cron sets `lockedAt = now()` once the
+ * inaugural match's `predictionsLockAt` is reached). Spec section 5.3.
+ */
+export class SpecialPredictionLockedException extends BadRequestException {
+  constructor(
+    message = 'Las predicciones especiales ya están cerradas',
+  ) {
+    super({ statusCode: 400, code: 'SPECIAL_PREDICTION_LOCKED', message });
+  }
+}
