@@ -13,6 +13,10 @@ import {
   OrphanAlertProcessor,
   type OrphanAlertJobData,
 } from '../../modules/payments/orphan-alert.processor.js';
+import {
+  LEADERBOARD_REFRESH_JOB,
+  LeaderboardRefreshProcessor,
+} from '../leaderboard/leaderboard.processor.js';
 
 export interface SendNotificationJobData {
   notificationId: string;
@@ -41,21 +45,29 @@ export class NotificationsProcessor extends WorkerHost {
     private readonly whatsapp: WhatsappService,
     private readonly email: EmailService,
     private readonly orphanAlert: OrphanAlertProcessor,
+    private readonly leaderboardRefresh: LeaderboardRefreshProcessor,
   ) {
     super();
   }
 
   async process(job: Job): Promise<void> {
     // Dispatch by job name. Multiple producers share this queue (the
-    // `send-notification` outbox + the delayed `admin-orphan-alert`); we
-    // route each to its handler so a single worker drains them all.
+    // `send-notification` outbox, the delayed `admin-orphan-alert`, the
+    // `leaderboard.refresh` MV refresher); we route each to its handler
+    // so a single worker drains them all.
     if (job.name === ADMIN_ORPHAN_ALERT_JOB) {
       await this.orphanAlert.handle(job as Job<OrphanAlertJobData>);
       return;
     }
+    if (job.name === LEADERBOARD_REFRESH_JOB) {
+      await this.leaderboardRefresh.handle(job);
+      return;
+    }
     if (job.name !== SEND_NOTIFICATION_JOB) {
       // Ignore unknown job names defensively; throwing here would burn retries
-      // for jobs that may have been added by an older deploy.
+      // for jobs that may have been added by an older deploy. `match-result`
+      // and `phase-winner` jobs are handled in Phase 11 — until then they
+      // land here and get logged + dropped.
       this.logger.warn(`Unknown job name on ${NOTIFICATIONS_QUEUE}: ${job.name}`);
       return;
     }
