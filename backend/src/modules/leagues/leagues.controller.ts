@@ -1,8 +1,11 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
+  Param,
   Post,
+  Query,
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -12,8 +15,14 @@ import {
   type AuthenticatedUser,
 } from '../../common/decorators/current-user.decorator.js';
 import { LeaguesService } from './leagues.service.js';
+import { LeaderboardService } from '../leaderboard/leaderboard.service.js';
+import { LeaderboardPageDto } from '../leaderboard/dto/leaderboard-page.dto.js';
+import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { CreateLeagueDto } from './dto/create-league.dto.js';
 import { JoinLeagueDto } from './dto/join-league.dto.js';
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 50;
 
 /**
  * Resolves IP + user-agent from the express request for downstream
@@ -35,7 +44,15 @@ function getRequestContext(req: Request): {
  */
 @Controller('leagues')
 export class LeaguesController {
-  constructor(private readonly leagues: LeaguesService) {}
+  constructor(
+    private readonly leagues: LeaguesService,
+    private readonly leaderboard: LeaderboardService,
+    // Used by the per-league leaderboard endpoint to assert membership
+    // before delegating. Mirrors the pattern in `LeaderboardController`
+    // (where the same gate exists) — kept in the controller so the 403
+    // surfaces with a clean stack and the service stays HTTP-agnostic.
+    private readonly prisma: PrismaService,
+  ) {}
 
   /** Narrow the optional decorator value to a real user or 401. */
   private requireUser(user: AuthenticatedUser | undefined): AuthenticatedUser {
@@ -87,5 +104,36 @@ export class LeaguesController {
     const me = this.requireUser(user);
     const ctx = getRequestContext(req);
     return this.leagues.joinLeague(me.id, dto.inviteCode, ctx);
+  }
+
+  /**
+   * Per-league leaderboard. Reuses {@link LeaderboardService.getByLeague}
+   * (Phase 9) — this controller's only job here is the membership gate.
+   * Non-members get 403, INCLUDING admins: spec section 9 scopes the
+   * league ladder to actual members regardless of role. The 403 also
+   * fires for unknown leagueIds (no membership exists), which matches
+   * the existing behaviour at `/leaderboard/league/:id` and avoids
+   * leaking league existence to outsiders.
+   */
+  @Get(':leagueId/leaderboard')
+  async leaderboardForLeague(
+    @Param('leagueId') leagueId: string,
+    @Query() query: LeaderboardPageDto,
+    @CurrentUser() user: AuthenticatedUser | undefined,
+  ) {
+    const me = this.requireUser(user);
+
+    const membership = await this.prisma.leagueMembership.findUnique({
+      where: {
+        leagueId_userId: { leagueId, userId: me.id },
+      },
+    });
+    if (!membership) {
+      throw new ForbiddenException('Not a member of this league');
+    }
+
+    const page = query.page ?? DEFAULT_PAGE;
+    const pageSize = query.pageSize ?? DEFAULT_PAGE_SIZE;
+    return this.leaderboard.getByLeague(leagueId, page, pageSize);
   }
 }
