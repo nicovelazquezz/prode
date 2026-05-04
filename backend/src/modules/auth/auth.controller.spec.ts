@@ -114,3 +114,87 @@ describe('POST /auth/login (integration)', () => {
     );
   });
 });
+
+describe('POST /auth/refresh (integration)', () => {
+  let app: INestApplication;
+  const ADMIN_DNI = process.env.ADMIN_DEFAULT_DNI ?? '00000000';
+  const ADMIN_PASSWORD =
+    process.env.ADMIN_DEFAULT_PASSWORD ?? 'ChangeMe_DevOnly!';
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    app.use(cookieParser());
+    await app.init();
+  }, 30_000);
+
+  afterAll(async () => {
+    if (app) await app.close();
+  });
+
+  /**
+   * Helper: login first, return the refresh cookie value the server set.
+   */
+  async function loginAndGrabCookie(): Promise<string> {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ dni: ADMIN_DNI, password: ADMIN_PASSWORD });
+    expect(res.status).toBe(200);
+    const setCookie = res.headers['set-cookie'];
+    const cookies = Array.isArray(setCookie)
+      ? setCookie
+      : ([setCookie] as string[]);
+    const refresh = cookies.find((c) => c.startsWith('refresh_token='));
+    if (!refresh) throw new Error('No refresh_token cookie set on login');
+    return refresh.split(';')[0]!; // "refresh_token=<value>"
+  }
+
+  it('returns 401 with no cookie', async () => {
+    const res = await request(app.getHttpServer()).post('/auth/refresh');
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 401 with a bogus cookie value', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', ['refresh_token=not-a-real-token']);
+    expect(res.status).toBe(401);
+  });
+
+  it('issues a new access token and rotates the refresh cookie', async () => {
+    const cookie = await loginAndGrabCookie();
+    const oldValue = cookie.split('=')[1];
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', [cookie]);
+
+    expect(res.status).toBe(200);
+    expect(res.body.accessToken).toEqual(expect.any(String));
+
+    const setCookie = res.headers['set-cookie'];
+    const cookies = Array.isArray(setCookie)
+      ? setCookie
+      : ([setCookie] as string[]);
+    const newRefresh = cookies.find((c) => c.startsWith('refresh_token='));
+    expect(newRefresh).toBeDefined();
+    const newValue = newRefresh!.split(';')[0]!.split('=')[1];
+    expect(newValue).not.toBe(oldValue);
+  });
+
+  it('refusing the same refresh twice (rotation invalidates the old token)', async () => {
+    const cookie = await loginAndGrabCookie();
+
+    const first = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', [cookie]);
+    expect(first.status).toBe(200);
+
+    const second = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', [cookie]);
+    expect(second.status).toBe(401);
+  });
+});

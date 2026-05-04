@@ -133,4 +133,55 @@ export class AuthController {
 
     return { accessToken, user: pickPublicUser(user) };
   }
+
+  @Public()
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const cookies = (req as Request & { cookies?: Record<string, string> })
+      .cookies;
+    const plain = cookies?.[REFRESH_COOKIE];
+    if (!plain) {
+      throw new UnauthorizedException('Missing refresh cookie');
+    }
+
+    const existing = await this.refreshTokens.findValidByPlain(plain);
+    if (!existing) {
+      // Token revoked, expired, or not found. Clear the cookie defensively
+      // so a stale browser doesn't keep retrying.
+      res.clearCookie(REFRESH_COOKIE, { path: '/' });
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    const user = await this.usersService.findById(existing.userId);
+    if (!user || user.status !== 'ACTIVE') {
+      // Owner deactivated or banned since this refresh was issued. Revoke.
+      await this.refreshTokens.revoke(existing.id);
+      res.clearCookie(REFRESH_COOKIE, { path: '/' });
+      throw new UnauthorizedException('Account no longer active');
+    }
+
+    // Rotation: revoke the old token, mint a new pair.
+    await this.refreshTokens.revoke(existing.id);
+    const ctx = getRequestContext(req);
+    const { plain: newPlain } = await this.refreshTokens.create(user.id, ctx);
+
+    const accessToken = this.authService.signAccessToken({
+      sub: user.id,
+      role: user.role,
+    });
+
+    res.cookie(REFRESH_COOKIE, newPlain, {
+      httpOnly: true,
+      secure: this.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: REFRESH_TTL_MS,
+      path: '/',
+    });
+
+    return { accessToken, user: pickPublicUser(user) };
+  }
 }
