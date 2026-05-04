@@ -3,6 +3,7 @@ import { AuthService } from './auth.service.js';
 import { AuthController } from './auth.controller.js';
 import { RefreshTokensService } from './refresh-tokens.service.js';
 import { PasswordResetsService } from './password-resets.service.js';
+import { TokenCleanupCron } from './token-cleanup.cron.js';
 import { UsersModule } from '../users/users.module.js';
 import { ACCESS_TOKEN_VERIFIER } from '../../common/guards/jwt-auth.guard.js';
 
@@ -19,12 +20,14 @@ import { ACCESS_TOKEN_VERIFIER } from '../../common/guards/jwt-auth.guard.js';
     AuthService,
     RefreshTokensService,
     PasswordResetsService,
+    TokenCleanupCron,
     { provide: ACCESS_TOKEN_VERIFIER, useExisting: AuthService },
   ],
   exports: [
     AuthService,
     RefreshTokensService,
     PasswordResetsService,
+    TokenCleanupCron,
     ACCESS_TOKEN_VERIFIER,
   ],
 })
