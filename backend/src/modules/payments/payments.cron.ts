@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { AuditService } from '../audit/audit.service.js';
+import { AdminAlertsService } from '../../shared/admin-alerts/admin-alerts.service.js';
 
 /**
  * Schedule expressions are interpreted in the process timezone. The
@@ -33,6 +34,7 @@ export class PaymentsCron {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly adminAlerts: AdminAlertsService,
   ) {}
 
   /**
@@ -83,5 +85,38 @@ export class PaymentsCron {
       `Marked ${result.count} payments ORPHANED (token expired without registration).`,
     );
     return result.count;
+  }
+
+  /**
+   * Daily summary fired at 09:00 ART. Counts the payments newly orphaned
+   * since the same time yesterday and pings the admin via WhatsApp so
+   * they get a single rolled-up message instead of one per delayed
+   * `admin-orphan-alert` job.
+   *
+   * Returns the count for ease of testing. No-op when zero so the admin
+   * isn't pinged on quiet days.
+   */
+  @Cron('0 9 * * *', { timeZone: ART_TZ })
+  async dailyOrphanSummary(): Promise<number> {
+    const since = new Date(Date.now() - 24 * 3600 * 1000);
+    const count = await this.prisma.payment.count({
+      where: {
+        status: 'ORPHANED',
+        updatedAt: { gte: since },
+      },
+    });
+    if (count === 0) return 0;
+
+    await this.adminAlerts.notify({
+      type: 'ORPHAN_SUMMARY',
+      message:
+        `Resumen contable diario: ${count} pago(s) marcado(s) como ORPHANED ` +
+        `en las últimas 24 horas. Revisá el panel de admin.`,
+    });
+
+    this.logger.log(
+      `Daily orphan summary sent to admin (count=${count}).`,
+    );
+    return count;
   }
 }

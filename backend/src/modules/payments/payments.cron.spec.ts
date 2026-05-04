@@ -125,4 +125,40 @@ describe('PaymentsCron.cleanupOrphanedPayments (integration)', () => {
     const flipped = await cron.cleanupOrphanedPayments();
     expect(flipped).toBe(0);
   });
+
+  it('dailyOrphanSummary counts recent ORPHANED rows and notifies admin', async () => {
+    // The cleanup test above flipped one payment to ORPHANED moments ago,
+    // so dailyOrphanSummary should see at least 1.
+    const count = await cron.dailyOrphanSummary();
+    expect(count).toBeGreaterThanOrEqual(1);
+
+    // The admin alert lands as a Notification with channel=WHATSAPP and
+    // type=ADMIN_BROADCAST whose message mentions ORPHANED.
+    const alerts = await prisma.notification.findMany({
+      where: {
+        channel: 'WHATSAPP',
+        type: 'ADMIN_BROADCAST',
+        message: { contains: 'ORPHANED' },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 1,
+    });
+    expect(alerts.length).toBeGreaterThanOrEqual(1);
+
+    // Cleanup the alert(s) we triggered (no dedupKey → afterAll skips them).
+    await prisma.notification.deleteMany({
+      where: { id: { in: alerts.map((a) => a.id) } },
+    });
+  });
+
+  it('dailyOrphanSummary skips notification when count is zero', async () => {
+    // Force a "no recent orphans" state by pushing the existing rows past
+    // the 24h window. Since their `updatedAt` is now-ish, we move it back.
+    await prisma.payment.updateMany({
+      where: { id: { in: createdPaymentIds }, status: 'ORPHANED' },
+      data: { updatedAt: new Date(Date.now() - 48 * 3600 * 1000) },
+    });
+    const count = await cron.dailyOrphanSummary();
+    expect(count).toBe(0);
+  });
 });
