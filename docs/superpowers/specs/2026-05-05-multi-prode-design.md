@@ -675,7 +675,7 @@ Click en el dropdown abre un menu shadcn Dropdown estilizado dark editorial:
 
 ### 5.3 NewEntryModal
 
-Modal que abre al click en "+ Crear otro prode". UI idéntica al spec sección 4.2 step 3. Submit dispara mutation hacia `/payments/init` y al success redirige a MP/mock-checkout.
+Modal que abre al click en "+ Crear otro prode". UI idéntica al spec sección 4.2 step 3. Submit dispara mutation hacia `POST /entries/init-payment` (endpoint logueado, ver §3.2) y al success redirige a MP/mock-checkout.
 
 Si MP devuelve error 409 cap:
 - Cierra el modal
@@ -748,7 +748,7 @@ Si el `entryId` resuelto NO existe en la lista (ej: entry borrada, BD reseteada 
 
 XSS note: el `activeEntryId` no es secreto — un atacante con XSS puede leer qué entry estás viendo, pero el access token sigue solo en memoria de JS (variable de módulo per spec frontend §5.1). El daño de leer activeEntryId es despreciable.
 
-### 5.5 PointsCelebration y leaderboard ranking
+### 5.7 PointsCelebration y leaderboard ranking
 
 El leaderboard muestra rows de **entries**, no users. Si Juan tiene 2 entries:
 - Row 1: "Juan Pérez · Mi prode optimista" — pos 18, 47 pts
@@ -758,7 +758,7 @@ El highlight "VOS" del row destacado se aplica al row del entry ACTIVO actual (n
 
 Cuando el user cambia el entry activo, el highlight cambia y la tabla scrollea al nuevo "VOS".
 
-### 5.6 Admin
+### 5.8 Admin
 
 `/admin/usuarios` muestra una columna nueva `entries`: count + sparkline de puntos totales si tiene >1 entry. Click en el row → drawer con detalle, incluye lista de entries con stats por separado.
 
@@ -779,7 +779,7 @@ Esto NO es feature-flag controlable: cuando se mergea, todo el sistema cambia at
 3. **Endpoints nuevos:** /entries/me, /entries/:id, PATCH /entries/:id, GET /admin/entries
 4. **Endpoints modificados:** /predictions/* → /entries/:entryId/predictions/*, /leagues operaciones con entryId
 5. **Webhook handler:** crear Entry automáticamente cuando Payment APPROVED y userId NOT NULL
-6. **`/payments/init` con auth opcional + cap check**
+6. **Endpoint nuevo `POST /entries/init-payment`** (auth required, cap check con SELECT FOR UPDATE) — separado del `POST /payments/init` público existente.
 7. **Tests:** ~30-40 tests modificados, ~10-15 nuevos. Incluir test E2E del flujo "agregar otro prode"
 
 ### Frontend (~1 día)
@@ -829,7 +829,7 @@ Como el sistema todavía está pre-launch (no hay tráfico real), el downtime es
 4. **Alias opcional** — si no, "Mi prode #N" — UX simple cuando user tiene 1, descubrible cuando tiene 2+.
 5. **Liga es del User, membership del Entry** — un user puede tener su entry "serio" en una liga y su entry "random" en otra.
 6. **`/entries/:entryId/predictions/*` paths estilo REST** — más cacheable y más explícito que un header `X-Entry-Id`.
-7. **`/payments/init` con auth opcional** — un endpoint, dos comportamientos según JWT.
+7. **Dos endpoints separados para iniciar pago** (NO un endpoint con auth opcional) — `POST /payments/init` público para registro nuevo + `POST /entries/init-payment` autenticado para "agregar otro prode". Clarifica contratos, simplifica testing y rate-limiting diferenciado.
 8. **Webhook crea Entry automático** — el frontend nunca llama directo `/entries POST`.
 9. **Persistencia del entry activo en localStorage** — sobrevive refresh, fácil de debuggear.
 10. **Sin auto-anulación en chargeback** — admin manual, edge case raro.
@@ -843,7 +843,7 @@ Como el sistema todavía está pre-launch (no hay tráfico real), el downtime es
 | Caso | Cómo se maneja |
 |------|----------------|
 | User llega al cap (5 entries) y intenta crear otra | 409 ENTRY_CAP_REACHED, modal muestra mensaje |
-| Admin baja el cap a 3 cuando hay users con 5 entries | Existing entries no se tocan; nuevos /payments/init devuelven 409 |
+| Admin baja el cap a 3 cuando hay users con 5 entries | Existing entries no se tocan; nuevos `POST /entries/init-payment` devuelven 409 ENTRY_CAP_REACHED |
 | User cambia activeEntry mid-mutation de prediction | Optimistic update apunta al entry pre-cambio; queries se invalidan al cambiar; un toast confirma "Predicción guardada en {entry.alias}" |
 | Webhook MP duplicado tras Entry ya creada | Idempotente: el `Entry.paymentId @unique` rechaza el segundo insert; logged y skipped |
 | User logueado completa /entries/init-payment pero la session expira mid-flow | El JWT debe estar válido en el `init`. Si expira durante el redirect a MP, el webhook usa el `Payment.userId` ya guardado — la session expira no lo afecta. Cuando vuelve, el AuthProvider hace refresh y resuelve la nueva entry vía polling de /entries/me |
@@ -877,4 +877,4 @@ Como el sistema todavía está pre-launch (no hay tráfico real), el downtime es
 2. → Spec review loop con `spec-document-reviewer` subagent
 3. → Cliente revisa
 4. → Plan de implementación detallado vía skill `writing-plans`
-5. → Implementación: 2 fases (backend → frontend), ~2.5 días total
+5. → Implementación: 2 fases (backend → frontend), **~3.5 días total** (2 backend + 1 frontend + 0.5 test refactor — ver §6 estimación realista)
