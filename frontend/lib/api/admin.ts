@@ -10,15 +10,27 @@ import type {
 
 // ── Users ──────────────────────────────────────────────────────
 
+/**
+ * User como lo devuelve la lista admin: agrega campos que solo el
+ * panel admin necesita (paidAt, predictionsCount, totalPoints). El
+ * backend puede que aun no devuelva todos — los marcamos opcionales.
+ */
+export interface AdminUser extends User {
+  paidAt?: string | null;
+  predictionsCount?: number;
+  totalPoints?: number;
+}
+
 export async function listUsers(query?: {
   page?: number;
   pageSize?: number;
   status?: string;
+  role?: string;
   search?: string;
-}): Promise<Paginated<User>> {
+}): Promise<Paginated<AdminUser>> {
   return api
     .get("admin/users", { searchParams: cleanParams(query) })
-    .json<Paginated<User>>();
+    .json<Paginated<AdminUser>>();
 }
 
 export async function createManualUser(dto: {
@@ -29,6 +41,7 @@ export async function createManualUser(dto: {
   password: string;
   amount?: number;
   method?: string;
+  notes?: string;
 }): Promise<User> {
   return api.post("admin/users", { json: dto }).json<User>();
 }
@@ -44,6 +57,21 @@ export async function updateUser(
   }>,
 ): Promise<User> {
   return api.patch(`admin/users/${id}`, { json: dto }).json<User>();
+}
+
+/**
+ * Reset password de un user. Devuelve la password generada por
+ * el backend (mismo flow que crear manual). Si el endpoint no
+ * existe todavia, asumir TODO.
+ */
+export async function resetUserPassword(
+  id: string,
+): Promise<{ password: string }> {
+  // TODO(backend): POST /admin/users/:id/reset-password — devuelve
+  // password en plain (idem flow de creacion manual del spec §6.11).
+  return api
+    .post(`admin/users/${id}/reset-password`)
+    .json<{ password: string }>();
 }
 
 // ── Payments ────────────────────────────────────────────────────
