@@ -3,6 +3,7 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  NotFoundException,
   Param,
   Query,
   UnauthorizedException,
@@ -25,24 +26,21 @@ const DEFAULT_AROUND_N = 5;
 /**
  * Public + authenticated leaderboard reads (spec section 9). The global
  * and per-phase listings stay unauthenticated so the home page can show
- * the ladder without a login. The `me/around` and `league/:id` paths
- * require auth — the latter additionally checks league membership.
+ * the ladder without a login. The `entry/:entryId/around` and
+ * `league/:id` paths require auth.
+ *
+ * Multi-prode: rows describe entries (one row per entry, not per user).
+ * The `me/around` legacy path resolves the caller's primary entry and
+ * forwards to the new entry-scoped query, so existing clients keep
+ * working until the frontend switches to the new endpoint.
  */
 @Controller('leaderboard')
 export class LeaderboardController {
   constructor(
     private readonly service: LeaderboardService,
-    // Used by the league endpoint to assert membership before delegating.
-    // Kept here (not in the service) so the service stays free of HTTP
-    // policy and the membership check produces a 403 with a clean stack.
     private readonly prisma: PrismaService,
   ) {}
 
-  /**
-   * Public global ladder, paged. Returns `{ rows, total }` so the client
-   * can render a progress bar / total-pages indicator without an extra
-   * count request.
-   */
   @Public()
   @Get('global')
   async global(@Query() query: LeaderboardPageDto) {
@@ -51,15 +49,6 @@ export class LeaderboardController {
     return this.service.getGlobal(page, pageSize);
   }
 
-  /**
-   * Public per-phase ladder. Same shape as `/global`, but filtered to
-   * predictions whose match belongs to the given phase. Phase is a
-   * route param (not a query) so caches cleanly key on URL.
-   *
-   * Path validation here is manual because Nest's `@Query` validators
-   * don't auto-cover `@Param`. We mirror the matches controller's
-   * pattern for consistency in the 400 response.
-   */
   @Public()
   @Get('phase/:phase')
   async byPhase(
@@ -77,9 +66,27 @@ export class LeaderboardController {
   }
 
   /**
-   * Authenticated "around me" — returns up to `2n + 1` rows centred on
-   * the caller's rank. Always uncached on the service side because the
-   * slice is per-user.
+   * "Around" a specific entry. The entry must belong to the caller —
+   * sharing your friend's around-rank is intentionally not a public
+   * feature.
+   */
+  @Get('entry/:entryId/around')
+  async entryAround(
+    @Param('entryId') entryId: string,
+    @Query() query: LeaderboardAroundDto,
+    @CurrentUser() user: AuthenticatedUser | undefined,
+  ) {
+    if (!user) {
+      throw new UnauthorizedException('Authentication required');
+    }
+    await this.assertOwnedEntry(user.id, entryId);
+    const n = query.n ?? DEFAULT_AROUND_N;
+    return this.service.getEntryAround(entryId, n);
+  }
+
+  /**
+   * Legacy /me/around — resolves the user's primary entry and forwards.
+   * Kept until the frontend rebinds to /entry/:entryId/around.
    */
   @Get('me/around')
   async meAround(
@@ -89,15 +96,21 @@ export class LeaderboardController {
     if (!user) {
       throw new UnauthorizedException('Authentication required');
     }
+    const entry = await this.prisma.entry.findFirst({
+      where: { userId: user.id, status: 'ACTIVE' },
+      orderBy: { position: 'asc' },
+      select: { id: true },
+    });
+    if (!entry) {
+      throw new NotFoundException('No active entry for user');
+    }
     const n = query.n ?? DEFAULT_AROUND_N;
-    return this.service.getMyAround(user.id, n);
+    return this.service.getEntryAround(entry.id, n);
   }
 
   /**
-   * Authenticated per-league ladder. The caller must be a member of the
-   * league — anything else returns 403, even for ADMIN role. Admins who
-   * need cross-league visibility should query the underlying tables
-   * directly (operational concern, not a feature surface).
+   * Authenticated per-league ladder. The caller must have at least one
+   * entry in the league; we still check by entry now.
    */
   @Get('league/:leagueId')
   async byLeague(
@@ -109,18 +122,14 @@ export class LeaderboardController {
       throw new UnauthorizedException('Authentication required');
     }
 
-    // Membership check via the unique (leagueId, userId) index. A single
-    // round-trip; if missing we 403. We don't check league existence
-    // separately — a non-existent leagueId can't have a membership for
-    // the caller, which is the same shape as "league exists, you're not
-    // in it" from the user's POV.
-    const membership = await this.prisma.leagueMembership.findUnique({
+    // Membership check: any of the caller's entries is enough to grant
+    // visibility on the league ladder.
+    const membership = await this.prisma.leagueMembership.findFirst({
       where: {
-        leagueId_userId: {
-          leagueId,
-          userId: user.id,
-        },
+        leagueId,
+        entry: { userId: user.id },
       },
+      select: { id: true },
     });
     if (!membership) {
       throw new ForbiddenException('Not a member of this league');
@@ -129,5 +138,21 @@ export class LeaderboardController {
     const page = query.page ?? DEFAULT_PAGE;
     const pageSize = query.pageSize ?? DEFAULT_PAGE_SIZE;
     return this.service.getByLeague(leagueId, page, pageSize);
+  }
+
+  private async assertOwnedEntry(
+    userId: string,
+    entryId: string,
+  ): Promise<void> {
+    const entry = await this.prisma.entry.findUnique({
+      where: { id: entryId },
+      select: { userId: true, status: true },
+    });
+    if (!entry) {
+      throw new NotFoundException(`Entry ${entryId} not found`);
+    }
+    if (entry.userId !== userId) {
+      throw new ForbiddenException('Entry does not belong to user');
+    }
   }
 }

@@ -123,12 +123,15 @@ export class LeaderboardService {
   }
 
   /**
-   * Per-user "around me" — never cached because the slice is
-   * user-specific and stales the moment a neighbour's score changes.
+   * Per-entry "around me" — never cached because the slice is
+   * entry-specific and stales the moment a neighbour's score changes.
    * The query itself is cheap (single CTE on the MV).
+   *
+   * Multi-prode: the around endpoint takes an entryId; the controller
+   * validates it belongs to the calling user.
    */
-  async getMyAround(userId: string, n = 5): Promise<LeaderboardAround> {
-    const rows = await this.repo.getGlobalAroundUser(userId, n);
+  async getEntryAround(entryId: string, n = 5): Promise<LeaderboardAround> {
+    const rows = await this.repo.getGlobalAroundEntry(entryId, n);
     return { rows };
   }
 
