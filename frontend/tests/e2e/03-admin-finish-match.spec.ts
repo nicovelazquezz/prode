@@ -30,41 +30,39 @@ test.use({
   viewport: { width: 1280, height: 800 },
 });
 
-test('admin finishes a SCHEDULED match with score 2-1', async ({ page }) => {
+test('admin finishes a SCHEDULED match with score 2-1', async ({
+  page,
+  request,
+}) => {
+  // Find a live SCHEDULED match via the un-cached `/matches?phase=GROUPS`
+  // endpoint. The /admin/partidos UI lists rows from `/matches/upcoming`
+  // which is cached server-side for 5 minutes, so its status badges go
+  // stale once a match flips to FINISHED. Going directly to the detail
+  // URL avoids that staleness.
+  const groupsRes = await request.get(
+    'http://localhost:3001/matches?phase=GROUPS',
+  );
+  expect(groupsRes.ok()).toBeTruthy();
+  const groupsPayload = (await groupsRes.json()) as
+    | Array<{ id: string; status: string }>
+    | { data: Array<{ id: string; status: string }> };
+  const groups = Array.isArray(groupsPayload)
+    ? groupsPayload
+    : groupsPayload.data;
+  const target = groups.find((m) => m.status === 'SCHEDULED');
+  expect(target, 'No SCHEDULED match available for the test').toBeDefined();
+  const matchId = target!.id;
+
   await loginAsAdmin(page);
 
+  // Sanity check: visit the list page so we exercise the table
+  // navigation, then jump straight to the known SCHEDULED match.
   await page.goto('/admin/partidos');
-
-  // Wait for the table to render.
   await expect(
     page.getByRole('heading', { name: /partidos/i }).first(),
   ).toBeVisible({ timeout: 15_000 });
 
-  // The "Detalle" link in each row carries aria-label
-  // "Editar partido N" (the visible text is "Detalle"). We pick the
-  // first row whose status cell shows "SCHEDULED".
-  const detalleLinks = page.getByRole('link', { name: /editar partido/i });
-  const linkCount = await detalleLinks.count();
-  expect(linkCount).toBeGreaterThan(0);
-
-  let targetIndex = -1;
-  for (let i = 0; i < Math.min(linkCount, 20); i++) {
-    const row = detalleLinks.nth(i).locator('xpath=ancestor::tr[1]');
-    const txt = (await row.innerText()).toUpperCase();
-    if (txt.includes('SCHEDULED')) {
-      targetIndex = i;
-      break;
-    }
-  }
-  expect(
-    targetIndex,
-    'No SCHEDULED match found in /admin/partidos',
-  ).toBeGreaterThanOrEqual(0);
-
-  await Promise.all([
-    page.waitForURL(/\/admin\/partidos\/[^/]+/),
-    detalleLinks.nth(targetIndex).click(),
-  ]);
+  await page.goto(`/admin/partidos/${matchId}`);
 
   // On detail page — open the score modal.
   await page.getByRole('button', { name: /cargar resultado/i }).click();
