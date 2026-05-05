@@ -146,7 +146,7 @@ export default function PrediccionesPage() {
     <>
       <PhaseTabs value={tab} onChange={setTab} />
 
-      <section className="mx-auto max-w-2xl px-4 py-6 md:px-8">
+      <section className="mx-auto max-w-2xl px-4 py-8 md:px-8 md:py-10">
         <h1 className="sr-only">Mis predicciones</h1>
 
         {matchesQuery.isLoading || predictionsQuery.isLoading ? (
@@ -242,10 +242,10 @@ function GroupedMatchList({
   const entries = [...groups.entries()];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       {entries.map(([day, list]) => (
-        <div key={day} className="flex flex-col gap-3">
-          <h2 className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+        <div key={day} className="flex flex-col gap-4">
+          <h2 className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
             {day}
           </h2>
           <div className="flex flex-col gap-3">
@@ -273,7 +273,7 @@ function SkeletonList() {
       {[...Array(4)].map((_, i) => (
         <div
           key={i}
-          className="h-32 rounded-md bg-[var(--color-prode-surface)] animate-pulse"
+          className="h-32 rounded-sm bg-[var(--color-landing-surface)] border border-[var(--color-landing-line)] animate-pulse"
         />
       ))}
     </div>
@@ -282,14 +282,14 @@ function SkeletonList() {
 
 function ErrorBlock({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="rounded-md border border-[var(--color-prode-border)] bg-white p-6 text-center">
-      <p className="font-sans text-sm text-[var(--color-prode-text-secondary)]">
+    <div className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-6 text-center">
+      <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
         No pudimos cargar los partidos.
       </p>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-3 inline-flex items-center justify-center font-sans text-sm font-bold uppercase tracking-wider text-[var(--color-prode-near-black)] underline underline-offset-4"
+        className="mt-4 inline-flex items-center justify-center font-[family-name:var(--font-landing-mono)] text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-landing-text)] underline underline-offset-4 decoration-[var(--color-landing-green)] decoration-2 hover:text-[var(--color-landing-gold)]"
       >
         Reintentar
       </button>
@@ -299,11 +299,11 @@ function ErrorBlock({ onRetry }: { onRetry: () => void }) {
 
 function EmptyBlock({ tab }: { tab: PhaseTabValue }) {
   return (
-    <div className="rounded-md border border-dashed border-[var(--color-prode-border)] bg-white p-8 text-center">
-      <p className="font-display text-2xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+    <div className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-10 text-center">
+      <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
         Sin partidos
       </p>
-      <p className="mt-2 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+      <p className="mt-3 font-[family-name:var(--font-landing-display)] text-[28px] uppercase tracking-[0.02em] leading-tight text-[var(--color-landing-text)]">
         {tab === "UPCOMING"
           ? "No hay partidos proximos por ahora."
           : "Esta fase aun no tiene partidos cargados."}
