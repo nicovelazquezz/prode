@@ -86,6 +86,7 @@ export async function createE2EApp(
         phase_winners,
         special_predictions,
         predictions,
+        entries,
         password_resets,
         refresh_tokens,
         payments
