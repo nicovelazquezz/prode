@@ -32,8 +32,12 @@ const TABS: Array<{ value: PhaseTabValue; label: string }> = [
  * custom (no Radix Tabs) porque queremos:
  *  - Scroll horizontal con snap mobile (Radix Tabs.List no soporta
  *    overflow-x bien en touch + sticky parent).
- *  - Underline accent bajo el active.
+ *  - Underline verde bajo el active (eyebrow editorial pattern de la
+ *    landing).
  *  - Sticky bajo el AppHeader sin grid issues.
+ *
+ * Visual: dark editorial — bg landing-bg, line-strong divider, items
+ * en mono uppercase tracked, active state cream + green underline.
  *
  * Touch target: cada tab tiene minHeight 48px (≥44 WCAG).
  */
@@ -41,8 +45,8 @@ export function PhaseTabs({ value, onChange, className }: PhaseTabsProps) {
   return (
     <div
       className={cn(
-        "sticky top-14 md:top-16 z-20 bg-white",
-        "border-b border-[var(--color-prode-border)]",
+        "sticky top-14 md:top-16 z-20 bg-[var(--color-landing-bg)]",
+        "border-b border-[var(--color-landing-line)]",
         className,
       )}
     >
@@ -70,12 +74,12 @@ export function PhaseTabs({ value, onChange, className }: PhaseTabsProps) {
               onClick={() => onChange(tab.value)}
               className={cn(
                 "snap-start shrink-0 min-h-12 px-4 py-3",
-                "font-sans text-sm",
+                "font-[family-name:var(--font-landing-mono)] text-[12px] uppercase tracking-[0.12em]",
                 "border-b-2 -mb-px transition-colors duration-200",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)] focus-visible:ring-offset-2",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-landing-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-landing-bg)]",
                 isActive
-                  ? "text-[var(--color-prode-near-black)] border-[var(--color-prode-accent)] font-bold"
-                  : "text-[var(--color-prode-text-secondary)] border-transparent hover:text-[var(--color-prode-near-black)]",
+                  ? "text-[var(--color-landing-text)] border-[var(--color-landing-green)]"
+                  : "text-[var(--color-landing-text-muted)] border-transparent hover:text-[var(--color-landing-text)]",
               )}
             >
               {tab.label}
