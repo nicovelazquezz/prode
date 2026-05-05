@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { joinLeague } from "@/lib/api/leagues";
 import { queryKeys } from "@/lib/api/queryKeys";
+import { useActiveEntry } from "@/lib/hooks/use-active-entry";
+import type { EntrySummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils/cn";
 
 const VALID_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -70,10 +72,17 @@ function JoinForm() {
   const params = useSearchParams();
   const router = useRouter();
   const qc = useQueryClient();
+  const { entries, activeEntry } = useActiveEntry();
   const [chars, setChars] = useState<string[]>(() =>
     Array(CODE_LENGTH).fill(""),
   );
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(
+    activeEntry?.id ?? null,
+  );
+  if (selectedEntryId === null && activeEntry) {
+    setSelectedEntryId(activeEntry.id);
+  }
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
 
   // Auto-fill desde ?code=xxx (uppercase, filtrado al alfabeto valido).
@@ -100,7 +109,13 @@ function JoinForm() {
   const isValid = codeRegex.test(code);
 
   const joinMutation = useMutation({
-    mutationFn: (inviteCode: string) => joinLeague({ inviteCode }),
+    mutationFn: ({
+      inviteCode,
+      entryId,
+    }: {
+      inviteCode: string;
+      entryId: string;
+    }) => joinLeague({ inviteCode, entryId }),
     onSuccess: (league) => {
       qc.invalidateQueries({ queryKey: queryKeys.leagues.all() });
       toast.success(`Te uniste a "${league.name}"`);
@@ -175,20 +190,31 @@ function JoinForm() {
     } else if (e.key === "ArrowRight" && index < CODE_LENGTH - 1) {
       e.preventDefault();
       inputsRef.current[index + 1]?.focus();
-    } else if (e.key === "Enter" && isValid) {
+    } else if (e.key === "Enter" && isValid && selectedEntryId) {
       e.preventDefault();
-      joinMutation.mutate(code);
+      joinMutation.mutate({ inviteCode: code, entryId: selectedEntryId });
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid || joinMutation.isPending) return;
-    joinMutation.mutate(code);
+    if (!selectedEntryId) {
+      setSubmitError("Elegi con cual de tus prodes querés unirte.");
+      return;
+    }
+    joinMutation.mutate({ inviteCode: code, entryId: selectedEntryId });
   };
 
   return (
     <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-6">
+      {entries.length > 1 ? (
+        <EntryPicker
+          entries={entries}
+          value={selectedEntryId}
+          onChange={setSelectedEntryId}
+        />
+      ) : null}
       <div
         role="group"
         aria-label="Codigo de invitacion"
@@ -239,5 +265,73 @@ function JoinForm() {
         {joinMutation.isPending ? "Uniendo..." : "Unirme"}
       </button>
     </form>
+  );
+}
+
+/**
+ * EntryPicker — multi-prode v1.1, spec §4.5. Compartido conceptualmente
+ * con `/ligas/crear`; mantenemos copias por simplicidad (2 archivos,
+ * apenas distintos en wording). Si crece a 3+ surge el componente
+ * compartido.
+ */
+function EntryPicker({
+  entries,
+  value,
+  onChange,
+}: {
+  entries: EntrySummary[];
+  value: string | null;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)] mb-1">
+        ¿Con cuál de tus prodes?
+      </legend>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {entries.map((e) => {
+          const checked = value === e.id;
+          const label = e.alias?.trim() ? e.alias : `Mi prode #${e.position}`;
+          return (
+            <label
+              key={e.id}
+              className={cn(
+                "flex items-center gap-3 cursor-pointer rounded-sm border p-3 transition-colors",
+                checked
+                  ? "border-[var(--color-landing-green)] bg-[var(--color-landing-surface-2)]"
+                  : "border-[var(--color-landing-line)] bg-[var(--color-landing-surface)] hover:border-[var(--color-landing-line-strong)]",
+              )}
+            >
+              <input
+                type="radio"
+                name="entry-picker"
+                value={e.id}
+                checked={checked}
+                onChange={() => onChange(e.id)}
+                className="sr-only"
+              />
+              <span
+                aria-hidden
+                className={cn(
+                  "h-4 w-4 shrink-0 rounded-full border-2 transition-colors",
+                  checked
+                    ? "border-[var(--color-landing-green)] bg-[var(--color-landing-green)]"
+                    : "border-[var(--color-landing-line-strong)]",
+                )}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text)] truncate">
+                  {label}
+                </span>
+                <span className="block font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)] tabular-nums mt-1">
+                  {e.stats.totalPoints} pts
+                  {e.stats.rank !== null ? ` · pos ${e.stats.rank}` : ""}
+                </span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }

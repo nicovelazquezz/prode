@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/dialog";
 import { createLeague } from "@/lib/api/leagues";
 import { queryKeys } from "@/lib/api/queryKeys";
-import type { League } from "@/lib/api/types";
+import type { EntrySummary, League } from "@/lib/api/types";
+import { useActiveEntry } from "@/lib/hooks/use-active-entry";
 import { cn } from "@/lib/utils/cn";
 
 const FRONTEND_URL =
@@ -54,7 +55,17 @@ const inputClasses =
 export default function CrearLigaPage() {
   const router = useRouter();
   const qc = useQueryClient();
+  const { entries, activeEntry } = useActiveEntry();
   const [created, setCreated] = useState<League | null>(null);
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(
+    activeEntry?.id ?? null,
+  );
+
+  // Mantener selectedEntryId sincronizado con activeEntry inicial
+  // sin pisar la elección manual del user.
+  if (selectedEntryId === null && activeEntry) {
+    setSelectedEntryId(activeEntry.id);
+  }
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -72,6 +83,7 @@ export default function CrearLigaPage() {
       description?: string;
       isPublic?: boolean;
       maxMembers?: number;
+      entryId: string;
     }) => createLeague(dto),
     onSuccess: (league) => {
       qc.invalidateQueries({ queryKey: queryKeys.leagues.all() });
@@ -83,6 +95,10 @@ export default function CrearLigaPage() {
   });
 
   const onSubmit = (values: FormValues) => {
+    if (!selectedEntryId) {
+      toast.error("Elegí con qué prode querés unirte a la liga.");
+      return;
+    }
     createMutation.mutate({
       name: values.name,
       description: values.description?.trim()
@@ -90,6 +106,7 @@ export default function CrearLigaPage() {
         : undefined,
       isPublic: values.isPublic,
       maxMembers: values.maxMembers,
+      entryId: selectedEntryId,
     });
   };
 
@@ -181,6 +198,14 @@ export default function CrearLigaPage() {
           ) : null}
         </div>
 
+        {entries.length > 1 ? (
+          <EntryPicker
+            entries={entries}
+            value={selectedEntryId}
+            onChange={setSelectedEntryId}
+          />
+        ) : null}
+
         <label className="flex items-start gap-3 cursor-pointer rounded-sm border border-[var(--color-landing-line)] bg-[var(--color-landing-surface)] p-4 transition-colors hover:border-[var(--color-landing-line-strong)]">
           <input
             type="checkbox"
@@ -222,6 +247,74 @@ export default function CrearLigaPage() {
         }}
       />
     </section>
+  );
+}
+
+/**
+ * EntryPicker (multi-prode v1.1, spec §4.5). Cuando el user tiene >1
+ * entry, le pedimos cuál unir a la liga. Default: activeEntry. Lista
+ * de radios estilo dark editorial — un fieldset por entry con alias
+ * o "Mi prode #N" + stats inline.
+ */
+function EntryPicker({
+  entries,
+  value,
+  onChange,
+}: {
+  entries: EntrySummary[];
+  value: string | null;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)] mb-1">
+        ¿Con cuál de tus prodes?
+      </legend>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {entries.map((e) => {
+          const checked = value === e.id;
+          const label = e.alias?.trim() ? e.alias : `Mi prode #${e.position}`;
+          return (
+            <label
+              key={e.id}
+              className={cn(
+                "flex items-center gap-3 cursor-pointer rounded-sm border p-3 transition-colors",
+                checked
+                  ? "border-[var(--color-landing-green)] bg-[var(--color-landing-surface-2)]"
+                  : "border-[var(--color-landing-line)] bg-[var(--color-landing-surface)] hover:border-[var(--color-landing-line-strong)]",
+              )}
+            >
+              <input
+                type="radio"
+                name="entry-picker"
+                value={e.id}
+                checked={checked}
+                onChange={() => onChange(e.id)}
+                className="sr-only"
+              />
+              <span
+                aria-hidden
+                className={cn(
+                  "h-4 w-4 shrink-0 rounded-full border-2 transition-colors",
+                  checked
+                    ? "border-[var(--color-landing-green)] bg-[var(--color-landing-green)]"
+                    : "border-[var(--color-landing-line-strong)]",
+                )}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text)] truncate">
+                  {label}
+                </span>
+                <span className="block font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)] tabular-nums mt-1">
+                  {e.stats.totalPoints} pts
+                  {e.stats.rank !== null ? ` · pos ${e.stats.rank}` : ""}
+                </span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }
 
