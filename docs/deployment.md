@@ -1,6 +1,6 @@
-# Deployment — Prode Mundial 2026 Backend
+# Deployment — Prode Mundial 2026
 
-Manual runbook for deploying the backend to production via **Dokploy** on the Tiro Federal VPS. All commands assume the operator is logged into the Dokploy panel and has shell access to the host.
+Manual runbook for deploying both the backend and the frontend to production via **Dokploy** on the Tiro Federal VPS. All commands assume the operator is logged into the Dokploy panel and has shell access to the host.
 
 > The repo ships everything needed for a reproducible deploy: `backend/Dockerfile` (multi-stage, runs migrations on start) and `dokploy/docker-compose.yml` (postgres + redis + backend). Secrets and env vars live in the Dokploy panel — never in git.
 
@@ -162,3 +162,124 @@ gunzip -c prode-YYYY-MM-DD.sql.gz | psql -U postgres -d prode_restore_test
 - **TZ**: tanto Postgres como el contenedor backend usan `America/Argentina/Buenos_Aires`. La BD almacena UTC; el frontend convierte. El TZ del contenedor sólo afecta logs y crons.
 - **Sentry**: si `SENTRY_DSN` está vacío, Sentry queda deshabilitado (log: `Sentry disabled`). En prod, configuralo siempre.
 - **Secrets en logs**: el redactor de pino-http oculta `password`, `token`, `authorization`, `cookie` y los headers de MP — verificado en `src/common/observability/logger.spec.ts`.
+
+---
+
+# Frontend
+
+El frontend es un servicio adicional dentro del mismo `dokploy/docker-compose.yml`. Se construye desde `./frontend/Dockerfile` (multi-stage, salida `standalone` de Next.js 15) y corre en el puerto 3000 detrás de Traefik con dominio propio.
+
+## F1. Prerequisitos
+
+- DNS: `prode.tirofederal.com` → VPS public IP (A record).
+- Backend ya desplegado y respondiendo en `https://api.prode.tirofederal.com` (los pasos del backend deben completarse primero, sino la SSR falla en el primer render del SSR de algunas páginas).
+- Acceso al panel Dokploy del proyecto `prode`.
+
+## F2. Configurar env vars del frontend (Dokploy → Application → Environment)
+
+El compose pasa estas variables como **build args** (Next inlinea cada `NEXT_PUBLIC_*` en el bundle del cliente al hacer `next build`) y también como variables de runtime (la capa SSR las consume en route handlers como `/api/health`). Por eso, **modificarlas requiere rebuild**, no solo restart.
+
+| Variable | Valor producción | Notas |
+|---|---|---|
+| `API_URL` | `https://api.prode.tirofederal.com` | Reusa la del backend; el compose la mapea a `NEXT_PUBLIC_API_URL`. |
+| `FRONTEND_URL` | `https://prode.tirofederal.com` | Reusa la del backend; mapeada a `NEXT_PUBLIC_FRONTEND_URL`. |
+| `INSCRIPCION_PRECIO` | `15000` | Pesos argentinos. Si cambia, hay que rebuild + cambiar también la config de scoring en backend si aplica. |
+| `ADMIN_WHATSAPP_NUMBER` | E.164 sin `+` (ej `5492914000000`) | Reusa la del backend; el frontend la usa para los CTAs `wa.me/...`. |
+| `TURNSTILE_SITE_KEY` | Clave **pública** de Cloudflare Turnstile | Distinta de `TURNSTILE_SECRET_KEY` (esa es server-side, vive en backend). |
+| `SENTRY_DSN_FRONTEND` | DSN del proyecto **frontend** en Sentry | Diferente del `SENTRY_DSN` backend. Dejar vacío deshabilita Sentry. |
+
+> El compose hardcodea `NEXT_PUBLIC_WORLD_CUP_START=2026-06-11T18:00:00-03:00` y `NEXT_PUBLIC_ENABLE_MOCK_CHECKOUT=false`. El mock checkout NO debe activarse en producción — está gateado por el backend, pero igual cerramos la puerta del lado cliente.
+
+## F3. Configurar dominio + HTTPS
+
+En Dokploy → **Domains** del servicio `prode-frontend`:
+
+1. **Host**: `prode.tirofederal.com`.
+2. **Container port**: `3000`.
+3. **HTTPS**: ON. **Certificate provider**: Let's Encrypt.
+4. **Force HTTPS redirect**: ON.
+5. Save → Dokploy emite el certificado vía Traefik automáticamente (puede tardar 30–60s la primera vez).
+
+Verificación:
+
+```bash
+curl -I https://prode.tirofederal.com
+# HTTP/2 200
+```
+
+## F4. Primer deploy
+
+1. Panel → **Deploy**. Dokploy hace `git pull`, `docker compose build` (incluye `prode-frontend` con todos los `--build-arg NEXT_PUBLIC_*`), y luego `docker compose up -d`.
+2. El build del frontend tarda ~2 minutos (Next 15 + Webpack + Serwist + tipos). Si falla, revisar los logs del paso `build` — los errores comunes son `NEXT_PUBLIC_API_URL` ausente o lockfile fuera de sync.
+3. Smoke test post-deploy:
+
+   ```bash
+   # Healthcheck del frontend (verifica que el SSR levantó y que puede llamar al backend)
+   curl -s https://prode.tirofederal.com/api/health
+   # Expected: {"status":"ok","backend":true,"timestamp":"..."}
+
+   # Landing accesible (debe devolver HTML con el countdown)
+   curl -sI https://prode.tirofederal.com/ | head -1
+   # HTTP/2 200
+
+   # Login del admin (mismo backend)
+   curl -s -X POST https://api.prode.tirofederal.com/auth/login \
+     -H 'content-type: application/json' \
+     -d '{"dni":"<ADMIN_DEFAULT_DNI>","password":"<ADMIN_DEFAULT_PASSWORD>"}'
+   # debe devolver { "accessToken": "...", "user": {...} }
+   ```
+
+4. Probar en navegador: `https://prode.tirofederal.com` debería cargar la landing y el countdown debe estar contando hacia el `WORLD_CUP_START`. Login del admin desde la UI.
+
+## F5. PWA — instalación + service worker
+
+Tras el primer deploy, el service worker (`public/sw.js`, generado por Serwist en build) se sirve con `Cache-Control: no-cache, no-store, must-revalidate` para que los updates lleguen inmediatamente. Verificar en DevTools → Application → Service Workers que aparezca registrado.
+
+El manifest (`public/manifest.json`) y los iconos (`icon-192.png`, `icon-512.png`, `icon-512-maskable.png`, `apple-touch-icon.png`) se sirven desde `public/`.
+
+## F6. Activos pendientes (placeholders a reemplazar antes del lanzamiento público)
+
+### F6.1. Tipografía display (FIFA WC 2026 Condensed)
+
+El sistema visual usa `Fwc 2026 Condensed` como tipografía display, autohospedada en `frontend/public/fonts/`. Hoy ese directorio sólo tiene un `.gitkeep` — el frontend cae al fallback CSS hasta que se sume el archivo real.
+
+**Procedimiento cuando el cliente entregue el `.woff2`:**
+
+1. Copiar el archivo a `frontend/public/fonts/Fwc-2026-Condensed.woff2` (nombre exacto, lowercase).
+2. Verificar que `app/layout.tsx` (o el `font-face` correspondiente en `app/globals.css`) ya referencia `/fonts/Fwc-2026-Condensed.woff2` con `font-display: swap`. No hace falta tocar Tailwind tokens.
+3. Commit + push: el rebuild siguiente lo distribuye. **No hay env var ni redeploy especial**, alcanza con un deploy normal.
+4. Smoke test: en DevTools → Network filtrar por `.woff2`, debe aparecer cargado con `200` y `Content-Type: font/woff2`.
+
+### F6.2. Iconos PWA definitivos
+
+Los iconos actuales en `frontend/public/icon-*.png` son **placeholders sólidos color azul** generados por `scripts/gen-pwa-icons.mjs` (sin texto, sin escudo del club). Antes del lanzamiento, el cliente debe entregar:
+
+- `icon-192.png` — 192×192, fondo a sangre, escudo Tiro Federal centrado.
+- `icon-512.png` — 512×512, idem.
+- `icon-512-maskable.png` — 512×512 con safe area de 80px en cada borde para mascarillas Android.
+- `apple-touch-icon.png` — 180×180, idem (sin transparencia, esquinas redondeadas las pone iOS).
+
+**Procedimiento de reemplazo:**
+
+1. Sobrescribir los 4 archivos en `frontend/public/` con los entregados.
+2. (Opcional, recomendado) Subir un `screenshots/` con capturas para el manifest si se quiere mejorar la install card de Android.
+3. Commit + redeploy.
+4. **Importante:** los usuarios que ya tengan la PWA instalada **no verán el icono nuevo** hasta desinstalar/reinstalar — Android cachea el icono al momento del install prompt. Si se actualiza tras el lanzamiento, comunicar el reinstall.
+
+## F7. Operación corriente (frontend)
+
+| Tarea | Comando / Acción |
+|---|---|
+| Ver logs en vivo | Dokploy → **Logs** del servicio `prode-frontend`, o `docker logs -f $(docker ps -qf name=prode-frontend)` |
+| Reiniciar frontend | Dokploy → **Restart** del servicio (no requiere rebuild) |
+| Cambiar `NEXT_PUBLIC_*` | Editar env vars + **Redeploy** (rebuild necesario; restart no alcanza, los valores están inlined en el bundle) |
+| Rollback | Dokploy → **Deployments** → re-deploy del commit anterior. El servicio backend no se ve afectado si solo cambia el frontend. |
+| Forzar update del SW para todos los usuarios | El SW ya se sirve con `no-cache`, así que el browser revalida en cada visita. Si por algún motivo quedó cacheado, bumpear la versión en `app/sw.ts` y redeploy. |
+
+## F8. Notas finales del frontend
+
+- **Standalone output**: Next.js produce un `.next/standalone/server.js` autocontenido que NO necesita `next start` ni el módulo `next` instalado en runtime. El Dockerfile copia ese standalone + `.next/static` + `public/` y arranca con `node server.js`.
+- **Build args vs env**: las variables `NEXT_PUBLIC_*` viajan por **ambas vías** (build args y runtime env). El motivo es que Next inlinea los valores en el bundle del cliente al build, pero algunos route handlers (ej `/api/health`) las consumen en runtime via `process.env`.
+- **Cookies cross-subdomain**: el backend ya emite el refresh cookie con `Domain=.tirofederal.com` y `SameSite=Lax`. Eso permite que `prode.tirofederal.com` y `api.prode.tirofederal.com` compartan sesión sin trampolines de CORS.
+- **Cloudflare Turnstile**: la `SITE_KEY` (pública) vive en el frontend, la `SECRET_KEY` (server-side) en el backend. Configurar el dominio `prode.tirofederal.com` en el panel de Turnstile como hostname permitido.
+- **Sentry**: si `SENTRY_DSN_FRONTEND` está vacío, el SDK queda no-op (ver `sentry.*.config.ts`). En prod, configuralo siempre — los errores SSR y de cliente caen al mismo proyecto Sentry.
