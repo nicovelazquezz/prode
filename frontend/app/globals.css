@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* TODO: Cuando esté disponible `public/fonts/FWC2026-CondensedBlack.woff2`
+ * (proprietario de FIFA), eliminar este :root override y dejar que la
+ * variable la inyecte `next/font/local` desde layout.tsx.
+ * Mientras tanto, fallback Arial Narrow Black para mantener vibe condensed.
+ */
+:root {
+  --font-fwc: "Arial Narrow Black", "Arial Narrow", "Arial", sans-serif;
+}
+
 /* Tokens del DESIGN.md (FIFA WC 2026 Hospitality) */
 @theme {
   --color-prode-near-black: #05090e;
@@ -11,8 +20,8 @@
   --color-prode-text-muted: #bc8fd1;
   --color-prode-border: #d0d5df;
 
-  --font-display: "Fwc 2026 Condensed", "Arial Narrow", sans-serif;
-  --font-sans: "Noto Sans", system-ui, sans-serif;
+  --font-display: var(--font-fwc), "Arial Narrow Black", "Arial Narrow", sans-serif;
+  --font-sans: var(--font-noto-sans), system-ui, sans-serif;
 
   --radius-sm: 4px;
   --radius-md: 16px;
