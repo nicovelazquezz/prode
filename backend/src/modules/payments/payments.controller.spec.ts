@@ -73,7 +73,7 @@ describe('POST /payments/init (integration)', () => {
     expect(payment?.completionTokenHash).toHaveLength(64); // sha256 hex
     expect(payment?.tokenExpiresAt).toBeNull(); // set on APPROVED, not at init
     expect(payment?.mpPreferenceId).toMatch(/^mock_pref_/);
-    expect(payment?.amount.toString()).toBe('15000'); // from AppConfig seed
+    expect(payment?.amount.toString()).toBe('10000'); // from AppConfig seed
   });
 
   it('writes an audit log entry with action=payment.init', async () => {
