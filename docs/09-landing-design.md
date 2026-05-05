@@ -1,7 +1,7 @@
 # 09 · Landing Mundial 2026 — Diseño
 
 > Spec aprobado el 2026-05-05 tras brainstorming con mockups en browser.
-> Mockup de referencia: `.superpowers/brainstorm/85758-1777986640/05-stadium-wc26-muted.html`.
+> Mockup final aprobado (v3): `.superpowers/brainstorm/85758-1777986640/09-landing-v3.html`.
 > Reglas de puntuación y premios: ver `02-sistema-puntos-premios.md` (fuente de verdad).
 
 ## Objetivo
@@ -20,10 +20,11 @@ Long-form scrolleable que explica el prode, los premios y el ángulo solidario, 
 
 Para que **otros clubes y simpatizantes ajenos a Tiro Federal puedan participar y colaborar sin sentir que es ajeno**, el branding visible es neutro:
 
-- **Topbar:** `PRODE MUNDIAL 2026 · BAHÍA BLANCA` (sin escudo, sin nombre de club como marca dominante).
+- **Strip top (mono, fino):** `MUNDIAL FIFA 2026 · 11 JUN — 19 JUL · USA / MEXICO / CANADÁ · N DÍAS PARA KICKOFF` — info temporal del evento.
+- **Topbar:** `● PRODE MUNDIAL 2026 · BAHÍA BLANCA` (sin escudo, sin nombre de club como marca dominante) + link `Iniciar sesión`.
 - **Hero:** copy enfocado en el deporte y el viaje, no en la pertenencia al club.
 - **Costado solidario:** ahí sí se nombra a Tiro Federal como organizador y dueño del equipo de handball que viaja.
-- **Footer:** `Organiza Club Tiro Federal · Bahía Blanca`.
+- **Footer rico de 4 columnas:** `Organiza` · `Contacto` · `Prode` · `Cuenta`.
 
 Esto permite que una persona de otro club juegue sin fricción identitaria, y el costado solidario es transversal ("ayudás a un equipo de pibes que se ganaron ir al Nacional").
 
@@ -67,24 +68,42 @@ Cuando el cliente provea `FWC2026-CondensedBlack.woff2` (variable `--font-fwc` y
 
 ### Motion
 
-- **Eyebrow LIVE:** pulse blink (1.4s, opacidad 1 ↔ 0.35).
+- **Eyebrow live:** pulse blink (1.4s, opacidad 1 ↔ 0.35) sobre el dot rojo del topbar y del hero eyebrow.
 - **Reveal scroll:** secciones con fade-up sutil (8-12px, 400ms) usando framer-motion.
-- **CTA hover:** background-color shift, 150ms.
+- **CTA hover:** background-color shift (`#A33D3D` → `#B74545`), 150ms.
 - **Respeto a `prefers-reduced-motion`:** todas las animaciones deshabilitadas si el usuario lo pide.
+
+### Texturas / atmósfera
+
+- **Grain texture overlay** (default ON) — SVG noise con `mix-blend-mode: overlay; opacity: 0.32`. Aplicado sobre el contenedor principal, rompe la planitud del navy. Imperceptible como decoración, perceptible como "calidad de impresión".
+- **Radial gradients localizados** — uno suave en el hero (azul, top-center), otro en el final CTA (rojo, center). No se usa como decoración protagonista, solo como atmósfera.
+
+### Sistema visual repetitivo
+
+- **Underline verde** (`border-bottom: 4-6px solid #5C7847`) aplicado en H1 (sobre `BANCÁ EL VIAJE`), section-title `Cómo se juega`, y H2 del bloque solidario. Es el sello visual recurrente.
+- **Eyebrow en mono uppercase** con letter-spacing 0.18-0.22em — todas las secciones lo usan para señalizar entrada.
+- **Stats con número grande Anton + label mono pequeño** — patrón repetido en hero stats, countdown, sistema de puntos y premios.
 
 ## Copy (textos finales)
 
+### Strip top (sobre el topbar)
+
+`MUNDIAL FIFA 2026 · 11 JUN — 19 JUL · USA / MEXICO / CANADÁ · N DÍAS PARA KICKOFF`
+
+(N se calcula en runtime — countdown a `2026-06-11T12:00:00-03:00`.)
+
 ### Hero
 
-- **Eyebrow:** `EN VIVO · MUNDIAL 2026 · CIERRA EN N DÍAS`
-- **H1:** `JUGÁ EL PRODE.` / `BANCÁ EL VIAJE.`
-- **Lede:** `Pronosticá los 104 partidos del Mundial. Sumás puntos, escalás el ranking, ganás premios. Cada inscripción ayuda al equipo de handball del Tiro Federal a llegar al Nacional C en Comodoro Rivadavia.`
+- **Eyebrow (con dot rojo pulsante):** `INSCRIPCIÓN ABIERTA · MUNDIAL 2026 · ARRANCA EN N DÍAS`
+- **H1:** `JUGÁ EL PRODE.` / `BANCÁ EL VIAJE.` (la segunda línea con underline verde)
+- **Lede:** `Pronosticá los partidos del Mundial fase por fase. Sumás puntos, escalás el ranking, ganás premios. Cada inscripción banca al equipo de handball del Tiro Federal que viaja al Nacional C en Comodoro Rivadavia.`
 - **CTA primario:** `Inscribirme · $10.000`
 - **CTA ghost:** `Cómo funciona`
+- **Mini-meta debajo:** `CIERRA 11/JUN/26 · MERCADOPAGO · TRANSFERENCIA · EFECTIVO EN EL CLUB`
 
 ### Stats lower-third
 
-`104 Partidos` · `48 Selecciones` · `7 Fases` · `1 Causa`
+`8 Semanas de juego` · `48 Selecciones` · `7 Fases` · `1 Causa`
 
 ### Countdown
 
@@ -159,27 +178,34 @@ Accordion con 6 preguntas:
 
 - **H2:** `Estás a un click de jugar.`
 - **Sub:** `Inscripción $10.000 · MercadoPago, transferencia o efectivo en el club. La carga abre apenas pagás.`
-- **CTA:** `Inscribirme ahora`
+- **CTA:** `Quiero jugar`
 
-### Footer
+### Footer (rico, 4 columnas)
 
-- Línea 1: `Organiza Club Tiro Federal · Bahía Blanca · 2026`
-- Línea 2: `Reglamento · Términos · Contacto`
+| Columna | Contenido |
+|---------|-----------|
+| **Organiza** | `Club Tiro Federal · Bahía Blanca · 2026` + tagline corto: `Iniciativa solidaria del equipo de handball. Abierta a todo el que quiera jugar.` |
+| **Contacto** | `WhatsApp +54 9 ...` · `Instagram @clubtirofederal` · `contacto@...` |
+| **Prode** | `Reglamento` · `Términos` · `Política de privacidad` |
+| **Cuenta** | `Inscribirme` · `Iniciar sesión` |
+
+Bar inferior: `© 2026 · Club Tiro Federal · Bahía Blanca` · `Hecho con cariño en Bahía`.
 
 ## Estructura de página (orden vertical)
 
-1. Topbar — `● PRODE MUNDIAL 2026 · BAHÍA BLANCA` + link `Iniciar sesión`
-2. Hero
-3. Stats lower-third
-4. Countdown
-5. Cómo funciona (3 pasos)
-6. Sistema de puntos (4 reglas + nota multiplicadores)
-7. Predicciones especiales (3 tarjetas)
-8. Premios (lista jerárquica)
-9. Costado solidario (handball / Comodoro / Nacional C)
-10. FAQ
-11. Final CTA
-12. Footer
+1. Strip top — `MUNDIAL FIFA 2026 · 11 JUN — 19 JUL · USA / MEXICO / CANADÁ · N DÍAS PARA KICKOFF`
+2. Topbar — `● PRODE MUNDIAL 2026 · BAHÍA BLANCA` + link `Iniciar sesión`
+3. Hero (eyebrow live + H1 + lede + CTAs + mini-meta)
+4. Stats lower-third
+5. Countdown
+6. Cómo funciona (3 pasos)
+7. Sistema de puntos (4 reglas + nota multiplicadores)
+8. Predicciones especiales (3 tarjetas)
+9. Premios (3 categorías, sin %)
+10. Costado solidario (handball / Comodoro / Nacional C)
+11. FAQ
+12. Final CTA
+13. Footer rico (4 columnas + bar)
 
 ## Implementación técnica
 
@@ -195,13 +221,16 @@ Accordion con 6 preguntas:
 
 ## Accesibilidad
 
-- Contraste mínimo 4.5:1 verificado para texto cream (`#F1ECE0`) sobre navy (`#0E1426`).
-- CTA rojo (`#A33D3D`) con texto cream — verificar 4.5:1 sobre el rojo (puede requerir ajuste a un rojo levemente más oscuro o texto más claro).
-- Focus rings visibles en CTAs.
-- Eyebrow LIVE no es solo color — incluye texto "EN VIVO".
-- Countdown anunciado a screen readers vía `aria-live="polite"` con actualización cada minuto (no cada segundo, para no spammear).
-- Respeto a `prefers-reduced-motion`.
-- Touch targets ≥ 44px.
+- Contraste verificado: texto cream (`#F1ECE0`) sobre navy (`#0E1426`) → ~14:1 ✓ AAA.
+- Contraste verificado: texto cream sobre CTA rojo (`#A33D3D`) → ~5.43:1 ✓ AA.
+- Contraste verificado: texto muted (`#8A92A8`) sobre navy → ~5.79:1 ✓ AA.
+- **Focus rings:** `:focus-visible { outline: 2px solid #C8A053; outline-offset: 4px; }` en CTAs y links.
+- **Eyebrow live:** texto explícito (`INSCRIPCIÓN ABIERTA · ARRANCA EN N DÍAS`) — el dot rojo es decoración, no portador único de información.
+- **Countdown:** contenedor con `aria-live="polite"` y `aria-atomic="true"`. Actualización del DOM cada **minuto** (no cada segundo) para no spammear lectores de pantalla; visualmente el segundero sigue al ritmo normal.
+- **Reduced motion:** `@media (prefers-reduced-motion: reduce)` desactiva el pulse del dot rojo, los reveals de framer-motion y reduce todas las transitions a 0.01ms.
+- **Touch targets:** CTAs y FAQ items ≥ 44px de alto.
+- **`cursor: pointer`** en todos los elementos clickables (FAQ items, prize cards si son interactivas, links del footer).
+- **FAQ accordion accesible:** items con `tabindex="0"`, manejo de teclado (Enter/Space para abrir).
 
 ## Out of scope
 
