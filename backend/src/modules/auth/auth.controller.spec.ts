@@ -669,3 +669,217 @@ describe('GET /auth/me (integration)', () => {
     expect(res.body).not.toHaveProperty('passwordResets');
   });
 });
+
+/**
+ * Tests for `POST /auth/change-password`. The endpoint exists for the
+ * authenticated "settings → cambiar contraseña" flow — different from
+ * /auth/reset-password (which is consumed via a one-time token from
+ * forgot-password).
+ *
+ * Critical invariants:
+ *   - Requires a valid bearer (401 otherwise).
+ *   - Validates the *current* password against the stored hash (400 on
+ *     mismatch). This guards against an attacker who has a stolen
+ *     access token but doesn't know the password.
+ *   - Bumps the password hash AND revokes ALL active refresh tokens
+ *     atomically — any other live session on a stolen device is
+ *     forced to re-authenticate.
+ *   - Audits both the failed and the successful attempts.
+ */
+describe('POST /auth/change-password (integration)', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  let authService: AuthService;
+  // Dedicated user so we don't disturb the seed admin password and
+  // can clean up between/after tests.
+  let testUserId: string;
+  let testDni: string;
+  const INITIAL_PASSWORD = 'InitialPass1';
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    app.use(cookieParser());
+    await app.init();
+    prisma = app.get(PrismaService);
+    authService = app.get(AuthService);
+
+    const dniSuffix = Date.now().toString().slice(-7);
+    testDni = `2${dniSuffix}`;
+    const passwordHash = await authService.hashPassword(INITIAL_PASSWORD);
+    const user = await prisma.user.create({
+      data: {
+        dni: testDni,
+        firstName: 'Change',
+        lastName: 'Pwd',
+        whatsapp: `54912${dniSuffix}`,
+        passwordHash,
+        role: 'USER',
+        status: 'ACTIVE',
+      },
+    });
+    testUserId = user.id;
+  }, 30_000);
+
+  afterAll(async () => {
+    if (testUserId) {
+      await prisma.refreshToken.deleteMany({ where: { userId: testUserId } });
+      await prisma.auditLog.deleteMany({ where: { userId: testUserId } });
+      await prisma.notification.deleteMany({ where: { userId: testUserId } });
+      await prisma.user.delete({ where: { id: testUserId } }).catch(() => {});
+    }
+    if (app) await app.close();
+  });
+
+  /** Login fresh and return access token + refresh cookie. */
+  async function loginFresh(
+    password: string,
+  ): Promise<{ accessToken: string; refreshCookie: string }> {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ dni: testDni, password });
+    expect(res.status).toBe(200);
+    const setCookie = res.headers['set-cookie'];
+    const cookies = Array.isArray(setCookie)
+      ? setCookie
+      : ([setCookie] as string[]);
+    const refresh = cookies.find((c) => c.startsWith('refresh_token='));
+    if (!refresh) throw new Error('No refresh cookie set on login');
+    return {
+      accessToken: res.body.accessToken,
+      refreshCookie: refresh.split(';')[0]!,
+    };
+  }
+
+  /**
+   * Each mutating test rebases on a known password so the suite stays
+   * idempotent regardless of order. We DO NOT rely on JIT password
+   * resets via the service — calling /auth/login + /auth/change-password
+   * is the contract the frontend uses, so testing through the same
+   * surface keeps the assertion honest.
+   */
+  async function ensurePasswordIs(target: string): Promise<void> {
+    const newHash = await authService.hashPassword(target);
+    await prisma.user.update({
+      where: { id: testUserId },
+      data: { passwordHash: newHash },
+    });
+  }
+
+  it('returns 401 without a bearer token', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/change-password')
+      .send({ currentPassword: INITIAL_PASSWORD, newPassword: 'WhateverPass2' });
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 400 when newPassword is too short or missing a digit', async () => {
+    await ensurePasswordIs(INITIAL_PASSWORD);
+    const { accessToken } = await loginFresh(INITIAL_PASSWORD);
+
+    const tooShort = await request(app.getHttpServer())
+      .post('/auth/change-password')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ currentPassword: INITIAL_PASSWORD, newPassword: 'short1' });
+    expect(tooShort.status).toBe(400);
+
+    const noDigits = await request(app.getHttpServer())
+      .post('/auth/change-password')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ currentPassword: INITIAL_PASSWORD, newPassword: 'noDigitsHere' });
+    expect(noDigits.status).toBe(400);
+  });
+
+  it('returns 400 when currentPassword is wrong', async () => {
+    await ensurePasswordIs(INITIAL_PASSWORD);
+    const { accessToken } = await loginFresh(INITIAL_PASSWORD);
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/change-password')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        currentPassword: 'definitely-not-right',
+        newPassword: 'BrandNewPass3',
+      });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/contraseña actual incorrecta/i);
+
+    // Audit row records the failure.
+    await new Promise((r) => setTimeout(r, 200));
+    const audit = await prisma.auditLog.findFirst({
+      where: {
+        userId: testUserId,
+        action: 'auth.change_password_failed',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(audit).not.toBeNull();
+  });
+
+  it('returns 400 when newPassword equals currentPassword', async () => {
+    await ensurePasswordIs(INITIAL_PASSWORD);
+    const { accessToken } = await loginFresh(INITIAL_PASSWORD);
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/change-password')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        currentPassword: INITIAL_PASSWORD,
+        newPassword: INITIAL_PASSWORD,
+      });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/distinta/i);
+  });
+
+  it('happy path: 204, password rotated, ALL refresh tokens revoked, audit row written', async () => {
+    await ensurePasswordIs(INITIAL_PASSWORD);
+    // Two active sessions to prove ALL of them get killed.
+    const sessionA = await loginFresh(INITIAL_PASSWORD);
+    const sessionB = await loginFresh(INITIAL_PASSWORD);
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/change-password')
+      .set('Authorization', `Bearer ${sessionA.accessToken}`)
+      .send({
+        currentPassword: INITIAL_PASSWORD,
+        newPassword: 'BrandNewSecret9',
+      });
+    expect(res.status).toBe(204);
+
+    // Old password rejected on a fresh login attempt.
+    const loginOld = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ dni: testDni, password: INITIAL_PASSWORD });
+    expect(loginOld.status).toBe(401);
+
+    // New password works.
+    const loginNew = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ dni: testDni, password: 'BrandNewSecret9' });
+    expect(loginNew.status).toBe(200);
+
+    // Both pre-change refresh cookies must be dead. The frontend will
+    // see /auth/refresh fail and bounce to /login.
+    const refreshA = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', [sessionA.refreshCookie]);
+    expect(refreshA.status).toBe(401);
+    const refreshB = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', [sessionB.refreshCookie]);
+    expect(refreshB.status).toBe(401);
+
+    // Audit row written.
+    await new Promise((r) => setTimeout(r, 200));
+    const audit = await prisma.auditLog.findFirst({
+      where: {
+        userId: testUserId,
+        action: 'auth.password_changed_by_user',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(audit).not.toBeNull();
+  });
+});

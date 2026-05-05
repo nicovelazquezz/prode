@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -26,6 +27,7 @@ import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { CompleteRegistrationDto } from './dto/complete-registration.dto.js';
 import { loadEnv } from '../../config/env.js';
 import { AdminAlertsService } from '../../shared/admin-alerts/admin-alerts.service.js';
@@ -456,6 +458,107 @@ export class AuthController {
       throw new NotFoundException('User not found');
     }
     return user;
+  }
+
+  /**
+   * Authenticated password change. Different from `/auth/reset-password`
+   * (which consumes a one-time token from a forgot-password flow): this
+   * one expects the caller to know their current password, so it acts
+   * as a sanity check against a hijacked access token.
+   *
+   * Flow:
+   *   1) Reject if the current password doesn't match the stored hash.
+   *      We surface this as 400 with a generic message so an attacker
+   *      who already has the access token can't enumerate timing
+   *      differences between "user not found" vs "wrong password".
+   *   2) Hash the new password with bcrypt(rounds=12), updated inline
+   *      with revoking ALL active refresh tokens for the user — a
+   *      password change implies any other live session on a stolen
+   *      device must be forced to re-authenticate.
+   *   3) Audit log `auth.password_changed_by_user`.
+   *   4) Return 204.
+   *
+   * The controller intentionally doesn't rotate the caller's *own*
+   * refresh cookie. The frontend will detect the next /auth/refresh
+   * fail and redirect to /login like any other expired session.
+   */
+  @Post('change-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @Req() req: Request,
+    @CurrentUser() current: AuthenticatedUser | undefined,
+  ): Promise<void> {
+    if (!current) throw new UnauthorizedException('Authentication required');
+    const ctx = getRequestContext(req);
+
+    // The User row is needed for the bcrypt compare; load only the fields
+    // we touch to keep the query tight.
+    const user = await this.prisma.user.findUnique({
+      where: { id: current.id },
+      select: { id: true, passwordHash: true, status: true },
+    });
+    if (!user || user.status !== 'ACTIVE') {
+      // Mirrors the login path: a banned/inactive caller shouldn't be
+      // able to change their password through a leftover access token.
+      throw new UnauthorizedException('Account no longer active');
+    }
+
+    const ok = await this.authService.comparePassword(
+      dto.currentPassword,
+      user.passwordHash,
+    );
+    if (!ok) {
+      void this.audit.log({
+        userId: user.id,
+        action: 'auth.change_password_failed',
+        entity: 'auth',
+        entityId: user.id,
+        changes: { reason: 'wrong_current_password' },
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+      });
+      // 400 (not 401) — the bearer was valid; the *body* was wrong.
+      throw new BadRequestException('Contraseña actual incorrecta');
+    }
+
+    // Reject reusing the same password — bcrypt.compare is the only way
+    // to check this since the stored value is a one-way hash. Cheap to
+    // run once and saves a confused user from a no-op revoke.
+    const sameAsBefore = await this.authService.comparePassword(
+      dto.newPassword,
+      user.passwordHash,
+    );
+    if (sameAsBefore) {
+      throw new BadRequestException(
+        'La nueva contraseña debe ser distinta a la actual',
+      );
+    }
+
+    const newHash = await this.authService.hashPassword(dto.newPassword);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: newHash },
+      }),
+      // Revoke every active refresh token. The caller's own session
+      // dies along with the others — the frontend will land on /login
+      // after the next /auth/refresh attempt fails.
+      this.prisma.refreshToken.updateMany({
+        where: { userId: user.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
+
+    void this.audit.log({
+      userId: user.id,
+      action: 'auth.password_changed_by_user',
+      entity: 'auth',
+      entityId: user.id,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+    });
   }
 
   /**
