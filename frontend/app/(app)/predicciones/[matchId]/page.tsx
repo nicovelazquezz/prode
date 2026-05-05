@@ -28,9 +28,10 @@ import {
   getMatchPredictionCount,
 } from "@/lib/api/matches";
 import {
-  getMyPredictionForMatch,
+  getEntryPredictionForMatch,
   upsertMatchPrediction,
 } from "@/lib/api/predictions";
+import { useActiveEntry } from "@/lib/hooks/use-active-entry";
 import type { Match, Prediction } from "@/lib/api/types";
 
 const PHASE_LABELS: Record<string, string> = {
@@ -58,6 +59,8 @@ interface PageProps {
 export default function MatchDetailPage({ params }: PageProps) {
   const { matchId } = use(params);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const { activeEntry } = useActiveEntry();
+  const entryId = activeEntry?.id ?? "";
 
   const matchQuery = useQuery<Match | null>({
     queryKey: queryKeys.matches.detail(matchId),
@@ -66,8 +69,9 @@ export default function MatchDetailPage({ params }: PageProps) {
   });
 
   const predictionQuery = useQuery<Prediction | null>({
-    queryKey: queryKeys.predictions.forMatch(matchId),
-    queryFn: () => getMyPredictionForMatch(matchId),
+    queryKey: queryKeys.entries.predictionForMatch(entryId, matchId),
+    queryFn: () => getEntryPredictionForMatch(entryId, matchId),
+    enabled: !!entryId,
     staleTime: 30_000,
   });
 
@@ -81,17 +85,15 @@ export default function MatchDetailPage({ params }: PageProps) {
 
   const upsertMutation = useMutation({
     mutationFn: (dto: { scoreHome: number; scoreAway: number }) =>
-      upsertMatchPrediction(matchId, dto),
+      upsertMatchPrediction(entryId, matchId, dto),
     onMutate: async (dto) => {
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.predictions.forMatch(matchId),
-      });
-      const prev = queryClient.getQueryData<Prediction | null>(
-        queryKeys.predictions.forMatch(matchId),
-      );
+      const cacheKey = queryKeys.entries.predictionForMatch(entryId, matchId);
+      await queryClient.cancelQueries({ queryKey: cacheKey });
+      const prev = queryClient.getQueryData<Prediction | null>(cacheKey);
       const optimistic: Prediction = {
         id: prev?.id ?? `optimistic-${matchId}`,
-        userId: prev?.userId ?? "me",
+        entryId,
+        userId: prev?.userId,
         matchId,
         scoreHome: dto.scoreHome,
         scoreAway: dto.scoreAway,
@@ -103,22 +105,17 @@ export default function MatchDetailPage({ params }: PageProps) {
         createdAt: prev?.createdAt ?? new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      queryClient.setQueryData(
-        queryKeys.predictions.forMatch(matchId),
-        optimistic,
-      );
-      return { prev };
+      queryClient.setQueryData(cacheKey, optimistic);
+      return { prev, cacheKey };
     },
     onError: (_e, _v, ctx) => {
-      if (ctx?.prev !== undefined) {
-        queryClient.setQueryData(
-          queryKeys.predictions.forMatch(matchId),
-          ctx.prev,
-        );
+      if (ctx?.prev !== undefined && ctx.cacheKey) {
+        queryClient.setQueryData(ctx.cacheKey, ctx.prev);
       }
       toast.error("No pudimos guardar tu prediccion. Reintenta.");
     },
     onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.entries.all() });
       queryClient.invalidateQueries({
         queryKey: queryKeys.predictions.all(),
       });

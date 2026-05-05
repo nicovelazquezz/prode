@@ -24,10 +24,11 @@ import {
   getUpcomingMatches,
 } from "@/lib/api/matches";
 import {
-  getMyPredictions,
+  getEntryPredictions,
   upsertMatchPrediction,
 } from "@/lib/api/predictions";
 import type { Match, Paginated, Prediction } from "@/lib/api/types";
+import { useActiveEntry } from "@/lib/hooks/use-active-entry";
 import { deriveAvailablePhases } from "@/lib/landing/available-phases";
 
 type MatchListData = Match[];
@@ -35,6 +36,8 @@ type MatchListData = Match[];
 export default function PrediccionesPage() {
   const [tab, setTab] = useState<PhaseTabValue>("UPCOMING");
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
+  const { activeEntry } = useActiveEntry();
+  const entryId = activeEntry?.id ?? "";
 
   // All matches (cache lago) → derivar fases visibles para los tabs.
   const allMatchesQuery = useQuery<MatchListData>({
@@ -57,11 +60,14 @@ export default function PrediccionesPage() {
     staleTime: 30_000,
   });
 
-  // Get all my predictions in one shot. Backend pagina; en el peor
-  // caso son ~64 partidos × 1 prediction. pageSize=200 cubre todo.
+  // Get all my predictions del entry activo. Backend pagina; en el
+  // peor caso son ~64 partidos × 1 prediction por entry. pageSize=200
+  // cubre todo. `enabled` evita pegar al backend antes de que
+  // ActiveEntryProvider resuelva el activeEntry.
   const predictionsQuery = useQuery<Paginated<Prediction>>({
-    queryKey: queryKeys.predictions.me({ pageSize: 200 }),
-    queryFn: () => getMyPredictions({ pageSize: 200 }),
+    queryKey: queryKeys.entries.predictions(entryId, { pageSize: 200 }),
+    queryFn: () => getEntryPredictions(entryId, { pageSize: 200 }),
+    enabled: !!entryId,
     staleTime: 30_000,
   });
 
@@ -76,29 +82,33 @@ export default function PrediccionesPage() {
 
   const queryClient = useQueryClient();
 
-  // Auto-save mutation con optimistic update (spec §8.4).
+  // Auto-save mutation con optimistic update (spec §8.4). El `entryId`
+  // se snapshotea al disparar la mutation: si el user cambia de entry
+  // mid-mutation, esta sigue apuntando al entry original (spec §5.5).
   const upsertMutation = useMutation({
     mutationFn: async ({
+      entryId: mutationEntryId,
       matchId,
       dto,
     }: {
+      entryId: string;
       matchId: string;
       dto: { scoreHome: number; scoreAway: number };
-    }) => upsertMatchPrediction(matchId, dto),
-    onMutate: async ({ matchId, dto }) => {
-      // Cancel ongoing refetches that could overwrite our optimistic write.
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.predictions.me({ pageSize: 200 }),
+    }) => upsertMatchPrediction(mutationEntryId, matchId, dto),
+    onMutate: async ({ entryId: mutationEntryId, matchId, dto }) => {
+      const cacheKey = queryKeys.entries.predictions(mutationEntryId, {
+        pageSize: 200,
       });
-      const prev = queryClient.getQueryData<Paginated<Prediction>>(
-        queryKeys.predictions.me({ pageSize: 200 }),
-      );
+      // Cancel ongoing refetches that could overwrite our optimistic write.
+      await queryClient.cancelQueries({ queryKey: cacheKey });
+      const prev = queryClient.getQueryData<Paginated<Prediction>>(cacheKey);
       if (prev) {
         const data = [...prev.data];
         const idx = data.findIndex((p) => p.matchId === matchId);
         const optimistic: Prediction = {
           id: idx >= 0 ? data[idx]!.id : `optimistic-${matchId}`,
-          userId: idx >= 0 ? data[idx]!.userId : "me",
+          entryId: mutationEntryId,
+          userId: idx >= 0 ? data[idx]!.userId : undefined,
           matchId,
           scoreHome: dto.scoreHome,
           scoreAway: dto.scoreAway,
@@ -113,27 +123,25 @@ export default function PrediccionesPage() {
         };
         if (idx >= 0) data[idx] = optimistic;
         else data.push(optimistic);
-        queryClient.setQueryData<Paginated<Prediction>>(
-          queryKeys.predictions.me({ pageSize: 200 }),
-          { ...prev, data },
-        );
+        queryClient.setQueryData<Paginated<Prediction>>(cacheKey, {
+          ...prev,
+          data,
+        });
       }
-      return { prev };
+      return { prev, cacheKey };
     },
     onError: (_err, _vars, ctx) => {
       // Rollback to pre-mutation snapshot.
-      if (ctx?.prev) {
-        queryClient.setQueryData(
-          queryKeys.predictions.me({ pageSize: 200 }),
-          ctx.prev,
-        );
+      if (ctx?.prev && ctx.cacheKey) {
+        queryClient.setQueryData(ctx.cacheKey, ctx.prev);
       }
       toast.error("No pudimos guardar tu prediccion. Reintenta en un momento.");
     },
     onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.predictions.all(),
-      });
+      // Invalida ambos namespaces — el legacy cubre cualquier consumer
+      // todavía no migrado; entries.* cubre el cache real.
+      queryClient.invalidateQueries({ queryKey: queryKeys.predictions.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.entries.all() });
     },
   });
 
@@ -141,7 +149,8 @@ export default function PrediccionesPage() {
     matchId: string,
     dto: { scoreHome: number; scoreAway: number },
   ) => {
-    upsertMutation.mutate({ matchId, dto });
+    if (!entryId) return;
+    upsertMutation.mutate({ entryId, matchId, dto });
   };
 
   // Active match for the shared NumberPadSheet (mobile).
