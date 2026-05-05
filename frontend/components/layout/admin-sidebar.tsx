@@ -11,7 +11,6 @@ import {
   Bell,
   ScrollText,
   Settings,
-  Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -27,10 +26,9 @@ const ITEMS: SidebarItem[] = [
   { href: "/admin/pagos", label: "Pagos", Icon: CreditCard },
   { href: "/admin/partidos", label: "Partidos", Icon: Calendar },
   { href: "/admin/fases", label: "Fases", Icon: Flag },
-  { href: "/admin/ligas", label: "Ligas", Icon: Trophy },
   { href: "/admin/notificaciones", label: "Notificaciones", Icon: Bell },
   { href: "/admin/auditoria", label: "Auditoria", Icon: ScrollText },
-  { href: "/admin/config", label: "Config", Icon: Settings },
+  { href: "/admin/configuracion", label: "Configuracion", Icon: Settings },
 ];
 
 interface AdminSidebarProps {

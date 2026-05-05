@@ -168,12 +168,42 @@ export async function listAudit(query?: {
 
 // ── Metrics ─────────────────────────────────────────────────────
 
+/**
+ * Metricas del dashboard admin. El backend puede no exponer este
+ * endpoint todavia; el dashboard incluye un fallback con stats
+ * stubeadas si la query falla. Cuando exista, se espera el shape:
+ *
+ *  - totals.{users,active,pending,banned}
+ *  - revenue.{total,paidUserCount}
+ *  - predictions.{loaded,expected}  // expected = 104 * paidUserCount
+ *  - nextMatch?: { id, kickoffAt, homeLabel, awayLabel }
+ *  - sparklines.{usersByDay[],revenueByDay[]}  // cada uno: number[] de 14 dias
+ */
 export interface AdminMetrics {
-  totalUsers: number;
-  activeUsers: number;
-  totalRevenue: number;
-  predictionsLoaded: number;
-  upcomingMatches: number;
+  totals: {
+    users: number;
+    active: number;
+    pending: number;
+    banned: number;
+  };
+  revenue: {
+    total: number;
+    paidUserCount: number;
+  };
+  predictions: {
+    loaded: number;
+    expected: number;
+  };
+  nextMatch: {
+    id: string;
+    kickoffAt: string;
+    homeLabel: string;
+    awayLabel: string;
+  } | null;
+  sparklines: {
+    usersByDay: number[];
+    revenueByDay: number[];
+  };
 }
 
 export async function getMetrics(): Promise<AdminMetrics> {

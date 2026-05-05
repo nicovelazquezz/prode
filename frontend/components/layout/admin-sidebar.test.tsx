@@ -14,7 +14,7 @@ describe("AdminSidebar", () => {
     mockUsePathname.mockReturnValue("/admin");
   });
 
-  it("renders all 9 nav items", () => {
+  it("renders all 8 nav items", () => {
     render(<AdminSidebar />);
     const expected = [
       "Dashboard",
@@ -22,10 +22,9 @@ describe("AdminSidebar", () => {
       "Pagos",
       "Partidos",
       "Fases",
-      "Ligas",
       "Notificaciones",
       "Auditoria",
-      "Config",
+      "Configuracion",
     ];
     for (const label of expected) {
       expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
