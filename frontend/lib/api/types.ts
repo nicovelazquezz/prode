@@ -201,6 +201,18 @@ export interface PublicStats {
 
 // ── Leaderboard ────────────────────────────────────────────────
 
+/**
+ * Row of the leaderboard as exposed to UI components.
+ *
+ * The backend returns `{ rows: [{ user_id, first_name, ... }], total }`
+ * (see backend/src/modules/leaderboard/leaderboard.service.ts). Our
+ * `lib/api/leaderboard.ts` adapter maps that into this richer shape:
+ *   - `position` is computed from the row index (1-based).
+ *   - snake_case keys are camelCased to match the rest of our API
+ *     surface.
+ * UI components consume this normalized type and don't need to know
+ * about the wire shape.
+ */
 export interface LeaderboardEntry {
   position: number;
   userId: string;
