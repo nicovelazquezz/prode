@@ -63,8 +63,9 @@ const PHASE_LABELS: Record<string, string> = {
 };
 
 /**
- * Match card con los 5 estados visuales del spec §6.4. Sin opacity
- * en el locked state — preservar contraste WCAG AA es prioridad.
+ * Match card con los 5 estados visuales del spec §6.4 repintada con la
+ * paleta dark editorial (`--color-landing-*`). Sin opacity en el
+ * locked state — preservar contraste WCAG AA es prioridad.
  *
  * El card es informativo (no clickable globalmente). Los inputs de
  * la prediccion son los puntos de interaccion. La pagina detalle
@@ -86,47 +87,52 @@ export function MatchCard({
   const awayName = away?.name ?? match.awayTeamLabel ?? "Por definir";
 
   const inputDisabled = state === "locked" || state === "finished";
+  const finishedWithPoints =
+    state === "finished" && prediction !== null && prediction !== undefined && prediction.pointsEarned > 0;
 
   return (
     <article
       className={cn(
-        "rounded-md p-4 transition-colors",
-        state === "empty" && "border border-[var(--color-prode-border)] bg-white",
+        "rounded-sm p-5 transition-colors",
+        // Flat elevation: bg surface base, surface-2 cuando locked.
+        state === "empty" &&
+          "bg-[var(--color-landing-surface)] border border-[var(--color-landing-line-strong)]",
         state === "saved" &&
-          "border-2 border-[var(--color-prode-near-black)] bg-white",
+          "bg-[var(--color-landing-surface)] border-2 border-[var(--color-landing-text)]",
         state === "retrying" &&
-          "border-2 border-[var(--color-prode-accent)] bg-white",
-        state === "locked" && "bg-[color-mix(in_srgb,var(--color-prode-surface)_60%,white)] border border-[var(--color-prode-border)]",
+          "bg-[var(--color-landing-surface)] border-2 border-[var(--color-landing-red)]",
+        state === "locked" &&
+          "bg-[var(--color-landing-surface-2)] border border-[var(--color-landing-line)]",
         state === "finished" &&
-          (prediction && prediction.pointsEarned > 0
-            ? "border-2 border-[var(--color-prode-accent)] bg-white"
-            : "border border-[var(--color-prode-border)] bg-white"),
+          (finishedWithPoints
+            ? "bg-[var(--color-landing-surface)] border-2 border-[var(--color-landing-green)]"
+            : "bg-[var(--color-landing-surface)] border border-[var(--color-landing-line-strong)]"),
       )}
       aria-label={`${homeName} vs ${awayName}`}
       data-state={state}
     >
-      {/* Header meta */}
+      {/* Header meta — eyebrow mono uppercase tracked */}
       <header
         className={cn(
-          "flex items-center justify-between gap-2 mb-3",
-          "font-sans text-[11px] font-bold uppercase tracking-wider",
+          "flex items-center justify-between gap-2 mb-4",
+          "font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em]",
           state === "locked"
-            ? "text-[var(--color-prode-text-muted)]"
-            : "text-[var(--color-prode-text-secondary)]",
+            ? "text-[var(--color-landing-text-muted)]"
+            : "text-[var(--color-landing-text-muted)]",
         )}
       >
-        <span>
+        <span className="truncate">
           {match.groupCode
             ? `GRUPO ${match.groupCode}`
             : PHASE_LABELS[match.phase] ?? match.phase}
-          {" • "}
+          {" · "}
           <KickoffTime iso={match.kickoffAt} />
-          {match.venue ? <> {" • "}{match.venue}</> : null}
+          {match.venue ? <> {" · "}{match.venue.toUpperCase()}</> : null}
         </span>
       </header>
 
       {/* Body: 2 rows */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         <TeamRow
           name={homeName}
           fifaCode={home?.fifaCode}
@@ -160,7 +166,7 @@ export function MatchCard({
       </div>
 
       {/* Footer: countdown + state badge */}
-      <footer className="mt-4 flex items-center justify-between gap-3">
+      <footer className="mt-5 flex items-center justify-between gap-3">
         <Countdown match={match} state={state} />
         <StateBadge state={state} prediction={prediction} />
       </footer>
@@ -226,14 +232,14 @@ function TeamRow({
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-3 min-w-0">
         {fifaCode ? <TeamFlag fifaCode={fifaCode} size={32} /> : null}
-        <span className="font-display text-lg font-black uppercase tracking-wide truncate text-[var(--color-prode-near-black)]">
+        <span className="font-[family-name:var(--font-landing-display)] text-[20px] uppercase tracking-[0.02em] leading-none truncate text-[var(--color-landing-text)]">
           {name}
         </span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {finalScore !== null ? (
           <span
-            className="font-display text-3xl font-black tabular-nums leading-none text-[var(--color-prode-near-black)]"
+            className="font-[family-name:var(--font-landing-display)] text-[32px] tabular-nums leading-none text-[var(--color-landing-text)]"
             aria-label={`Resultado ${name}: ${finalScore}`}
           >
             {finalScore}
@@ -276,43 +282,45 @@ function Countdown({
   state: MatchCardState;
 }) {
   const parts = useCountdown(match.predictionsLockAt);
+  const baseClass =
+    "font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em]";
   if (state === "finished") {
     return (
-      <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+      <span className={cn(baseClass, "text-[var(--color-landing-text-muted)]")}>
         FINALIZADO
       </span>
     );
   }
   if (state === "locked") {
     return (
-      <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-muted)]">
+      <span className={cn(baseClass, "text-[var(--color-landing-text-muted)]")}>
         CERRADO
       </span>
     );
   }
   if (!parts) {
     return (
-      <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-        ⏱ Cierra pronto
+      <span className={cn(baseClass, "text-[var(--color-landing-text-muted)]")}>
+        Cierra pronto
       </span>
     );
   }
   if (parts.finished) {
     return (
-      <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-accent)]">
+      <span className={cn(baseClass, "text-[var(--color-landing-red)]")}>
         Cerrado
       </span>
     );
   }
   const label =
     parts.days > 0
-      ? `${parts.days}d ${parts.hours}h`
+      ? `${parts.days}D ${parts.hours}H`
       : parts.hours > 0
-        ? `${parts.hours}h ${parts.minutes}m`
-        : `${parts.minutes}m ${parts.seconds.toString().padStart(2, "0")}s`;
+        ? `${parts.hours}H ${parts.minutes}M`
+        : `${parts.minutes}M ${parts.seconds.toString().padStart(2, "0")}S`;
   return (
-    <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-      ⏱ Cierra en {label}
+    <span className={cn(baseClass, "text-[var(--color-landing-text-muted)]")}>
+      Cierra en {label}
     </span>
   );
 }
@@ -324,23 +332,30 @@ function StateBadge({
   state: MatchCardState;
   prediction: Prediction | null | undefined;
 }) {
+  const baseClass =
+    "font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em]";
   if (state === "empty") {
     return (
-      <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+      <span className={cn(baseClass, "text-[var(--color-landing-text-muted)]")}>
         PENDIENTE
       </span>
     );
   }
   if (state === "saved") {
     return (
-      <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-near-black)]">
+      <span className={cn(baseClass, "text-[var(--color-landing-green)]")}>
         ✓ GUARDADO
       </span>
     );
   }
   if (state === "retrying") {
     return (
-      <span className="inline-flex items-center gap-1 font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-accent)]">
+      <span
+        className={cn(
+          baseClass,
+          "inline-flex items-center gap-1 text-[var(--color-landing-red)]",
+        )}
+      >
         <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
         REINTENTANDO...
       </span>
@@ -348,7 +363,12 @@ function StateBadge({
   }
   if (state === "locked") {
     return (
-      <span className="inline-flex items-center gap-1 font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-muted)]">
+      <span
+        className={cn(
+          baseClass,
+          "inline-flex items-center gap-1 text-[var(--color-landing-text-muted)]",
+        )}
+      >
         <Lock className="h-3 w-3" aria-hidden />
         CERRADO
       </span>
@@ -359,10 +379,10 @@ function StateBadge({
     return (
       <span
         className={cn(
-          "font-sans text-[11px] font-bold uppercase tracking-wider",
+          baseClass,
           prediction.pointsEarned > 0
-            ? "text-[var(--color-prode-accent)]"
-            : "text-[var(--color-prode-text-secondary)]",
+            ? "text-[var(--color-landing-green)]"
+            : "text-[var(--color-landing-text-muted)]",
         )}
       >
         {prediction.pointsEarned > 0
@@ -372,7 +392,7 @@ function StateBadge({
     );
   }
   return (
-    <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+    <span className={cn(baseClass, "text-[var(--color-landing-text-muted)]")}>
       SIN PREDICCION
     </span>
   );
@@ -390,14 +410,14 @@ function FinishedSummary({
     Date.now() - new Date(prediction.evaluatedAt).getTime() <
       RECENT_EVAL_WINDOW_MS;
   const showCelebration = recentlyEvaluated && prediction.pointsEarned > 0;
+  const eyebrow =
+    "font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]";
 
   return (
-    <div className="mt-4 pt-4 border-t border-[var(--color-prode-border)]">
+    <div className="mt-5 pt-4 border-t border-[var(--color-landing-line)]">
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col gap-1">
-          <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-            Resultado
-          </span>
+          <span className={eyebrow}>Resultado</span>
           {match.scoreHome !== null && match.scoreAway !== null ? (
             <ScoreDisplay
               scoreHome={match.scoreHome}
@@ -407,9 +427,7 @@ function FinishedSummary({
           ) : null}
         </div>
         <div className="flex flex-col gap-1 text-right">
-          <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-            Tu prediccion
-          </span>
+          <span className={eyebrow}>Tu prediccion</span>
           <ScoreDisplay
             scoreHome={prediction.scoreHome}
             scoreAway={prediction.scoreAway}
@@ -428,7 +446,7 @@ function FinishedSummary({
           arriba muestra "REINTENTANDO". */}
       <button
         type="button"
-        className="mt-2 inline-flex items-center gap-1 font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-muted)] cursor-default"
+        className="mt-2 inline-flex items-center gap-1 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)] cursor-default"
         disabled
         aria-hidden
       >
