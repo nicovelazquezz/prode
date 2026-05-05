@@ -60,6 +60,9 @@ const baseMatch: Match = {
 
 const basePrediction: Prediction = {
   id: "p1",
+  // Multi-prode v1.1: predictions ahora se asocian a un Entry (no User).
+  // userId queda opcional para compat; entryId es la referencia canonical.
+  entryId: "e1",
   userId: "u1",
   matchId: "m1",
   scoreHome: 2,

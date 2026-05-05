@@ -6,9 +6,12 @@ import type { LeaderboardEntry } from "@/lib/api/types";
 
 const baseEntry: LeaderboardEntry = {
   position: 5,
+  entryId: "e-5",
   userId: "u-5",
   firstName: "Juan",
   lastName: "Perez",
+  alias: null,
+  entryPosition: 1,
   totalPoints: 42,
 };
 
@@ -66,5 +69,38 @@ describe("LeaderboardRow", () => {
     render(<LeaderboardRow entry={baseEntry} />);
     const button = screen.getByRole("button");
     expect(button.style.borderLeftColor).toBe("transparent");
+  });
+
+  // ── Multi-prode display name + currentEntryId ──────────────
+  it("highlights row when currentEntryId matches entry.entryId", () => {
+    render(<LeaderboardRow entry={baseEntry} currentEntryId="e-5" />);
+    expect(screen.getByText("VOS")).toBeInTheDocument();
+  });
+
+  it("does not highlight when currentEntryId differs (other entry of same user)", () => {
+    render(<LeaderboardRow entry={baseEntry} currentEntryId="e-99" />);
+    expect(screen.queryByText("VOS")).not.toBeInTheDocument();
+  });
+
+  it("renders alias suffix when alias is set", () => {
+    render(<LeaderboardRow entry={{ ...baseEntry, alias: "El de papá" }} />);
+    expect(screen.getByText(/Juan Perez/)).toBeInTheDocument();
+    expect(screen.getByText(/· El de papá/)).toBeInTheDocument();
+  });
+
+  it("renders '(#N)' suffix when userHasMultipleEntries=true and no alias", () => {
+    render(
+      <LeaderboardRow
+        entry={{ ...baseEntry, entryPosition: 2 }}
+        userHasMultipleEntries
+      />,
+    );
+    expect(screen.getByText("(#2)")).toBeInTheDocument();
+  });
+
+  it("does not render any suffix for single-entry user without alias", () => {
+    render(<LeaderboardRow entry={baseEntry} userHasMultipleEntries={false} />);
+    expect(screen.queryByText(/\(#\d+\)/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/·/)).not.toBeInTheDocument();
   });
 });
