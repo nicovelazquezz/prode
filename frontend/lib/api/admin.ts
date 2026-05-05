@@ -378,6 +378,7 @@ export interface AppConfigEntry {
   value: string;
   description: string | null;
   updatedAt: string;
+  updatedBy: string | null;
 }
 
 export async function listConfig(): Promise<AppConfigEntry[]> {
@@ -391,6 +392,84 @@ export async function updateConfig(
   return api
     .put(`admin/config/${key}`, { json: { value } })
     .json<AppConfigEntry>();
+}
+
+// ── Scoring & Phase Multiplier rules ────────────────────────────
+
+import type { OutcomeType } from "./types";
+
+export interface ScoringRuleEntry {
+  outcomeType: OutcomeType;
+  basePoints: number;
+  description: string | null;
+  updatedAt: string;
+  updatedBy: string | null;
+}
+
+export async function listScoringRules(): Promise<ScoringRuleEntry[]> {
+  // TODO(backend): GET /admin/scoring-rules — devuelve los 5 outcome
+  // types con sus basePoints actuales.
+  return api.get("admin/scoring-rules").json<ScoringRuleEntry[]>();
+}
+
+export async function updateScoringRule(
+  outcomeType: OutcomeType,
+  basePoints: number,
+): Promise<ScoringRuleEntry> {
+  return api
+    .put(`admin/scoring-rules/${outcomeType}`, { json: { basePoints } })
+    .json<ScoringRuleEntry>();
+}
+
+export interface PhaseMultiplierEntry {
+  phase: Phase;
+  multiplier: number;
+  updatedAt: string;
+  updatedBy: string | null;
+}
+
+export async function listPhaseMultipliers(): Promise<PhaseMultiplierEntry[]> {
+  // TODO(backend): GET /admin/phase-multipliers — 7 fases × multiplier.
+  return api.get("admin/phase-multipliers").json<PhaseMultiplierEntry[]>();
+}
+
+export async function updatePhaseMultiplier(
+  phase: Phase,
+  multiplier: number,
+): Promise<PhaseMultiplierEntry> {
+  return api
+    .put(`admin/phase-multipliers/${phase}`, { json: { multiplier } })
+    .json<PhaseMultiplierEntry>();
+}
+
+export interface SpecialPrizeRuleEntry {
+  key:
+    | "CHAMPION"
+    | "RUNNER_UP"
+    | "THIRD_PLACE"
+    | "TOP_SCORER"
+    | "TOTAL_GOALS"
+    | "FAIR_PLAY";
+  points: number;
+  description: string | null;
+  updatedAt: string;
+  updatedBy: string | null;
+}
+
+export async function listSpecialPrizeRules(): Promise<SpecialPrizeRuleEntry[]> {
+  // TODO(backend): GET /admin/special-prize-rules.
+  return api
+    .get("admin/special-prize-rules")
+    .json<SpecialPrizeRuleEntry[]>();
+}
+
+export async function updateSpecialPrizeRule(
+  key: SpecialPrizeRuleEntry["key"],
+  points: number,
+): Promise<SpecialPrizeRuleEntry> {
+  return api
+    .put(`admin/special-prize-rules/${key}`, { json: { points } })
+    .json<SpecialPrizeRuleEntry>();
 }
 
 function cleanParams(
