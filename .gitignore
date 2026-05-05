@@ -35,3 +35,4 @@ prisma/generated/
 *.pem
 .turbo/
 .superpowers/
+mockups/
