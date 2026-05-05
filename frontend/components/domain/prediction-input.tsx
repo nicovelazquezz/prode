@@ -39,13 +39,16 @@ const MAX_SCORE = 99;
 
 /**
  * Componente para cargar el score de una prediccion. Spec §6.5.
+ * Repintado con la paleta dark editorial (`--color-landing-*`).
  *
- *  - **Mobile (`max-width: 767px`)**: render como boton 56x56 que
- *    muestra el score ("—" si null) en font-display 32px. Tap dispara
- *    `onOpenSheet()` para abrir el `<NumberPadSheet>` compartido.
+ *  - **Mobile (`max-width: 767px`)**: render como boton 56x56 con
+ *    bg surface-2 y border line-strong. Display Oswald 32px en cream
+ *    ("—" muted si null). Tap dispara `onOpenSheet()` para abrir el
+ *    `<NumberPadSheet>` compartido.
  *  - **Desktop**: render como `<input type="text" inputmode="numeric">`
- *    nativo, validacion 0-99 (clamp on blur), `onChange` propaga el
- *    valor cuando cambia. El padre maneja debounce si quiere.
+ *    nativo, sin background, con border-bottom 1px line-strong. Focus
+ *    cambia el border-bottom a green 2px y el caret a cream. Display
+ *    Oswald 24px tabular-nums.
  *
  * SSR-safe: en el primer render usamos el variant desktop (input)
  * porque `useMediaQuery` devuelve false en SSR. Despues del mount
@@ -79,16 +82,16 @@ export function PredictionInput({
         disabled={disabled}
         aria-label={ariaLabel}
         className={cn(
-          "w-14 h-14 min-w-14 rounded-md",
-          "font-display text-3xl font-black tabular-nums leading-none",
+          "w-14 h-14 min-w-14 rounded-sm",
+          "font-[family-name:var(--font-landing-display)] text-[32px] tabular-nums leading-none",
           "flex items-center justify-center",
-          "transition-colors duration-200",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)] focus-visible:ring-offset-1",
+          "border transition-colors duration-200",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-landing-gold)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-landing-surface)]",
           disabled
-            ? "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-muted)] cursor-not-allowed"
+            ? "bg-[var(--color-landing-surface-2)] border-[var(--color-landing-line)] text-[var(--color-landing-text-muted)] cursor-not-allowed"
             : value === null
-              ? "bg-[var(--color-prode-surface)] border-2 border-dashed border-[var(--color-prode-border)] text-[var(--color-prode-text-muted)] hover:border-[var(--color-prode-near-black)]"
-              : "bg-[var(--color-prode-surface)] border-2 border-[var(--color-prode-near-black)] text-[var(--color-prode-near-black)]",
+              ? "bg-[var(--color-landing-surface-2)] border-[var(--color-landing-line-strong)] text-[var(--color-landing-text-muted)] hover:border-[var(--color-landing-text)]"
+              : "bg-[var(--color-landing-surface-2)] border-[var(--color-landing-text)] text-[var(--color-landing-text)]",
           className,
         )}
       >
@@ -97,7 +100,7 @@ export function PredictionInput({
     );
   }
 
-  // Desktop: input nativo.
+  // Desktop: input nativo con border-bottom underline.
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
     setLocalValue(raw);
@@ -123,17 +126,15 @@ export function PredictionInput({
       maxLength={2}
       placeholder="—"
       className={cn(
-        "w-14 h-14 rounded-md text-center",
-        "font-display text-3xl font-black tabular-nums leading-none",
-        "border-2 outline-none",
+        "w-12 h-12 text-center bg-transparent",
+        "font-[family-name:var(--font-landing-display)] text-[24px] tabular-nums leading-none",
+        "border-0 border-b outline-none",
         "transition-colors duration-200",
-        "focus:border-[var(--color-prode-near-black)]",
-        "placeholder:text-[var(--color-prode-text-muted)]",
+        "placeholder:text-[var(--color-landing-text-muted)]",
+        "focus:border-b-2 focus:border-[var(--color-landing-green)] focus:outline-none",
         disabled
-          ? "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-muted)] border-[var(--color-prode-border)] cursor-not-allowed"
-          : value === null
-            ? "bg-[var(--color-prode-surface)] border-dashed border-[var(--color-prode-border)] text-[var(--color-prode-near-black)]"
-            : "bg-[var(--color-prode-surface)] border-[var(--color-prode-near-black)] text-[var(--color-prode-near-black)]",
+          ? "border-[var(--color-landing-line)] text-[var(--color-landing-text-muted)] cursor-not-allowed"
+          : "border-[var(--color-landing-line-strong)] text-[var(--color-landing-text)]",
         className,
       )}
     />
