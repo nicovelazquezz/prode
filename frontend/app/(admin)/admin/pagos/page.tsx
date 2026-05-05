@@ -272,6 +272,7 @@ function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
     REJECTED: "bg-[var(--color-landing-red)] text-[var(--color-landing-text)]",
     REFUNDED:
       "bg-[var(--color-landing-surface)] text-[var(--color-landing-text-muted)]",
+    OVER_CAP: "bg-[var(--color-landing-red)] text-[var(--color-landing-text)]",
     ORPHANED: "bg-[var(--color-landing-red)] text-[var(--color-landing-text)]",
   };
   return (

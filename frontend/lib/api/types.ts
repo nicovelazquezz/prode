@@ -50,7 +50,10 @@ export type PaymentStatus =
   | "APPROVED"
   | "REJECTED"
   | "REFUNDED"
+  | "OVER_CAP"
   | "ORPHANED";
+
+export type EntryStatus = "ACTIVE" | "ANNULLED";
 
 export type PaymentMethod = "MERCADOPAGO" | "CASH" | "TRANSFER";
 
@@ -116,9 +119,49 @@ export interface Match {
   venue?: string | null;
 }
 
-export interface Prediction {
+/**
+ * Entry: una "boleta" / set independiente de predicciones que un user
+ * compró. Un user puede tener hasta `max_entries_per_user` entries
+ * (cap configurable desde admin, default 5). Predicciones, special
+ * prediction y memberships de mini-ligas se asocian al `entryId`,
+ * no al `userId`.
+ */
+export interface Entry {
   id: string;
   userId: string;
+  position: number;
+  alias: string | null;
+  status: EntryStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * EntrySummary: shape devuelta por `GET /entries/me` y `GET /entries/:id`.
+ * Incluye stats agregadas por entry (no por user) — se usa para
+ * renderizar el switcher con info inline (puntos · posición) y para
+ * decidir si el alias todavía es editable (`specialPredictionLocked`).
+ */
+export interface EntrySummary extends Entry {
+  stats: {
+    predictionsCount: number;
+    totalPoints: number;
+    /** null si la MV todavía no refrescó o el entry no tiene predictions. */
+    rank: number | null;
+    specialPredictionLocked: boolean;
+  };
+}
+
+export interface Prediction {
+  id: string;
+  /**
+   * El backend ahora devuelve `entryId` en lugar de `userId`. Marcado
+   * opcional para que mocks legacy (tests, optimistic updates antiguos)
+   * sigan compilando durante la migración a multi-prode; consumers
+   * reales (página de predicciones) lo reciben siempre poblado.
+   */
+  entryId?: string;
+  userId?: string;
   matchId: string;
   scoreHome: number;
   scoreAway: number;
@@ -134,7 +177,9 @@ export interface Prediction {
 
 export interface SpecialPrediction {
   id: string;
-  userId: string;
+  /** Opcional para compat con mocks legacy; consumers reales lo reciben. */
+  entryId?: string;
+  userId?: string;
   championTeamId: string | null;
   runnerUpTeamId: string | null;
   thirdPlaceTeamId: string | null;
@@ -215,9 +260,20 @@ export interface PublicStats {
  */
 export interface LeaderboardEntry {
   position: number;
+  /**
+   * ID del Entry (multi-prode); cada row del ranking es un Entry.
+   * Opcional para que el adapter en transición pueda emitir filas
+   * sin entryId hasta que el backend lo exponga.
+   */
+  entryId?: string;
+  /** ID del User dueño del Entry — usado para abrir el perfil público. */
   userId: string;
   firstName: string;
   lastName: string;
+  /** Alias custom del entry; null si el user no le puso nombre. */
+  alias?: string | null;
+  /** Posición del entry dentro del user (1..N). Para "Mi prode #2". */
+  entryPosition?: number;
   totalPoints: number;
   predictionsCount?: number;
 }
@@ -231,9 +287,14 @@ export interface PaginatedLeaderboard {
 
 export interface MeAroundResult {
   position: number;
+  /**
+   * Total de entries en el ranking global. Mantenemos el nombre
+   * `totalUsers` para compatibilidad visual con el hero ("# de N"),
+   * aunque conceptualmente ahora son entries.
+   */
   totalUsers: number;
   totalPoints: number;
-  context: LeaderboardEntry[]; // entries near the user
+  context: LeaderboardEntry[]; // entries near the active entry
 }
 
 // ── Auth responses ─────────────────────────────────────────────
@@ -241,6 +302,12 @@ export interface MeAroundResult {
 export interface AuthResponse {
   accessToken: string;
   user: User;
+  /**
+   * Lista de entries del user (multi-prode v1.1+). El backend la
+   * incluye cuando es relevante (login, complete-registration, /auth/me).
+   * Opcional para compat con tests/mocks legacy.
+   */
+  entries?: EntrySummary[];
 }
 
 // ── Pagination utility ─────────────────────────────────────────
