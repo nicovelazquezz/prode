@@ -60,6 +60,9 @@ test('user score lands on the leaderboard after admin finishes match', async ({
   const matchId = target!.id;
 
   // ── 2) User loads a 3-2 prediction via API (UI flow already tested) ─
+  // Multi-prode v1.1: predictions ahora viven bajo /entries/:entryId/...
+  // Resolvemos primero el primer entry del user via GET /entries/me
+  // (single-entry user post-backfill).
   const loginRes = await request.post(
     'http://localhost:3001/auth/login',
     { data: { dni: userDni, password: userPassword } },
@@ -69,8 +72,17 @@ test('user score lands on the leaderboard after admin finishes match', async ({
     accessToken: string;
   };
 
+  const entriesRes = await request.get(
+    'http://localhost:3001/entries/me',
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  expect(entriesRes.ok()).toBeTruthy();
+  const entriesPayload = (await entriesRes.json()) as Array<{ id: string }>;
+  expect(entriesPayload.length).toBeGreaterThanOrEqual(1);
+  const entryId = entriesPayload[0]!.id;
+
   const predictRes = await request.post(
-    `http://localhost:3001/predictions/match/${matchId}`,
+    `http://localhost:3001/entries/${entryId}/predictions/match/${matchId}`,
     {
       data: { scoreHome: 3, scoreAway: 2 },
       headers: { Authorization: `Bearer ${accessToken}` },
