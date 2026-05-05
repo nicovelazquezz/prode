@@ -1,0 +1,69 @@
+# Dokploy production stack for prode-backend.
+#
+# Env vars are populated from the Dokploy panel (NOT from the repo) — the
+# `${VAR}` placeholders below are resolved at deploy time. Only POSTGRES_PASSWORD
+# is required for both the postgres container and the backend's DATABASE_URL.
+#
+# Volumes are named so Dokploy can manage backups (Postgres → Backblaze B2).
+
+services:
+  prode-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: prode
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: prode
+      TZ: America/Argentina/Buenos_Aires
+    volumes:
+      - prode-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U prode']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  prode-redis:
+    image: redis:7-alpine
+    volumes:
+      - prode-redis-data:/data
+    restart: unless-stopped
+
+  prode-backend:
+    image: prode-backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://prode:${POSTGRES_PASSWORD}@prode-postgres:5432/prode
+      REDIS_URL: redis://prode-redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN}
+      MP_PUBLIC_KEY: ${MP_PUBLIC_KEY}
+      MP_WEBHOOK_SECRET: ${MP_WEBHOOK_SECRET}
+      WHATSAPP_API_URL: ${WHATSAPP_API_URL}
+      WHATSAPP_API_TOKEN: ${WHATSAPP_API_TOKEN}
+      ADMIN_WHATSAPP_NUMBER: ${ADMIN_WHATSAPP_NUMBER}
+      EMAIL_FROM: ${EMAIL_FROM}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      FRONTEND_URL: ${FRONTEND_URL}
+      API_URL: ${API_URL}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+      SENTRY_DSN: ${SENTRY_DSN}
+      ADMIN_DEFAULT_DNI: ${ADMIN_DEFAULT_DNI}
+      ADMIN_DEFAULT_PASSWORD: ${ADMIN_DEFAULT_PASSWORD}
+    depends_on:
+      prode-postgres:
+        condition: service_healthy
+      prode-redis:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  prode-pg-data:
+  prode-redis-data:
