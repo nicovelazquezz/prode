@@ -14,7 +14,6 @@ import {
 import { Download } from "lucide-react";
 import { AdminStatCard } from "@/components/domain/admin-stat-card";
 import { CountdownTimer } from "@/components/domain/countdown-timer";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
 import { queryKeys } from "@/lib/api/queryKeys";
 import {
@@ -65,11 +64,16 @@ export default function AdminDashboardPage() {
     <div className="space-y-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
-            Dashboard
+          <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+            Panel admin
+          </div>
+          <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)]">
+            <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+              Dashboard.
+            </span>
           </h1>
-          <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
-            Vista general del torneo, recaudacion y participacion.
+          <p className="mt-3 text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+            Vista general del torneo, recaudación y participación.
           </p>
         </div>
         <ExportActions />
@@ -78,12 +82,10 @@ export default function AdminDashboardPage() {
       {isStub ? (
         <div
           role="status"
-          className="rounded-md border border-dashed border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-4"
+          className="rounded-sm border border-dashed border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-4"
         >
-          <p className="font-sans text-xs text-[var(--color-prode-text-secondary)]">
-            Endpoint <code className="font-mono">/admin/metrics</code> aun no
-            disponible — mostrando valores en cero. Cuando el backend lo exponga
-            estos numeros se actualizan en automatico.
+          <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)]">
+            Endpoint <code className="font-[family-name:var(--font-landing-mono)] text-[var(--color-landing-gold)]">/admin/metrics</code> aún no disponible — mostrando valores en cero.
           </p>
         </div>
       ) : null}
@@ -100,18 +102,18 @@ export default function AdminDashboardPage() {
           )} baneados`}
           sparkline={
             m.sparklines.usersByDay.length ? (
-              <Sparkline data={m.sparklines.usersByDay} color="#05090e" />
+              <Sparkline data={m.sparklines.usersByDay} color="#5c7847" />
             ) : null
           }
           loading={isLoading}
         />
         <AdminStatCard
-          label="Recaudacion"
+          label="Recaudación"
           value={formatARS(m.revenue.total)}
           hint={`${formatNumber(m.revenue.paidUserCount)} pagos aprobados`}
           sparkline={
             m.sparklines.revenueByDay.length ? (
-              <Sparkline data={m.sparklines.revenueByDay} color="#fe1743" />
+              <Sparkline data={m.sparklines.revenueByDay} color="#c8a053" />
             ) : null
           }
           loading={isLoading}
@@ -134,14 +136,14 @@ export default function AdminDashboardPage() {
 
       <section
         aria-label="Reportes"
-        className="rounded-md border border-[var(--color-prode-border)] bg-white p-5 md:p-6"
+        className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5 md:p-6"
       >
-        <h2 className="font-display text-2xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+        <h2 className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
           Reportes
         </h2>
-        <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
-          Descarga reportes para procesamiento offline (contabilidad,
-          comunicacion, premios). Los archivos los genera el backend on-demand.
+        <p className="mt-2 text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+          Descargá reportes para procesamiento offline (contabilidad,
+          comunicación, premios). Los archivos los genera el backend on-demand.
         </p>
         <div className="mt-4">
           <ExportActions />
@@ -150,10 +152,10 @@ export default function AdminDashboardPage() {
 
       <section
         aria-label="Resumen de participacion"
-        className="rounded-md border border-[var(--color-prode-border)] bg-white p-5 md:p-6"
+        className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5 md:p-6"
       >
-        <h2 className="font-display text-2xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
-          Recaudacion (14 dias)
+        <h2 className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
+          Recaudación (14 días)
         </h2>
         {m.sparklines.revenueByDay.length ? (
           <div className="mt-4 h-48 w-full">
@@ -164,8 +166,8 @@ export default function AdminDashboardPage() {
               >
                 <defs>
                   <linearGradient id="revArea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#fe1743" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="#fe1743" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#c8a053" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="#c8a053" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis
@@ -173,14 +175,15 @@ export default function AdminDashboardPage() {
                   tickLine={false}
                   axisLine={false}
                   fontSize={11}
-                  stroke="#4b5667"
+                  stroke="#8a92a8"
                 />
                 <YAxis hide />
                 <Tooltip
                   contentStyle={{
-                    background: "#ffffff",
-                    border: "1px solid #d0d5df",
+                    background: "#1b2238",
+                    border: "1px solid rgba(241,236,224,0.14)",
                     borderRadius: 4,
+                    color: "#f1ece0",
                     fontFamily: "var(--font-sans)",
                   }}
                   formatter={(value) => [
@@ -191,7 +194,7 @@ export default function AdminDashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="y"
-                  stroke="#fe1743"
+                  stroke="#c8a053"
                   strokeWidth={2}
                   fill="url(#revArea)"
                 />
@@ -199,11 +202,9 @@ export default function AdminDashboardPage() {
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="mt-4 font-sans text-sm text-[var(--color-prode-text-secondary)]">
-            No hay datos historicos todavia. Las series temporales aparecen
-            cuando el backend entregue
-            {" "}
-            <code className="font-mono">sparklines.revenueByDay</code>.
+          <p className="mt-4 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)]">
+            No hay datos históricos todavía. Las series temporales aparecen cuando el backend entregue {" "}
+            <code className="font-[family-name:var(--font-landing-mono)] text-[var(--color-landing-gold)]">sparklines.revenueByDay</code>.
           </p>
         )}
       </section>
@@ -220,34 +221,29 @@ function NextMatchCard({
 }) {
   if (loading) {
     return (
-      <AdminStatCard
-        label="Proximo partido"
-        value="—"
-        hint=""
-        loading
-      />
+      <AdminStatCard label="Próximo partido" value="—" hint="" loading />
     );
   }
   if (!nextMatch) {
     return (
-      <div className="rounded-md border border-dashed border-[var(--color-prode-border)] bg-white p-5 md:p-6">
-        <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-          Proximo partido
+      <div className="rounded-sm border border-dashed border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5 md:p-6">
+        <p className="font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+          Próximo partido
         </p>
-        <p className="mt-3 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+        <p className="mt-3 text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
           No hay partidos programados.
         </p>
       </div>
     );
   }
   return (
-    <div className="rounded-md border border-[var(--color-prode-border)] bg-white p-5 md:p-6">
-      <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-        Proximo partido
+    <div className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5 md:p-6">
+      <p className="font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+        Próximo partido
       </p>
-      <p className="mt-3 font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+      <p className="mt-3 font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight text-[var(--color-landing-text)]">
         {nextMatch.homeLabel}
-        <span className="mx-2 text-[var(--color-prode-text-secondary)]">vs</span>
+        <span className="mx-2 text-[var(--color-landing-text-muted)]">vs</span>
         {nextMatch.awayLabel}
       </p>
       <div className="mt-3">
@@ -255,7 +251,7 @@ function NextMatchCard({
       </div>
       <Link
         href={`/admin/partidos/${nextMatch.id}`}
-        className="mt-4 inline-flex items-center font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-near-black)] underline underline-offset-4"
+        className="mt-4 inline-flex items-center font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] underline underline-offset-4 decoration-[var(--color-landing-green)] decoration-2 hover:text-[var(--color-landing-gold)]"
       >
         Ver detalle
       </Link>
@@ -324,26 +320,27 @@ function ExportActions() {
       toast.info(`${label} — proximamente`);
     }
   };
+  const cls =
+    "inline-flex items-center gap-2 rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-4 py-2 font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]";
+
   return (
     <div className="flex flex-wrap gap-2">
-      <Button
+      <button
         type="button"
-        variant="outlined"
-        size="sm"
         onClick={() => handle("Exportar pagos a CSV", "payments.csv")}
+        className={cls}
       >
-        <Download className="mr-2 h-4 w-4" aria-hidden />
+        <Download className="h-4 w-4" aria-hidden />
         Exportar pagos
-      </Button>
-      <Button
+      </button>
+      <button
         type="button"
-        variant="outlined"
-        size="sm"
         onClick={() => handle("Exportar tabla final PDF", "leaderboard.pdf")}
+        className={cls}
       >
-        <Download className="mr-2 h-4 w-4" aria-hidden />
+        <Download className="h-4 w-4" aria-hidden />
         Exportar tabla
-      </Button>
+      </button>
     </div>
   );
 }
