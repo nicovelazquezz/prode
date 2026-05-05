@@ -7,7 +7,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { HTTPError } from "ky";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { joinLeague } from "@/lib/api/leagues";
 import { queryKeys } from "@/lib/api/queryKeys";
 import { cn } from "@/lib/utils/cn";
@@ -21,25 +20,30 @@ const codeRegex = new RegExp(`^[${VALID_ALPHABET}]{${CODE_LENGTH}}$`);
  * exacto del backend `generateInviteCode`). Lee `?code=xxx` del
  * query param para auto-fill via Suspense + useSearchParams.
  *
- * El componente OTP esta envuelto en Suspense porque
- * `useSearchParams` requiere boundary en Next.js 15+.
+ * Visual: dark editorial. Cada char es un slot oscuro con borde
+ * line-strong, focus → outline gold + border-bottom green.
  */
 export default function UnirmePage() {
   return (
-    <section className="mx-auto max-w-md px-4 py-6 md:px-8">
+    <section className="mx-auto max-w-md px-4 pb-20 pt-10 md:px-8 md:pb-24 md:pt-14">
       <Link
         href="/ligas"
-        className="inline-flex items-center gap-2 mb-3 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)] hover:text-[var(--color-prode-near-black)]"
+        className="inline-flex items-center gap-2 mb-4 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)] transition-colors hover:text-[var(--color-landing-text)]"
       >
         <ArrowLeft className="h-3 w-3" aria-hidden />
         Volver
       </Link>
 
-      <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide leading-none text-[var(--color-prode-near-black)]">
-        Unirme a una liga
+      <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+        Mini-liga
+      </div>
+      <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)]">
+        <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+          Unirme.
+        </span>
       </h1>
-      <p className="mt-2 font-sans text-sm text-[var(--color-prode-text-secondary)]">
-        Pegale el codigo de 6 caracteres que te pasaron.
+      <p className="mt-4 text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+        Pegale el código de 6 caracteres que te pasaron.
       </p>
 
       <Suspense fallback={<JoinFormSkeleton />}>
@@ -55,7 +59,7 @@ function JoinFormSkeleton() {
       {[...Array(CODE_LENGTH)].map((_, i) => (
         <div
           key={i}
-          className="h-14 w-12 rounded-md bg-[var(--color-prode-surface)] animate-pulse"
+          className="h-14 w-12 rounded-sm bg-[var(--color-landing-surface)] border border-[var(--color-landing-line)] animate-pulse"
         />
       ))}
     </div>
@@ -137,14 +141,12 @@ function JoinForm() {
       .filter((c) => VALID_ALPHABET.includes(c));
 
     if (sanitized.length === 0) {
-      // borrado/clear
       const next = [...chars];
       next[index] = "";
       setChars(next);
       return;
     }
 
-    // Si el user pego varios chars, distribuirlos a partir del index actual.
     const next = [...chars];
     let cursor = index;
     for (const c of sanitized) {
@@ -162,7 +164,6 @@ function JoinForm() {
     e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
     if (e.key === "Backspace" && !chars[index] && index > 0) {
-      // Backspace en input vacio → mover al anterior.
       e.preventDefault();
       inputsRef.current[index - 1]?.focus();
       const next = [...chars];
@@ -187,7 +188,7 @@ function JoinForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
+    <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-6">
       <div
         role="group"
         aria-label="Codigo de invitacion"
@@ -202,20 +203,20 @@ function JoinForm() {
             type="text"
             inputMode="text"
             autoComplete="one-time-code"
-            maxLength={CODE_LENGTH /* permitimos pegar codigo entero */}
+            maxLength={CODE_LENGTH}
             value={chars[i] ?? ""}
             onChange={(e) => handleChange(i, e.target.value)}
             onKeyDown={(e) => handleKeyDown(i, e)}
             aria-label={`Caracter ${i + 1}`}
             className={cn(
               "h-14 w-12 text-center",
-              "font-display text-3xl font-black uppercase tabular-nums",
-              "border-2 rounded-md bg-white",
-              "transition-colors duration-200",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)] focus-visible:ring-offset-2",
+              "font-[family-name:var(--font-landing-display)] text-3xl uppercase tabular-nums",
+              "rounded-sm bg-[var(--color-landing-surface)]",
+              "border-2 transition-colors duration-200",
+              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]",
               submitError
-                ? "border-[var(--color-prode-accent)] text-[var(--color-prode-accent)]"
-                : "border-[var(--color-prode-border)] focus:border-[var(--color-prode-near-black)] text-[var(--color-prode-near-black)]",
+                ? "border-[var(--color-landing-red)] text-[var(--color-landing-red)]"
+                : "border-[var(--color-landing-line-strong)] focus:border-[var(--color-landing-green)] text-[var(--color-landing-text)]",
             )}
           />
         ))}
@@ -224,21 +225,19 @@ function JoinForm() {
       {submitError ? (
         <p
           role="alert"
-          className="font-sans text-sm text-center text-[var(--color-prode-accent)]"
+          className="text-center font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.16em] text-[var(--color-landing-red)]"
         >
           {submitError}
         </p>
       ) : null}
 
-      <Button
+      <button
         type="submit"
-        variant="primary"
-        size="lg"
         disabled={!isValid || joinMutation.isPending}
-        className="w-full justify-center"
+        className="inline-flex w-full items-center justify-center rounded-sm bg-[var(--color-landing-red)] px-6 py-4 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)] disabled:cursor-not-allowed disabled:opacity-40"
       >
         {joinMutation.isPending ? "Uniendo..." : "Unirme"}
-      </Button>
+      </button>
     </form>
   );
 }

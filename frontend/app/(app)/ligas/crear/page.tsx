@@ -17,9 +17,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { createLeague } from "@/lib/api/leagues";
 import { queryKeys } from "@/lib/api/queryKeys";
 import type { League } from "@/lib/api/types";
@@ -47,6 +44,12 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
+
+const labelClasses =
+  "font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]";
+
+const inputClasses =
+  "h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 text-base text-[var(--color-landing-text)] placeholder:text-[var(--color-landing-text-muted)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)] focus:border-[var(--color-landing-green)]";
 
 export default function CrearLigaPage() {
   const router = useRouter();
@@ -91,108 +94,123 @@ export default function CrearLigaPage() {
   };
 
   return (
-    <section className="mx-auto max-w-xl px-4 py-6 md:px-8">
+    <section className="mx-auto max-w-xl px-4 pb-20 pt-10 md:px-8 md:pb-24 md:pt-14">
       <Link
         href="/ligas"
-        className="inline-flex items-center gap-2 mb-3 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)] hover:text-[var(--color-prode-near-black)]"
+        className="inline-flex items-center gap-2 mb-4 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)] transition-colors hover:text-[var(--color-landing-text)]"
       >
         <ArrowLeft className="h-3 w-3" aria-hidden />
         Volver
       </Link>
 
-      <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide leading-none text-[var(--color-prode-near-black)]">
-        Crear mini-liga
+      <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+        Mini-liga
+      </div>
+      <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)]">
+        <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+          Crear liga.
+        </span>
       </h1>
-      <p className="mt-2 font-sans text-sm text-[var(--color-prode-text-secondary)]">
-        Compartis un codigo con tus amigos y se suman.
+      <p className="mt-4 text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+        Compartís un código con tus amigos y se suman.
       </p>
 
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="mt-8 flex flex-col gap-6"
+        className="mt-10 flex flex-col gap-6"
         noValidate
       >
         <div className="flex flex-col gap-2">
-          <Label htmlFor="name">Nombre</Label>
-          <Input
+          <label htmlFor="name" className={labelClasses}>
+            Nombre
+          </label>
+          <input
             id="name"
             type="text"
             autoComplete="off"
             placeholder="Los Pibes del Barrio"
             aria-invalid={form.formState.errors.name ? "true" : "false"}
+            className={inputClasses}
             {...form.register("name")}
           />
           {form.formState.errors.name ? (
-            <p className="font-sans text-xs text-[var(--color-prode-accent)]">
+            <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.16em] text-[var(--color-landing-red)]">
               {form.formState.errors.name.message}
             </p>
           ) : null}
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="description">Descripcion (opcional)</Label>
-          <Input
+          <label htmlFor="description" className={labelClasses}>
+            Descripción (opcional)
+          </label>
+          <input
             id="description"
             type="text"
             autoComplete="off"
             placeholder="Mini-liga de la oficina"
             aria-invalid={form.formState.errors.description ? "true" : "false"}
+            className={inputClasses}
             {...form.register("description")}
           />
           {form.formState.errors.description ? (
-            <p className="font-sans text-xs text-[var(--color-prode-accent)]">
+            <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.16em] text-[var(--color-landing-red)]">
               {form.formState.errors.description.message}
             </p>
           ) : null}
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="maxMembers">Cantidad maxima de miembros</Label>
-          <Input
+          <label htmlFor="maxMembers" className={labelClasses}>
+            Cantidad máxima de miembros
+          </label>
+          <input
             id="maxMembers"
             type="number"
             inputMode="numeric"
             min={2}
             max={200}
             aria-invalid={form.formState.errors.maxMembers ? "true" : "false"}
+            className={inputClasses}
             {...form.register("maxMembers", { valueAsNumber: true })}
           />
           {form.formState.errors.maxMembers ? (
-            <p className="font-sans text-xs text-[var(--color-prode-accent)]">
+            <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.16em] text-[var(--color-landing-red)]">
               {form.formState.errors.maxMembers.message}
             </p>
           ) : null}
         </div>
 
-        <label className="flex items-start gap-3 cursor-pointer">
+        <label className="flex items-start gap-3 cursor-pointer rounded-sm border border-[var(--color-landing-line)] bg-[var(--color-landing-surface)] p-4 transition-colors hover:border-[var(--color-landing-line-strong)]">
           <input
             type="checkbox"
             className={cn(
-              "mt-1 h-5 w-5 shrink-0 rounded border-2 border-[var(--color-prode-border)]",
-              "checked:bg-[var(--color-prode-near-black)] checked:border-[var(--color-prode-near-black)]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)] focus-visible:ring-offset-2",
+              "mt-1 h-5 w-5 shrink-0 rounded-sm appearance-none cursor-pointer",
+              "border-2 border-[var(--color-landing-line-strong)] bg-transparent",
+              "checked:bg-[var(--color-landing-green)] checked:border-[var(--color-landing-green)]",
+              "checked:bg-[length:14px_14px] checked:bg-no-repeat checked:bg-center",
+              "checked:[background-image:url('data:image/svg+xml;utf8,<svg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2024%2024%22%20fill=%22none%22%20stroke=%22%23f1ece0%22%20stroke-width=%223%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22><polyline%20points=%2220%206%209%2017%204%2012%22/></svg>')]",
+              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]",
             )}
             {...form.register("isPublic")}
           />
           <div className="min-w-0">
-            <p className="font-sans text-sm font-medium text-[var(--color-prode-near-black)]">
-              Liga publica
+            <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text)]">
+              Liga pública
             </p>
-            <p className="font-sans text-xs text-[var(--color-prode-text-secondary)]">
-              Cualquiera con el codigo puede unirse. Las privadas requieren aprobacion del owner (proximamente).
+            <p className="mt-1 text-xs leading-relaxed text-[var(--color-landing-text-muted)]">
+              Cualquiera con el código puede unirse. Las privadas requieren aprobación del owner (próximamente).
             </p>
           </div>
         </label>
 
-        <Button
+        <button
           type="submit"
-          variant="primary"
-          size="lg"
           disabled={createMutation.isPending}
-          className="w-full justify-center"
+          className="inline-flex w-full items-center justify-center rounded-sm bg-[var(--color-landing-red)] px-6 py-4 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {createMutation.isPending ? "Creando..." : "Crear liga"}
-        </Button>
+        </button>
       </form>
 
       <CreatedDialog
@@ -228,18 +246,22 @@ function CreatedDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Liga creada</DialogTitle>
-          <DialogDescription>
-            Pasale este codigo a tus amigos para que se unan.
+          <DialogTitle className="font-[family-name:var(--font-landing-display)] text-3xl uppercase tracking-tight text-[var(--color-landing-text)]">
+            <span className="inline-block border-b-[4px] border-[var(--color-landing-green)] pb-1">
+              Liga creada
+            </span>
+          </DialogTitle>
+          <DialogDescription className="text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+            Pasale este código a tus amigos para que se unan.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="my-4 text-center">
-          <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-            Codigo de invitacion
+        <div className="my-4 rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)] py-6 text-center">
+          <p className="font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+            Código de invitación
           </p>
           <p
-            className="mt-2 font-display font-black uppercase tracking-tight tabular-nums leading-none text-[var(--color-prode-near-black)]"
+            className="mt-3 font-[family-name:var(--font-landing-display)] uppercase tracking-tight tabular-nums leading-none text-[var(--color-landing-gold)]"
             style={{ fontSize: "clamp(48px, 14vw, 80px)" }}
           >
             {code}
@@ -251,26 +273,19 @@ function CreatedDialog({
             href={waHref}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(
-              "inline-flex items-center justify-center gap-2 flex-1",
-              "rounded-md bg-[var(--color-prode-accent)] px-6 h-12",
-              "font-sans text-sm font-bold uppercase tracking-wider text-white",
-              "transition-opacity duration-200 hover:opacity-90",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)] focus-visible:ring-offset-2",
-            )}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-sm bg-[var(--color-landing-red)] px-6 h-12 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
           >
             <Share2 className="h-4 w-4" aria-hidden />
             Compartir por WhatsApp
           </a>
-          <Button
+          <button
             type="button"
-            variant="outlined"
-            className="flex-1 gap-2"
             onClick={onGoToLeaderboard}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-6 h-12 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
           >
             <Trophy className="h-4 w-4" aria-hidden />
             Ver tabla
-          </Button>
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
