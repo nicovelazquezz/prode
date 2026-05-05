@@ -14,7 +14,11 @@ let refreshPromise: Promise<string | null> | null = null;
 
 /**
  * Permite override del cliente ky en tests (MSW). En runtime usa
- * el ky base con `prefixUrl` y `credentials: 'include'`.
+ * el ky base con `prefix` y `credentials: 'include'`.
+ *
+ * Construido perezoso (lazy) para que `process.env.NEXT_PUBLIC_API_URL`
+ * sea evaluado en el primer call, no en module-init time (importante
+ * para tests donde el env se setea antes de cada suite).
  */
 const createDefaultClient = () =>
   ky.create({
@@ -24,7 +28,11 @@ const createDefaultClient = () =>
     credentials: "include",
   });
 
-let refreshClient: typeof ky = createDefaultClient();
+let refreshClient: typeof ky | null = null;
+function getRefreshClient(): typeof ky {
+  if (!refreshClient) refreshClient = createDefaultClient();
+  return refreshClient;
+}
 
 /**
  * Internal: setter para tests que necesitan inyectar un ky custom
@@ -35,7 +43,7 @@ export function __setRefreshClientForTests(client: typeof ky): void {
 }
 
 export function __resetRefreshClientForTests(): void {
-  refreshClient = createDefaultClient();
+  refreshClient = null;
 }
 
 /**
@@ -58,7 +66,7 @@ export function __resetRefreshPromiseForTests(): void {
 export function refreshAccessToken(): Promise<string | null> {
   if (refreshPromise) return refreshPromise;
 
-  refreshPromise = refreshClient
+  refreshPromise = getRefreshClient()
     .post("auth/refresh")
     .json<{ accessToken: string }>()
     .then(({ accessToken }) => {
