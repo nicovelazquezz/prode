@@ -84,19 +84,21 @@ describe('LeaderboardService (integration)', () => {
     expect(after).toHaveLength(0);
   });
 
-  it('getMyAround: bypasses cache (per-user — never persisted)', async () => {
-    // Pick any seeded user so the query has a row to anchor on.
-    const someUser = await prisma.user.findFirst({ where: { status: 'ACTIVE' } });
-    if (!someUser) return; // empty DB — skip rather than fail
+  it('getEntryAround: bypasses cache (per-entry — never persisted)', async () => {
+    // Pick any seeded entry so the query has a row to anchor on.
+    const someEntry = await prisma.entry.findFirst({
+      where: { status: 'ACTIVE' },
+    });
+    if (!someEntry) return; // empty DB — skip rather than fail
 
-    const spy = jest.spyOn(repo, 'getGlobalAroundUser');
+    const spy = jest.spyOn(repo, 'getGlobalAroundEntry');
     spy.mockClear();
 
-    await service.getMyAround(someUser.id, 3);
-    await service.getMyAround(someUser.id, 3);
+    await service.getEntryAround(someEntry.id, 3);
+    await service.getEntryAround(someEntry.id, 3);
 
     // Both calls must reach the repo — there is intentionally no cache
-    // for user-specific slices.
+    // for entry-specific slices.
     expect(spy).toHaveBeenCalledTimes(2);
 
     // And no `leaderboard:around:*` keys should have been created.
