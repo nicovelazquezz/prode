@@ -51,7 +51,7 @@ export default function InscripcionPage() {
   }, [retry]);
 
   return (
-    <main className="grid min-h-[100svh] place-items-center bg-[var(--color-landing-bg)] px-8 py-16 text-[var(--color-landing-text)]">
+    <div className="grid min-h-[60vh] place-items-center px-8 py-16">
       <div className="w-full max-w-md text-center">
         {state.status === "starting" || state.status === "redirecting" ? (
           <>
@@ -99,7 +99,7 @@ export default function InscripcionPage() {
           </>
         )}
       </div>
-    </main>
+    </div>
   );
 }
 
