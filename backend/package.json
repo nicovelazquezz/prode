@@ -29,6 +29,7 @@
     "@nestjs/throttler": "^6.5.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@sentry/node": "^10.51.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.76.5",
     "cache-manager": "^7.2.8",

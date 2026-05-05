@@ -1,10 +1,17 @@
 import 'reflect-metadata';
 import 'dotenv/config';
+import { loadEnv } from './config/env.js';
+import { initSentry } from './common/observability/sentry.js';
+
+// Sentry must be initialised BEFORE any other module is imported so its
+// instrumentation can hook into Node's built-ins (http, fetch, etc.).
+const env = loadEnv();
+initSentry(env);
+
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
 import { applyHttpHardening } from './common/security/http-hardening.js';
-import { loadEnv } from './config/env.js';
 
 /**
  * Application bootstrap. Global pipe, guard, interceptor, and filters
@@ -14,7 +21,6 @@ import { loadEnv } from './config/env.js';
  * the production headers.
  */
 async function bootstrap() {
-  const env = loadEnv();
   const app = await NestFactory.create(AppModule, {
     rawBody: true, // necesario para verificación de firma MP
   });
