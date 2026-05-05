@@ -10,7 +10,7 @@ import { PublicProfileDrawer } from "@/components/domain/public-profile-drawer";
 import { queryKeys } from "@/lib/api/queryKeys";
 import { getByLeague } from "@/lib/api/leaderboard";
 import { getMyLeagues } from "@/lib/api/leagues";
-import { useAuth } from "@/lib/hooks/use-auth";
+import { useActiveEntry } from "@/lib/hooks/use-active-entry";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -25,7 +25,7 @@ export default function LeagueLeaderboardPage({
 }) {
   // Next.js 15+ pasa params como Promise. `use()` lo unwraps.
   const { leagueId } = use(params);
-  const { user } = useAuth();
+  const { activeEntry } = useActiveEntry();
   const [page, setPage] = useState<number>(1);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
@@ -152,7 +152,7 @@ export default function LeagueLeaderboardPage({
 
         <LeaderboardTable
           entries={leaderboardQuery.data?.entries ?? []}
-          currentUserId={user?.id ?? null}
+          currentEntryId={activeEntry?.id ?? null}
           loading={leaderboardQuery.isLoading}
           onRowClick={setProfileUserId}
           emptyMessage="Esta liga no tiene posiciones aun."

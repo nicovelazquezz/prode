@@ -7,8 +7,15 @@ import type { LeaderboardEntry } from "@/lib/api/types";
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
   /**
-   * userId del current user para resaltar su row con highlight
-   * "VOS" + sticky.
+   * entryId del entry ACTIVO del user (multi-prode v1.1) — el row
+   * matching se resalta con "VOS" + sticky. Si Juan tiene 2 entries
+   * en la página, sólo el row del entry activo se resalta.
+   */
+  currentEntryId?: string | null;
+  /**
+   * @deprecated alias de compat — usar `currentEntryId`. Tests legacy
+   * pasaban `currentUserId`. Se sigue propagando al row, donde matchea
+   * el `entry.userId` directamente (resalta la primera entry del user).
    */
   currentUserId?: string | null;
   /**
@@ -38,12 +45,20 @@ interface LeaderboardTableProps {
  */
 export function LeaderboardTable({
   entries,
+  currentEntryId,
   currentUserId,
   loading = false,
   onRowClick,
   emptyMessage = "Sin posiciones cargadas",
   className,
 }: LeaderboardTableProps) {
+  // Calcula qué `userId`s aparecen en >1 row del leaderboard. Esa info
+  // la consume el `LeaderboardRow` para decidir si aplica el sufijo
+  // "(#N)" en el display name (spec §3.2).
+  const userEntryCounts = new Map<string, number>();
+  for (const e of entries) {
+    userEntryCounts.set(e.userId, (userEntryCounts.get(e.userId) ?? 0) + 1);
+  }
   if (loading) {
     return (
       <div
@@ -99,9 +114,13 @@ export function LeaderboardTable({
       <div className="relative flex flex-col" role="rowgroup">
         {entries.map((entry) => (
           <LeaderboardRow
-            key={entry.userId}
+            key={entry.entryId ?? `${entry.userId}-${entry.position}`}
             entry={entry}
+            currentEntryId={currentEntryId}
             currentUserId={currentUserId}
+            userHasMultipleEntries={
+              (userEntryCounts.get(entry.userId) ?? 0) > 1
+            }
             sticky
             onClick={onRowClick}
           />

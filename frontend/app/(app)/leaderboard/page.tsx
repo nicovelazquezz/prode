@@ -11,12 +11,12 @@ import { queryKeys } from "@/lib/api/queryKeys";
 import {
   getGlobal,
   getByPhase,
-  getMyAround,
+  getAroundEntry,
 } from "@/lib/api/leaderboard";
 import { getMyLeagues } from "@/lib/api/leagues";
 import { getMatches } from "@/lib/api/matches";
 import type { Phase } from "@/lib/api/types";
-import { useAuth } from "@/lib/hooks/use-auth";
+import { useActiveEntry } from "@/lib/hooks/use-active-entry";
 import {
   PHASE_LABEL,
   deriveAvailablePhases,
@@ -34,16 +34,18 @@ type TabValue = "global" | "phase" | "leagues";
  * Phase select solo muestra las fases que ya tienen matches cargados.
  */
 export default function LeaderboardPage() {
-  const { user } = useAuth();
+  const { activeEntry } = useActiveEntry();
+  const entryId = activeEntry?.id ?? "";
   const [tab, setTab] = useState<TabValue>("global");
   const [phase, setPhase] = useState<Phase>("GROUPS");
   const [page, setPage] = useState<number>(1);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
-  // Hero data: my position globally.
+  // Hero data: ranking del entry activo del user.
   const meAroundQuery = useQuery({
-    queryKey: queryKeys.leaderboard.around(),
-    queryFn: () => getMyAround(),
+    queryKey: queryKeys.leaderboard.aroundEntry(entryId),
+    queryFn: () => getAroundEntry(entryId),
+    enabled: !!entryId,
     staleTime: 30_000,
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
@@ -173,7 +175,7 @@ export default function LeaderboardPage() {
             <TabsContent value="global">
               <LeaderboardTable
                 entries={globalQuery.data?.entries ?? []}
-                currentUserId={user?.id ?? null}
+                currentEntryId={entryId || null}
                 loading={globalQuery.isLoading}
                 onRowClick={setProfileUserId}
                 emptyMessage="Aún no hay posiciones cargadas"
@@ -197,7 +199,7 @@ export default function LeaderboardPage() {
               />
               <LeaderboardTable
                 entries={phaseQuery.data?.entries ?? []}
-                currentUserId={user?.id ?? null}
+                currentEntryId={entryId || null}
                 loading={phaseQuery.isLoading}
                 onRowClick={setProfileUserId}
                 emptyMessage="Sin puntos en esta fase aún"
