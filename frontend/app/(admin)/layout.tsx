@@ -13,6 +13,9 @@ import { useAuth } from "@/lib/hooks/use-auth";
  * Sidebar fija a la izquierda en desktop (md+); en mobile la
  * sidebar se oculta y el toggle se implementa en Phase 7. Por
  * ahora dejamos un header minimo top con el logout.
+ *
+ * Visual: dark editorial. Bg principal landing-bg, sidebar surface,
+ * header sticky bg surface con border line-strong inferior.
  */
 export default function AdminLayout({
   children,
@@ -31,12 +34,12 @@ export default function AdminLayout({
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex">
-        <div className="hidden md:block w-64 bg-[var(--color-prode-near-black)]" />
+      <div className="flex-1 flex min-h-screen bg-[var(--color-landing-bg)] text-[var(--color-landing-text)]">
+        <div className="hidden md:block w-64 bg-[var(--color-landing-surface)] border-r border-[var(--color-landing-line-strong)]" />
         <main className="flex-1 px-4 py-6 md:px-8" aria-busy="true">
           <div className="space-y-4 max-w-4xl">
-            <div className="h-12 w-1/3 bg-[var(--color-prode-surface)] rounded-md animate-pulse" />
-            <div className="h-32 bg-[var(--color-prode-surface)] rounded-md animate-pulse" />
+            <div className="h-12 w-1/3 rounded-sm bg-[var(--color-landing-surface)] animate-pulse" />
+            <div className="h-32 rounded-sm bg-[var(--color-landing-surface)] animate-pulse" />
           </div>
         </main>
       </div>
@@ -48,12 +51,15 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex-1 flex">
+    <div className="flex-1 flex min-h-screen bg-[var(--color-landing-bg)] text-[var(--color-landing-text)]">
       <AdminSidebar />
       <div className="flex-1 md:pl-64 flex flex-col">
-        <header className="sticky top-0 z-30 h-14 md:h-16 bg-white border-b border-[var(--color-prode-border)] flex items-center justify-between px-4 md:px-8">
-          <span className="font-sans text-sm text-[var(--color-prode-text-secondary)]">
-            <span className="hidden md:inline">Admin · </span>
+        <header className="sticky top-0 z-30 h-14 md:h-16 bg-[var(--color-landing-surface)] border-b border-[var(--color-landing-line-strong)] flex items-center justify-between px-4 md:px-8">
+          <span className="font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
+            <span className="hidden md:inline text-[var(--color-landing-text)]">
+              Admin
+            </span>
+            <span className="hidden md:inline"> · </span>
             {user.firstName} {user.lastName}
           </span>
           <button
@@ -62,13 +68,13 @@ export default function AdminLayout({
             onClick={() => {
               void logout().then(() => router.replace("/"));
             }}
-            className="inline-flex items-center gap-2 font-sans text-sm font-medium text-[var(--color-prode-text-secondary)] hover:text-[var(--color-prode-near-black)] transition-colors duration-300"
+            className="inline-flex items-center gap-2 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)] transition-colors hover:text-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
           >
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Salir</span>
           </button>
         </header>
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
+        <main className="flex-1 px-4 py-6 md:px-8 md:py-10">{children}</main>
       </div>
     </div>
   );
