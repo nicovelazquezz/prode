@@ -1,1 +1,29 @@
 @import "tailwindcss";
+
+/* Tokens del DESIGN.md (FIFA WC 2026 Hospitality) */
+@theme {
+  --color-prode-near-black: #05090e;
+  --color-prode-deep-navy: #0c1521;
+  --color-prode-accent: #fe1743;
+  --color-prode-bg: #ffffff;
+  --color-prode-surface: #f9fbff;
+  --color-prode-text-secondary: #4b5667;
+  --color-prode-text-muted: #bc8fd1;
+  --color-prode-border: #d0d5df;
+
+  --font-display: "Fwc 2026 Condensed", "Arial Narrow", sans-serif;
+  --font-sans: "Noto Sans", system-ui, sans-serif;
+
+  --radius-sm: 4px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 9999px;
+}
+
+html {
+  font-family: var(--font-sans);
+  color: var(--color-prode-near-black);
+}
+body {
+  background: var(--color-prode-bg);
+}
