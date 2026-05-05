@@ -139,5 +139,45 @@ describe("MatchCard — 5 visual states", () => {
     // Resultado + Tu prediccion both visible.
     expect(screen.getByText(/^Resultado$/i)).toBeInTheDocument();
     expect(screen.getByText(/^Tu prediccion$/i)).toBeInTheDocument();
+    // PointsCelebration debe aparecer (evaluatedAt es justo ahora).
+    expect(screen.getByTestId("points-celebration")).toBeInTheDocument();
+  });
+
+  it("state=finished: omits PointsCelebration when evaluatedAt is older than 5 min", () => {
+    const finishedMatch: Match = {
+      ...baseMatch,
+      status: "FINISHED",
+      scoreHome: 2,
+      scoreAway: 1,
+    };
+    const oldPrediction: Prediction = {
+      ...basePrediction,
+      outcomeType: "EXACT",
+      basePoints: 3,
+      multiplier: 1,
+      pointsEarned: 3,
+      evaluatedAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    };
+    render(<MatchCard match={finishedMatch} prediction={oldPrediction} />);
+    expect(screen.queryByTestId("points-celebration")).not.toBeInTheDocument();
+  });
+
+  it("state=finished: omits PointsCelebration when pointsEarned is 0", () => {
+    const finishedMatch: Match = {
+      ...baseMatch,
+      status: "FINISHED",
+      scoreHome: 2,
+      scoreAway: 1,
+    };
+    const missPrediction: Prediction = {
+      ...basePrediction,
+      outcomeType: "MISS",
+      basePoints: 0,
+      multiplier: 1,
+      pointsEarned: 0,
+      evaluatedAt: new Date().toISOString(),
+    };
+    render(<MatchCard match={finishedMatch} prediction={missPrediction} />);
+    expect(screen.queryByTestId("points-celebration")).not.toBeInTheDocument();
   });
 });

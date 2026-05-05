@@ -5,8 +5,16 @@ import type { Match, Prediction } from "@/lib/api/types";
 import { TeamFlag } from "@/components/domain/team-flag";
 import { ScoreDisplay } from "@/components/domain/score-display";
 import { PredictionInput } from "@/components/domain/prediction-input";
+import { PointsCelebration } from "@/components/domain/points-celebration";
 import { useCountdown } from "@/lib/hooks/use-countdown";
 import { cn } from "@/lib/utils/cn";
+
+/**
+ * Muestra animacion celebratoria solo si la prediction fue evaluada
+ * en los ultimos 5 minutos. Asi evitamos animar resultados viejos
+ * cada vez que se monta la lista.
+ */
+const RECENT_EVAL_WINDOW_MS = 5 * 60 * 1000;
 
 export type MatchCardState =
   | "empty" // sin cargar (open match, no prediction)
@@ -377,6 +385,12 @@ function FinishedSummary({
   match: Match;
   prediction: Prediction;
 }) {
+  const recentlyEvaluated =
+    prediction.evaluatedAt !== null &&
+    Date.now() - new Date(prediction.evaluatedAt).getTime() <
+      RECENT_EVAL_WINDOW_MS;
+  const showCelebration = recentlyEvaluated && prediction.pointsEarned > 0;
+
   return (
     <div className="mt-4 pt-4 border-t border-[var(--color-prode-border)]">
       <div className="flex items-center justify-between gap-2">
@@ -404,6 +418,11 @@ function FinishedSummary({
           />
         </div>
       </div>
+      {showCelebration ? (
+        <div className="mt-3 flex justify-end">
+          <PointsCelebration points={prediction.pointsEarned} />
+        </div>
+      ) : null}
       {/* Hint para reintentar carga si aplicable (NO mostramos si match
           ya fue evaluado). Para retries fallidos en estado open, badge
           arriba muestra "REINTENTANDO". */}
