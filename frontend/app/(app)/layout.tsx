@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { ActiveEntryProvider } from "@/providers/active-entry-provider";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 /**
@@ -57,10 +58,12 @@ export default function AppLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--color-landing-bg)] text-[var(--color-landing-text)]">
-      <AppHeader userName={user.firstName} />
-      <main className="flex-1 pb-16 md:pb-0">{children}</main>
-      <BottomNav />
-    </div>
+    <ActiveEntryProvider>
+      <div className="min-h-screen flex flex-col bg-[var(--color-landing-bg)] text-[var(--color-landing-text)]">
+        <AppHeader userName={user.firstName} />
+        <main className="flex-1 pb-16 md:pb-0">{children}</main>
+        <BottomNav />
+      </div>
+    </ActiveEntryProvider>
   );
 }
