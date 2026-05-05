@@ -1,0 +1,58 @@
+# Keep the build context small. Anything excluded here is invisible to the
+# Docker daemon (it never reaches the build, even via COPY .). The deps stage
+# only needs package.json / package-lock.json; the build stage needs source
+# code. Generated artefacts and developer-only files are excluded so we don't
+# accidentally copy stale .next outputs, secrets, or playwright reports.
+
+# dependencies
+node_modules
+
+# next.js build output (re-built inside the container)
+.next
+out
+build
+
+# env files — secrets stay in the Dokploy panel, never in the image
+.env
+.env.*
+!.env.example
+
+# git
+.git
+.gitignore
+
+# generated PWA service worker (re-emitted by `next build`)
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
+public/swe-worker-*.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+
+# tests + reports
+tests
+test
+playwright-report
+test-results
+blob-report
+playwright/.cache
+coverage
+
+# typescript build info
+*.tsbuildinfo
+next-env.d.ts
+
+# logs
+*.log
+npm-debug.log*
+
+# misc local-only
+.DS_Store
+.vercel
+.vscode
+.idea
+README.md
+
+# this file itself + the Dockerfile aren't needed in the build context
+.dockerignore
+Dockerfile
