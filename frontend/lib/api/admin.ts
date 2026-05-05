@@ -299,6 +299,28 @@ export async function listNotificationHistory(query?: {
     .json<Paginated<NotificationHistoryEntry>>();
 }
 
+// ── Exports ─────────────────────────────────────────────────────
+
+/**
+ * Disparar la descarga de un export CSV/PDF. Si el endpoint backend
+ * no existe (404), el caller debe mostrar toast "Proximamente".
+ *
+ * Implementacion: fetch via api (con auth automatic), construir blob,
+ * disparar `<a download>` programatico. Esto evita pasar por el
+ * browser-blocking que tiene `window.open` en algunos browsers.
+ *
+ * TODO(backend): cuando existan, los endpoints esperados son:
+ *   - GET /admin/exports/payments.csv  → text/csv
+ *   - GET /admin/exports/leaderboard.pdf → application/pdf
+ */
+export async function downloadExport(
+  endpoint: "payments.csv" | "leaderboard.pdf",
+): Promise<{ url: string; filename: string }> {
+  const blob = await api.get(`admin/exports/${endpoint}`).blob();
+  const url = URL.createObjectURL(blob);
+  return { url, filename: endpoint };
+}
+
 // ── Audit ───────────────────────────────────────────────────────
 
 export interface AuditEntry {

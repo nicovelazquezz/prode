@@ -17,7 +17,11 @@ import { CountdownTimer } from "@/components/domain/countdown-timer";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
 import { queryKeys } from "@/lib/api/queryKeys";
-import { getMetrics, type AdminMetrics } from "@/lib/api/admin";
+import {
+  downloadExport,
+  getMetrics,
+  type AdminMetrics,
+} from "@/lib/api/admin";
 import { formatARS, formatNumber } from "@/lib/utils/format";
 
 /**
@@ -126,6 +130,22 @@ export default function AdminDashboardPage() {
           loading={isLoading}
           nextMatch={m.nextMatch}
         />
+      </section>
+
+      <section
+        aria-label="Reportes"
+        className="rounded-md border border-[var(--color-prode-border)] bg-white p-5 md:p-6"
+      >
+        <h2 className="font-display text-2xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+          Reportes
+        </h2>
+        <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+          Descarga reportes para procesamiento offline (contabilidad,
+          comunicacion, premios). Los archivos los genera el backend on-demand.
+        </p>
+        <div className="mt-4">
+          <ExportActions />
+        </div>
       </section>
 
       <section
@@ -269,15 +289,40 @@ function toChartData(values: number[]): Array<{ x: number; y: number }> {
 }
 
 /**
- * Botones para exportar reportes (Task 7.8). Stub que muestra toast
- * "Proximamente" — si en el futuro existen `/admin/exports/payments.csv`
- * y `/admin/exports/leaderboard.pdf`, basta con apuntar el href a esas
- * URLs (con `Authorization` cookie) o disparar un `fetch + download`.
+ * Botones para exportar reportes (Task 7.8). Si el backend tiene los
+ * endpoints (`/admin/exports/payments.csv` y `/admin/exports/leaderboard.pdf`)
+ * dispara la descarga via blob URL programatica. Si devuelven 404 o
+ * cualquier error, muestra toast "Proximamente" para no romper la UX.
+ *
+ * El flow del download:
+ *   1. fetch al endpoint con auth automatic via api client
+ *   2. response.blob() → URL.createObjectURL → <a download> click
+ *   3. revoke object URL al final para liberar memoria
+ *
+ * TODO(backend): cuando los endpoints existan en backend, esta UX ya
+ * funciona sin cambios. Si nunca se implementan, el toast queda como
+ * mensaje permanente.
  */
 function ExportActions() {
-  const handle = (label: string) => {
-    // TODO(backend): wire to /admin/exports/{payments.csv | leaderboard.pdf}
-    toast.info(`${label} proximamente`);
+  const handle = async (
+    label: string,
+    endpoint: "payments.csv" | "leaderboard.pdf",
+  ) => {
+    try {
+      const { url, filename } = await downloadExport(endpoint);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      // Permitir al browser leer el blob antes de revocar.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success(`${label} descargado`);
+    } catch {
+      // 404 / network → asumir endpoint no implementado todavia.
+      toast.info(`${label} — proximamente`);
+    }
   };
   return (
     <div className="flex flex-wrap gap-2">
@@ -285,7 +330,7 @@ function ExportActions() {
         type="button"
         variant="outlined"
         size="sm"
-        onClick={() => handle("Exportar pagos a CSV")}
+        onClick={() => handle("Exportar pagos a CSV", "payments.csv")}
       >
         <Download className="mr-2 h-4 w-4" aria-hidden />
         Exportar pagos
@@ -294,7 +339,7 @@ function ExportActions() {
         type="button"
         variant="outlined"
         size="sm"
-        onClick={() => handle("Exportar tabla final PDF")}
+        onClick={() => handle("Exportar tabla final PDF", "leaderboard.pdf")}
       >
         <Download className="mr-2 h-4 w-4" aria-hidden />
         Exportar tabla
