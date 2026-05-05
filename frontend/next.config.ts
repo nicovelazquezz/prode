@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const withSerwist = withSerwistInit({
   swSrc: "app/sw.ts",
@@ -23,4 +24,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSerwist(nextConfig);
+const sentryWrappedConfig = withSentryConfig(withSerwist(nextConfig), {
+  // Don't print Sentry SDK version mismatch warnings to keep `next build`
+  // output clean. Re-enable if you want to debug Sentry telemetry.
+  silent: !process.env.CI,
+  // Skip the source map upload step entirely when no auth token is set
+  // (CI/dev). Avoids the "skipping source map upload" warning per build.
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+  // No-op when DSN unset — see sentry.*.config.ts files.
+});
+
+export default sentryWrappedConfig;
