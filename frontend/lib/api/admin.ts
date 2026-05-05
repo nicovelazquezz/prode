@@ -76,15 +76,43 @@ export async function resetUserPassword(
 
 // ── Payments ────────────────────────────────────────────────────
 
+/**
+ * Payment + datos del user asociado y mpRawData crudo (solo admin).
+ * El backend puede devolver `mpRawData` como cualquier shape MP — lo
+ * dejamos como `unknown` y el panel lo renderiza con JSON.stringify.
+ */
+export interface AdminPayment extends Payment {
+  user?: {
+    id: string;
+    dni: string;
+    firstName: string;
+    lastName: string;
+  } | null;
+  mpRawData?: unknown;
+}
+
 export async function listPayments(query?: {
   page?: number;
   pageSize?: number;
   status?: string;
   method?: string;
-}): Promise<Paginated<Payment>> {
+  fromDate?: string;
+  toDate?: string;
+}): Promise<Paginated<AdminPayment>> {
   return api
     .get("admin/payments", { searchParams: cleanParams(query) })
-    .json<Paginated<Payment>>();
+    .json<Paginated<AdminPayment>>();
+}
+
+/**
+ * Marca un payment manualmente como APPROVED. "Ultimo recurso" — uso
+ * cuando MP no replicó por algun motivo. Audit log queda registrado.
+ *
+ * TODO(backend): si el endpoint todavia no existe, este metodo va
+ * a fallar con 404 — el panel muestra toast de error.
+ */
+export async function approvePayment(id: string): Promise<Payment> {
+  return api.post(`admin/payments/${id}/approve`).json<Payment>();
 }
 
 // ── Matches ─────────────────────────────────────────────────────
