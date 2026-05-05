@@ -51,7 +51,7 @@ const SideDrawerContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed inset-y-0 right-0 z-50 flex h-full w-full flex-col",
-        "bg-white",
+        "bg-[var(--color-prode-surface)]",
         "border-l border-[var(--color-prode-border)]",
         width,
         className,

@@ -9,18 +9,23 @@
   --font-fwc: "Arial Narrow Black", "Arial Narrow", "Arial", sans-serif;
 }
 
-/* Tokens del DESIGN.md (FIFA WC 2026 Hospitality) */
+/* Tokens unificados — la estética stadium de la landing es ahora el
+ * mantra del proyecto entero. Los nombres `--color-prode-*` se mantienen
+ * para no romper consumos existentes (ui, layout, domain), pero apuntan
+ * a equivalentes landing (paleta apagada WC2026). Componentes nuevos
+ * deberían usar directamente `--color-landing-*`.
+ */
 @theme {
-  --color-prode-near-black: #05090e;
-  --color-prode-deep-navy: #0c1521;
-  --color-prode-accent: #fe1743;
-  --color-prode-bg: #ffffff;
-  --color-prode-surface: #f9fbff;
-  --color-prode-text-secondary: #4b5667;
-  --color-prode-text-muted: #bc8fd1;
-  --color-prode-border: #d0d5df;
+  --color-prode-bg: #0e1426;             /* navy profundo (bg principal) */
+  --color-prode-surface: #161d32;        /* surface elevada */
+  --color-prode-near-black: #f1ece0;     /* texto principal (cream cálido) */
+  --color-prode-deep-navy: #0a0f1c;      /* surface aún más oscura */
+  --color-prode-text-secondary: #8a92a8; /* texto secundario muteado */
+  --color-prode-text-muted: #8a92a8;     /* texto muteado (alias) */
+  --color-prode-border: rgba(241, 236, 224, 0.14); /* bordes line-strong */
+  --color-prode-accent: #a33d3d;         /* rojo apagado (CTAs / énfasis) */
 
-  --font-display: var(--font-fwc), "Arial Narrow Black", "Arial Narrow", sans-serif;
+  --font-display: var(--font-display-condensed), var(--font-fwc), "Arial Narrow Black", "Arial Narrow", sans-serif;
   --font-sans: var(--font-noto-sans), system-ui, sans-serif;
 
   --radius-sm: 4px;

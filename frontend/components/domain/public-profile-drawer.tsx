@@ -121,7 +121,7 @@ function PredictionItem({ prediction: p }: ItemProps) {
   return (
     <li
       className={cn(
-        "flex items-center justify-between gap-3 rounded-md border bg-white p-3",
+        "flex items-center justify-between gap-3 rounded-md border bg-[var(--color-prode-surface)] p-3",
         isCorrect
           ? "border-[var(--color-prode-accent)]"
           : "border-[var(--color-prode-border)]",

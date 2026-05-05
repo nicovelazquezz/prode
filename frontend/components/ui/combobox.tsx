@@ -18,7 +18,7 @@ const Command = React.forwardRef<
     ref={ref}
     className={cn(
       "flex h-full w-full flex-col overflow-hidden rounded-md",
-      "bg-white text-[var(--color-prode-near-black)]",
+      "bg-[var(--color-prode-surface)] text-[var(--color-prode-near-black)]",
       className,
     )}
     {...props}

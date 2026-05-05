@@ -37,7 +37,7 @@ export function BottomNav({ className }: BottomNavProps) {
     <nav
       className={cn(
         "fixed bottom-0 left-0 right-0 z-40 md:hidden",
-        "h-16 bg-white border-t border-[var(--color-prode-border)]",
+        "h-16 bg-[var(--color-prode-bg)] border-t border-[var(--color-prode-border)]",
         "grid grid-cols-4",
         className,
       )}

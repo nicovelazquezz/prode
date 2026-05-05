@@ -25,7 +25,7 @@ export function AppHeader({ userName = "Usuario", className }: AppHeaderProps) {
     <header
       className={cn(
         "sticky top-0 z-40 w-full",
-        "bg-white border-b border-[var(--color-prode-border)]",
+        "bg-[var(--color-prode-bg)] border-b border-[var(--color-prode-border)]",
         "h-14 md:h-16",
         className,
       )}

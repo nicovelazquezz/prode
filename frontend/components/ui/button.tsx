@@ -16,14 +16,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-[var(--color-prode-near-black)] text-white hover:opacity-90",
+          "bg-[var(--color-prode-accent)] text-[var(--color-prode-near-black)] hover:opacity-90",
         ghost:
           "bg-transparent text-[var(--color-prode-near-black)] hover:bg-[var(--color-prode-surface)]",
         outlined:
-          "bg-white text-[var(--color-prode-near-black)] border-2 border-[var(--color-prode-border)] rounded-2xl hover:border-[var(--color-prode-near-black)]",
-        accent: "bg-[var(--color-prode-accent)] text-white hover:opacity-90",
+          "bg-[var(--color-prode-surface)] text-[var(--color-prode-near-black)] border border-[var(--color-prode-border)] hover:border-[var(--color-prode-near-black)]",
+        accent:
+          "bg-[var(--color-prode-accent)] text-[var(--color-prode-near-black)] hover:opacity-90",
         destructive:
-          "bg-[var(--color-prode-accent)] text-white hover:opacity-90",
+          "bg-[var(--color-prode-accent)] text-[var(--color-prode-near-black)] hover:opacity-90",
       },
       size: {
         default: "h-12 px-8",

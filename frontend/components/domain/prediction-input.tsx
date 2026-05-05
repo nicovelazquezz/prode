@@ -87,8 +87,8 @@ export function PredictionInput({
           disabled
             ? "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-muted)] cursor-not-allowed"
             : value === null
-              ? "bg-white border-2 border-dashed border-[var(--color-prode-border)] text-[var(--color-prode-text-muted)] hover:border-[var(--color-prode-near-black)]"
-              : "bg-white border-2 border-[var(--color-prode-near-black)] text-[var(--color-prode-near-black)]",
+              ? "bg-[var(--color-prode-surface)] border-2 border-dashed border-[var(--color-prode-border)] text-[var(--color-prode-text-muted)] hover:border-[var(--color-prode-near-black)]"
+              : "bg-[var(--color-prode-surface)] border-2 border-[var(--color-prode-near-black)] text-[var(--color-prode-near-black)]",
           className,
         )}
       >
@@ -132,8 +132,8 @@ export function PredictionInput({
         disabled
           ? "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-muted)] border-[var(--color-prode-border)] cursor-not-allowed"
           : value === null
-            ? "bg-white border-dashed border-[var(--color-prode-border)] text-[var(--color-prode-near-black)]"
-            : "bg-white border-[var(--color-prode-near-black)] text-[var(--color-prode-near-black)]",
+            ? "bg-[var(--color-prode-surface)] border-dashed border-[var(--color-prode-border)] text-[var(--color-prode-near-black)]"
+            : "bg-[var(--color-prode-surface)] border-[var(--color-prode-near-black)] text-[var(--color-prode-near-black)]",
         className,
       )}
     />

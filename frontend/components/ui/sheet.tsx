@@ -36,7 +36,7 @@ const SheetContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col",
-        "rounded-t-md bg-white",
+        "rounded-t-md bg-[var(--color-prode-surface)]",
         "border-t border-[var(--color-prode-border)]",
         className,
       )}

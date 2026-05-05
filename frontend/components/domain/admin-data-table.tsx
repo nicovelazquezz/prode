@@ -64,7 +64,7 @@ export function AdminDataTable<TData>({
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       {toolbar}
-      <div className="overflow-x-auto rounded-md border border-[var(--color-prode-border)] bg-white">
+      <div className="overflow-x-auto rounded-md border border-[var(--color-prode-border)] bg-[var(--color-prode-bg)]">
         <table
           className="w-full border-collapse"
           aria-label={ariaLabel}

@@ -14,11 +14,11 @@ export function Toaster() {
       toastOptions={{
         classNames: {
           toast:
-            "bg-white border border-[var(--color-prode-border)] text-[var(--color-prode-near-black)] rounded-md font-sans",
+            "bg-[var(--color-prode-surface)] border border-[var(--color-prode-border)] text-[var(--color-prode-near-black)] rounded-md font-sans",
           title: "font-medium text-sm",
           description: "text-sm text-[var(--color-prode-text-secondary)]",
           actionButton:
-            "bg-[var(--color-prode-near-black)] text-white rounded-sm",
+            "bg-[var(--color-prode-accent)] text-[var(--color-prode-near-black)] rounded-sm",
           cancelButton:
             "bg-transparent text-[var(--color-prode-text-secondary)]",
           error: "border-[var(--color-prode-accent)]",
