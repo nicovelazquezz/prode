@@ -67,3 +67,68 @@ body {
     transform: translateX(-50%);
   }
 }
+
+/* ============================================== */
+/* LANDING — Mundial 2026                          */
+/* Tokens y atmósfera scoped al árbol .landing-root */
+/* ============================================== */
+@theme {
+  --color-landing-bg: #0e1426;
+  --color-landing-surface: #161d32;
+  --color-landing-surface-2: #1b2238;
+  --color-landing-text: #f1ece0;
+  --color-landing-text-muted: #8a92a8;
+  --color-landing-blue: #3e5489;
+  --color-landing-red: #a33d3d;
+  --color-landing-red-hover: #b74545;
+  --color-landing-green: #5c7847;
+  --color-landing-gold: #c8a053;
+  --color-landing-line: rgba(241, 236, 224, 0.08);
+  --color-landing-line-strong: rgba(241, 236, 224, 0.14);
+
+  --font-landing-display: var(--font-display-condensed), "Arial Narrow Black", sans-serif;
+  --font-landing-mono: var(--font-mono-data), "Menlo", monospace;
+}
+
+/* Grain texture overlay sobre toda la landing */
+.landing-root {
+  position: relative;
+  isolation: isolate;
+}
+.landing-root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.32;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.landing-root > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Pulse del dot live */
+@keyframes landing-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+.landing-pulse {
+  animation: landing-pulse 1.4s infinite;
+}
+
+/* Reduced motion — respeta preferencia del usuario */
+@media (prefers-reduced-motion: reduce) {
+  .landing-pulse {
+    animation: none;
+  }
+  .landing-root *,
+  .landing-root *::before,
+  .landing-root *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
