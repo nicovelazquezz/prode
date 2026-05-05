@@ -121,17 +121,13 @@ model User {
   updatedAt   DateTime  @updatedAt
   lastLoginAt DateTime?
 
-  predictions       Prediction[]
-  specialPrediction SpecialPrediction?
-  payments          Payment[]
-  refreshTokens     RefreshToken[]
-  passwordResets    PasswordReset[]
-  phaseWins         PhaseWinner[]
-  leaguesOwned      League[]           @relation("LeagueOwner")
-  leagueMemberships LeagueMembership[]
-  notifications     Notification[]
-  auditLogs         AuditLog[]
-  entries           Entry[]
+  payments       Payment[]
+  refreshTokens  RefreshToken[]
+  passwordResets PasswordReset[]
+  leaguesOwned   League[]        @relation("LeagueOwner")
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+  entries        Entry[]
 
   @@index([dni])
   @@index([whatsapp])
@@ -287,13 +283,11 @@ model SpecialPrizeRule {
 // ─── PREDICCIONES ─────────────────────────────────────────
 
 model Prediction {
-  id      String  @id @default(cuid())
-  userId  String
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entryId String?
-  entry   Entry?  @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  entryId String
+  entry   Entry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
   matchId String
-  match   Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
   scoreHome Int
   scoreAway Int
@@ -307,19 +301,16 @@ model Prediction {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, matchId])
+  @@unique([entryId, matchId])
   @@index([matchId])
-  @@index([userId, evaluatedAt])
-  @@index([entryId])
+  @@index([entryId, evaluatedAt])
   @@map("predictions")
 }
 
 model SpecialPrediction {
-  id      String  @id @default(cuid())
-  userId  String  @unique
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entryId String? @unique
-  entry   Entry?  @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  entryId String @unique
+  entry   Entry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   championTeamId   String?
   championTeam     Team?   @relation("ChampionPick", fields: [championTeamId], references: [id])
@@ -358,10 +349,8 @@ model SpecialPrediction {
 model PhaseWinner {
   id           String      @id @default(cuid())
   phase        Phase       @unique
-  userId       String
-  user         User        @relation(fields: [userId], references: [id])
-  entryId      String?
-  entry        Entry?      @relation(fields: [entryId], references: [id])
+  entryId      String
+  entry        Entry       @relation(fields: [entryId], references: [id])
   pointsEarned Int
   prizeAmount  Decimal?    @db.Decimal(10, 2)
   prizeStatus  PrizeStatus @default(PENDING)
@@ -369,7 +358,6 @@ model PhaseWinner {
   awardedAt    DateTime    @default(now())
   notes        String?
 
-  @@index([userId])
   @@index([entryId])
   @@map("phase_winners")
 }
@@ -479,14 +467,11 @@ model LeagueMembership {
   id       String   @id @default(cuid())
   leagueId String
   league   League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  userId   String
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entryId  String?
-  entry    Entry?   @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entryId  String
+  entry    Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
   joinedAt DateTime @default(now())
 
-  @@unique([leagueId, userId])
-  @@index([userId])
+  @@unique([leagueId, entryId])
   @@index([entryId])
   @@map("league_memberships")
 }
