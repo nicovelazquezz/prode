@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans } from "next/font/google";
+import { Noto_Sans, Anton, DM_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/providers/auth-provider";
@@ -10,6 +10,20 @@ const notoSans = Noto_Sans({
   subsets: ["latin"],
   variable: "--font-noto-sans",
   weight: ["400", "500", "700"],
+  display: "swap",
+});
+
+const anton = Anton({
+  subsets: ["latin"],
+  variable: "--font-display-condensed",
+  weight: "400",
+  display: "swap",
+});
+
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono-data",
+  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -71,7 +85,7 @@ export default function RootLayout({
   return (
     <html
       lang="es-AR"
-      className={`${notoSans.variable} ${fwcFallbackVariable.className} h-full antialiased`}
+      className={`${notoSans.variable} ${anton.variable} ${dmMono.variable} ${fwcFallbackVariable.className} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
