@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,7 +23,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { TeamFlag } from "@/components/domain/team-flag";
-import { TeamSelectModal } from "@/components/domain/team-select-modal";
+
+// Lazy-load the team picker — only mounted when the user taps a team slot.
+const TeamSelectModal = dynamic(
+  () =>
+    import("@/components/domain/team-select-modal").then(
+      (m) => m.TeamSelectModal,
+    ),
+);
 import { queryKeys } from "@/lib/api/queryKeys";
 import { getMatchesByPhase } from "@/lib/api/matches";
 import {

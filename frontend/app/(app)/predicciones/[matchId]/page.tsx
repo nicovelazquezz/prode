@@ -2,6 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ArrowLeft, Lock } from "lucide-react";
 import {
   useQuery,
@@ -12,7 +13,13 @@ import { toast } from "sonner";
 import { TeamFlag } from "@/components/domain/team-flag";
 import { ScoreDisplay } from "@/components/domain/score-display";
 import { PredictionInput } from "@/components/domain/prediction-input";
-import { NumberPadSheet } from "@/components/domain/number-pad-sheet";
+
+// Lazy-load the number pad sheet — only needed when the user taps an input
+// on mobile.
+const NumberPadSheet = dynamic(
+  () =>
+    import("@/components/domain/number-pad-sheet").then((m) => m.NumberPadSheet),
+);
 import { CountdownTimer } from "@/components/domain/countdown-timer";
 import { Button } from "@/components/ui/button";
 import { queryKeys } from "@/lib/api/queryKeys";

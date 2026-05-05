@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   useQuery,
   useMutation,
@@ -9,7 +10,13 @@ import {
 import { toast } from "sonner";
 import { PhaseTabs, type PhaseTabValue } from "@/components/domain/phase-tabs";
 import { MatchCard } from "@/components/domain/match-card";
-import { NumberPadSheet } from "@/components/domain/number-pad-sheet";
+
+// Lazy-load the number pad sheet — only mounted once the user taps a match
+// score on mobile, so we keep it out of the initial /predicciones bundle.
+const NumberPadSheet = dynamic(
+  () =>
+    import("@/components/domain/number-pad-sheet").then((m) => m.NumberPadSheet),
+);
 import { queryKeys } from "@/lib/api/queryKeys";
 import {
   getMatchesByPhase,

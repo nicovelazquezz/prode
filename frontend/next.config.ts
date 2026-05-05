@@ -12,7 +12,15 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "standalone",
+  reactStrictMode: true,
+  poweredByHeader: false,
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "flagcdn.com" }],
+  },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "date-fns"],
+  },
 };
 
 export default withSerwist(nextConfig);
