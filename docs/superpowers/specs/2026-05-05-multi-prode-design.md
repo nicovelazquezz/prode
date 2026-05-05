@@ -33,7 +33,8 @@ Estimación conservadora: si el 15% de los inscriptos paga una segunda entrada, 
 - Una entrada puede unirse a una mini-liga (no el usuario)
 - El leaderboard rankea por entrada, no por usuario
 - Los premios se asignan a la entrada ganadora; si una persona tiene 2 entradas y ambas están en el podio, gana 2 premios
-- UX: selector arriba en el header del `(app)` con dropdown de entradas + CTA "Crear otro prode +$10.000" que dispara el flujo de pago inline
+- UX: selector arriba en el header del `(app)` con dropdown de entradas + CTA "Crear otro prode" que dispara el flujo de pago inline
+- **Precio:** mismo que la primera entrada, leído de `AppConfig.inscripcion_precio` (hoy $10.000). NO hay precio escalonado.
 
 ### Fuera de alcance (post v1.1)
 
@@ -56,8 +57,16 @@ model Entry {
 
   // Vinculo 1-1 al pago que originó esta entry. NOT NULL en filas finales —
   // las entries se crean post-pago aprobado, nunca antes.
+  // **Decisión consciente con plan de migración futura:** si en v1.2+
+  // querés soportar múltiples Payments por Entry (refund + repay,
+  // ajuste manual del admin), migrás a una tabla intermedia
+  // `EntryPayment(entryId, paymentId, role)`. Hoy YAGNI.
   paymentId           String              @unique
   payment             Payment             @relation(fields: [paymentId], references: [id])
+
+  // Estado de la entry. Reservado para v1.2+ donde podríamos anular
+  // entries por chargeback/refund. Hoy todo es ACTIVE.
+  status              EntryStatus         @default(ACTIVE)
 
   // Alias opcional para distinguir entradas en la UI ("Mi prode optimista",
   // "El de papá"). Null hasta que el usuario elija uno.
@@ -81,6 +90,11 @@ model Entry {
   @@unique([userId, position])
   @@index([userId])
   @@map("entries")
+}
+
+enum EntryStatus {
+  ACTIVE
+  ANNULLED       // reservado para v1.2 (chargeback handling)
 }
 ```
 
@@ -159,27 +173,120 @@ model Payment {
 
 Editable desde `/admin/configuracion`. Default 5. Range razonable [1, 20]. Si se baja el cap a un valor menor que el de algún usuario existente, los entries existentes NO se borran — solo se previene la creación de nuevos.
 
-### 2.4 Migración de datos (backfill)
+### 2.4 Migración de datos (multi-fase, no atómica)
 
-Una migración de Prisma con SQL custom que:
+**Decisión clave:** la migración NO va en una sola TX porque (a) Prisma migrations en algunos drivers no garantizan atomicidad de DDL + DML grandes, (b) el rollback de tablas con muchas filas mantiene locks largos, (c) preferimos verificación manual entre pasos para abortar si algo huele mal.
 
-1. Crea la tabla `entries` con columnas y constraints.
-2. **Backfill:** por cada `Payment` con `userId IS NOT NULL` y `status = 'APPROVED'`, crea una `Entry` con:
-   - `userId = Payment.userId`
-   - `paymentId = Payment.id`
-   - `position = 1` (todos los users existentes tienen exactamente 1 entry post-backfill)
-   - `alias = NULL`
-3. Update `predictions.entryId` con el `Entry.id` correspondiente al `Prediction.userId` original.
-4. Update `special_predictions.entryId` análogo.
-5. Update `phase_winners.entryId` análogo (siempre que `Payment` exista).
-6. Update `league_memberships.entryId` análogo.
-7. Drop columnas `userId` de las 4 tablas + drop FKs viejas + recrear constraints únicos.
+**Pre-requisitos antes del deploy:**
+1. Snapshot manual de la BD (además del backup diario automático).
+2. Correr el **dry-run script** `scripts/multi-prode-migration-dryrun.ts` que reporta:
+   - Conteo de Users con Payment APPROVED (se convertirán en 1 Entry cada uno)
+   - Conteo de Users con múltiples Payments APPROVED (alerta: solo el más antiguo se usa para Entry #1)
+   - Conteo de Predictions/SpecialPredictions/PhaseWinners/LeagueMemberships **huérfanas** (definición abajo)
+   - Si alguno de los conteos huérfanos > 5 → ABORTAR y revisar manual.
+3. **Backup de filas a borrar:** `INSERT INTO predictions_orphaned_backup_2026_05_XX SELECT * FROM predictions WHERE userId IN (...)`. Se preservan por 30 días.
 
-Si un user tiene **múltiples Payments APPROVED** (improbable hoy, pero defensa en profundidad): el backfill toma el más antiguo como Entry #1; los Payments adicionales quedan **sin Entry asociado**. Audit log warnings para que el admin los revise post-migración.
+**Definición de "huérfana":** una `Prediction`/`SpecialPrediction`/`PhaseWinner`/`LeagueMembership` cuyo `userId` no tiene **ningún Payment con `status = 'APPROVED'`**. En la práctica solo aplica al admin user (DNI 00000000) que no carga predicciones, pero validamos siempre.
 
-Si un user **no tiene ningún Payment APPROVED**: sus predicciones (si las tuviera) quedan huérfanas. El backfill las elimina. En la práctica esto solo aplica al admin (que no carga predicciones) — datos relevantes quedan intactos.
+**Pasos de la migración (cada uno en commit/migration separado para poder abortar):**
 
-**La migración es destructiva sobre datos huérfanos.** Backup de BD obligatorio antes de correr en producción. Ya tenemos backup diario configurado.
+```
+Migración M1 — additive (no rompe sistema actual):
+  - CREATE TABLE entries (con userId, paymentId UNIQUE, position, alias, status, etc.)
+  - CREATE INDEX, CREATE UNIQUE
+  - ADD COLUMN entryId NULLABLE a predictions, special_predictions, phase_winners, league_memberships
+  - Crear EntryStatus enum
+```
+
+```
+Script de backfill (separado de la migration Prisma, idempotente, re-runnable):
+
+  -- 1. Crear Entry #1 por cada user con Payment APPROVED (most-recent payment first)
+  INSERT INTO entries (id, "userId", "paymentId", position, status, "createdAt", "updatedAt")
+  SELECT gen_random_cuid(), p."userId", p.id, 1, 'ACTIVE', NOW(), NOW()
+  FROM payments p
+  WHERE p.status = 'APPROVED' AND p."userId" IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM entries e WHERE e."userId" = p."userId")
+  AND p.id = (
+    SELECT id FROM payments p2
+    WHERE p2."userId" = p."userId" AND p2.status = 'APPROVED'
+    ORDER BY p2."createdAt" ASC LIMIT 1
+  );
+
+  -- 2. Backfill predictions.entryId
+  UPDATE predictions pred
+  SET "entryId" = (SELECT e.id FROM entries e WHERE e."userId" = pred."userId" LIMIT 1);
+
+  -- 3. Análogo para special_predictions, phase_winners, league_memberships
+
+  -- 4. Borrar huérfanas (con backup previo)
+  CREATE TABLE IF NOT EXISTS predictions_orphaned_backup_2026_05_XX AS
+    SELECT * FROM predictions WHERE "entryId" IS NULL;
+  DELETE FROM predictions WHERE "entryId" IS NULL;
+  -- (idem para los otros 3)
+
+  -- 5. ASSERT (abortar si falla)
+  DO $$ BEGIN
+    IF (SELECT COUNT(*) FROM predictions WHERE "entryId" IS NULL) > 0 THEN
+      RAISE EXCEPTION 'predictions con entryId NULL después de backfill';
+    END IF;
+  END $$;
+```
+
+```
+Migración M2 — destructive (después de validar M1 + backfill OK):
+  - ALTER COLUMN entryId SET NOT NULL en las 4 tablas
+  - DROP CONSTRAINT (userId, matchId) en predictions
+  - ADD CONSTRAINT (entryId, matchId) UNIQUE
+  - DROP COLUMN userId en predictions, special_predictions, phase_winners, league_memberships
+  - DROP/RECREATE materialized view leaderboard_global (ver §2.5)
+```
+
+**Rollback:** si abortamos entre M1 y M2: las 4 tablas quedan con userId + entryId nullable; sistema sigue funcionando con userId. M1 es idempotente.
+
+Si abortamos después de M2: restore desde snapshot. La columna userId se perdió, no se puede recuperar sin restore.
+
+### 2.5 Materialized view `leaderboard_global` — recreación
+
+La MV existente referencia `predictions.user_id` y `special_predictions.user_id`. Después de M2 esas columnas no existen. La MV debe **dropearse y recrearse** como parte de M2:
+
+```sql
+-- Parte de M2
+DROP MATERIALIZED VIEW IF EXISTS leaderboard_global;
+
+CREATE MATERIALIZED VIEW leaderboard_global AS
+SELECT
+  e.id AS entry_id,
+  e."userId" AS user_id,
+  e.position AS entry_position,
+  e.alias AS entry_alias,
+  u.first_name,
+  u.last_name,
+  COALESCE(SUM(p."pointsEarned"), 0) +
+    COALESCE(sp."totalPoints", 0) AS total_points,
+  COUNT(p.id) FILTER (WHERE p."outcomeType" = 'EXACT') AS exact_count,
+  COUNT(p.id) FILTER (WHERE p."outcomeType" IN ('EXACT','WINNER_AND_DIFF','WINNER_ONLY','DRAW_DIFFERENT')) AS hits_count,
+  sp."championTeamId" IS NOT NULL AS has_champion_pick
+FROM entries e
+INNER JOIN users u ON u.id = e."userId"
+LEFT JOIN predictions p ON p."entryId" = e.id
+LEFT JOIN special_predictions sp ON sp."entryId" = e.id
+WHERE u.status = 'ACTIVE' AND e.status = 'ACTIVE'
+GROUP BY e.id, e."userId", e.position, e.alias, u.first_name, u.last_name, sp."totalPoints", sp."championTeamId";
+
+CREATE UNIQUE INDEX leaderboard_global_entry_id_idx ON leaderboard_global (entry_id);
+CREATE INDEX leaderboard_global_total_points_idx
+  ON leaderboard_global (total_points DESC, exact_count DESC, hits_count DESC);
+CREATE INDEX leaderboard_global_user_id_idx ON leaderboard_global (user_id);
+
+REFRESH MATERIALIZED VIEW leaderboard_global;
+```
+
+`LeaderboardRepository` se adapta: ahora cada row es un Entry, no un User. Filtros y orden idénticos.
+
+### 2.6 Phase-winner job payload
+
+El backend tiene un job BullMQ `phase-winner` con payload `{ phase, userId }`. Cambia a `{ phase, entryId }`. El processor (notifications) resuelve el user via `Entry.userId` para mandar el WhatsApp al dueño humano.
 
 ---
 
@@ -303,21 +410,55 @@ Esta lógica se computa en el cliente; el response del backend manda los campos 
 
 **Restricción:** un mismo entry NO puede unirse a la misma liga 2 veces. Pero un mismo USER puede tener 2 entries distintos en la misma liga (pagaron 2 veces, juegan los 2 prodes en el mismo grupo de amigos). El `LeagueMembership.unique([leagueId, entryId])` lo enforce.
 
-#### Pagos
+#### Pagos — DOS endpoints separados
+
+Decisión: separar en 2 endpoints para clarificar contratos, simplificar testing, y evitar el surface ambiguo de "auth opcional":
 
 ```diff
-- POST /payments/init       body: {}                → crea Payment para el current user (o nuevo)
-+ POST /payments/init       body: {}                → si user logueado:
-+                                                       valida que tenga < max_entries_per_user
-+                                                       si OK: crea Payment con userId=current user
-+                                                       si lleno: 409 ENTRY_CAP_REACHED
-+                                                     si no logueado: igual que antes (Payment con userId=null,
-+                                                       flow público con completar-registro)
+  POST /payments/init                         # PÚBLICO, anónimo, flow registro nuevo
+                                              body: { turnstileToken }
+                                              → crea Payment con userId=null
+                                              → rate limit estricto (5/h por IP)
+                                              → Turnstile required en prod
+
++ POST /entries/init-payment                  # AUTH required, flow "agregar otro prode"
++                                             body: { alias?: string }   # opcional
++                                             → valida user JWT + entries.count < cap (con SELECT FOR UPDATE)
++                                             → en MISMA TX: crea Payment con userId=current user, status=PENDING
++                                             → almacena `alias` en Payment.entryAlias (columna nueva)
++                                             → llama checkoutProvider con back_urls.success especial (ver §4.2)
++                                             → si lleno: 409 ENTRY_CAP_REACHED { current, cap }
++                                             → rate limit más laxo (20/h por user)
++                                             → Turnstile NO required (user ya autenticado)
 ```
 
-Auth ahora es **opcional** en `/payments/init`. Si el JWT está presente y válido → flujo "agregar otro prode". Si no → flujo público de registro nuevo. El backend distingue los dos casos.
+**Race condition del cap:** el SELECT del count + INSERT del Payment van en la misma TX con `SELECT COUNT(*) FROM entries WHERE user_id = $1 FOR UPDATE` sobre los entries del user. Esto serializa peticiones concurrentes del mismo user. El webhook hace **re-check** del cap antes de crear la Entry final — defensa en profundidad.
 
-**Webhook MP (sin cambios externos):** después de marcar Payment APPROVED, si `Payment.userId IS NOT NULL` (caso "agregar otro prode") → crea `Entry` automáticamente y lo vincula al Payment. Si `userId IS NULL` (caso público) → no crea Entry todavía; el flujo de `/auth/complete-registration` lo crea junto con el User.
+**Webhook MP (cambios):** después de marcar Payment APPROVED, ejecuta:
+- Si `Payment.userId IS NULL` → flow público (sin cambios respecto al sistema actual)
+- Si `Payment.userId IS NOT NULL`:
+  - Re-check `entries.count < max_entries_per_user` (race con admin que bajó el cap)
+  - Si OK: crea `Entry` con `position = max(positions of user's entries) + 1`, `alias = Payment.entryAlias`, `paymentId = payment.id`. TX atómica con webhook update.
+  - Si lleno: marca `Payment.status` a un nuevo estado `OVER_CAP` + AdminAlerts notify (admin decide refund manual)
+  - Audit log `entry.created`
+
+**Schema delta para soportar esto:**
+
+```diff
+  model Payment {
++   entryAlias  String?          # solo se usa en flow "agregar otro prode"
+    // ... resto sin cambios
+  }
+
+  enum PaymentStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    REFUNDED
++   OVER_CAP                     # raro: webhook llegó pero user ya está al cap
+    ORPHANED
+  }
+```
 
 #### Auth
 
@@ -382,45 +523,52 @@ Para el user nuevo, todo es transparente: tiene 1 entry, no necesita saber que e
 
 ```
 1. User logueado en /predicciones (con su entry actual)
-2. En el header (desktop) o BottomNav (mobile), abre el selector de entries:
-   ┌──────────────────────────────────┐
-   │ ▼ Mi prode #1 (52 pts · pos 47)  │
-   ├──────────────────────────────────┤
-   │   Mi prode #1 (activo)           │
-   │   ┌── + Crear otro prode $10.000 │
-   └──────────────────────────────────┘
-3. Click en "+ Crear otro prode" → abre modal:
-   ┌──────────────────────────────────┐
-   │ NUEVA ENTRADA AL PRODE            │
-   │                                   │
-   │ Costo: $10.000                    │
-   │ Vas a tener un nuevo set de       │
-   │ predicciones independiente del    │
-   │ que ya jugás.                     │
-   │                                   │
-   │ Alias (opcional):                 │
-   │ [ ej: Mi prode optimista       ]  │
-   │                                   │
-   │ [ PAGAR CON MERCADOPAGO ]         │
-   │ [ Cancelar ]                      │
-   └──────────────────────────────────┘
-4. Click "PAGAR CON MERCADOPAGO":
-   → POST /payments/init con body {} y JWT del user en headers
-   → Backend valida: user existe, count(entries) < max_entries_per_user
-   → Si OK: crea Payment{userId = user.id, status: PENDING, completionTokenHash}
-   → Devuelve initPoint
+2. Abre el selector de entries en el header
+3. Click en "+ Crear otro prode" → modal NewEntryModal:
+   - Input alias (opcional, max 60 chars)
+   - Resumen: "Costo: ${precio}" (leído de AppConfig via /stats/public)
+   - Botones: PAGAR CON MERCADOPAGO / Cancelar
+4. Click PAGAR:
+   → POST /entries/init-payment con body { alias } y JWT
+   → Backend en TX: SELECT COUNT(*) FROM entries WHERE user_id=$1 FOR UPDATE
+                    + crea Payment{userId, alias=Payment.entryAlias, completionTokenHash}
+                    + crea preferencia MP con:
+                      - metadata.completion_token: irrelevante (user ya está logueado)
+                      - metadata.entry_alias: alias (para defensa en profundidad por si Payment.entryAlias se pierde)
+                      - back_urls.success: ${FRONTEND_URL}/inscripcion/success?paymentId=${payment.id}&logged=1
+                      - external_reference: payment.id
+   → Si cap lleno: 409 ENTRY_CAP_REACHED, modal muestra mensaje
+   → Si OK: devuelve initPoint
 5. Redirect a MP / mock-checkout
 6. Pago aprobado → webhook handler:
-   - Update Payment a APPROVED
-   - **Crea Entry automáticamente:** position = max(positions) + 1, alias del Payment.notes (si lo guardamos), userId = Payment.userId
-   - Vincula Payment.entryId = entry.id
+   - TX: update Payment a APPROVED
+   - Re-check cap (race con admin que bajó el cap)
+   - Si OK: crea Entry con position = max(...)+1, alias = Payment.entryAlias
+   - Si lleno: Payment.status = OVER_CAP, AdminAlerts.notify, NO crea Entry
    - Audit log entry.created
-   - NO encola el email de recovery (no hace falta, user ya está)
-7. MP redirige a /inscripcion/success → frontend detecta que el user ya está logueado → redirect a /predicciones?entry=newEntryId
-8. Frontend selecciona el nuevo entry como activo. Toast "✓ Nueva entrada creada"
+   - NO encola email de recovery (user ya está logueado)
+7. MP redirige a /inscripcion/success?paymentId=XXX&logged=1
+   - Frontend detecta query `logged=1` → polling GET /entries/me hasta ver el nuevo entry (timeout 10s)
+   - Cuando aparece → setActiveEntry(newEntryId) + redirect /predicciones?entry=newEntryId
+   - Si timeout sin nuevo entry → mensaje "Tu pago se procesó pero el prode todavía no aparece. Refresca en 1 min." (caso webhook delay)
+8. /predicciones con activeEntry = nuevo. Toast "✓ Nueva entrada creada"
 ```
 
-**El usuario nunca ve `/completar-registro` en este flujo** — saltea directo a las predicciones.
+**Diferencias clave entre flujo público y flujo logueado:**
+
+| Aspecto | Público (registro nuevo) | Logueado (agregar prode) |
+|---------|-------------------------|--------------------------|
+| Endpoint init | POST /payments/init | POST /entries/init-payment |
+| Auth | No required | JWT required |
+| Turnstile | Required en prod | No required |
+| Rate limit | 5/h por IP | 20/h por user |
+| MP back_urls.success | `?token=PLAIN` | `?paymentId=ID&logged=1` |
+| Cap check | N/A | SI, en TX con SELECT FOR UPDATE |
+| Webhook crea Entry | No (espera /complete-registration) | Sí, automático |
+| Después del pago | Va a /completar-registro | Va a /predicciones?entry=newId |
+| Recovery email | Sí | No |
+
+**El usuario logueado nunca ve `/completar-registro` en este flujo** — saltea directo a las predicciones.
 
 ### 4.3 Usuario con 2+ entries — UX
 
@@ -549,6 +697,57 @@ const predictionsQuery = useQuery({
 
 Cuando el user cambia de entry en el switcher, se invalida automáticamente el cache de `predictions`/`special` y se refetchea.
 
+### 5.5 Cache key migration completa
+
+Refactor de `lib/api/queryKeys.ts` (todos los cambios):
+
+```diff
+  predictions: {
+-   me: () => ['predictions', 'me'] as const,
+-   forMatch: (matchId: string) => ['predictions', 'me', 'match', matchId] as const,
+-   special: () => ['predictions', 'special', 'me'] as const,
++   // Eliminado — se reemplaza por entries.*
+  },
+  leaderboard: {
+    global: (page: number) => ['leaderboard', 'global', page] as const,
+    phase: (phase: Phase, page: number) => ['leaderboard', 'phase', phase, page] as const,
+-   around: () => ['leaderboard', 'me', 'around'] as const,
++   aroundEntry: (entryId: string) => ['leaderboard', 'entry', entryId, 'around'] as const,
+    league: (id: string, page: number) => ['leaderboard', 'league', id, page] as const,
+  },
++ entries: {
++   me: () => ['entries', 'me'] as const,
++   detail: (id: string) => ['entries', id] as const,
++   predictions: (entryId: string) => ['entries', entryId, 'predictions'] as const,
++   predictionForMatch: (entryId: string, matchId: string) => ['entries', entryId, 'predictions', matchId] as const,
++   special: (entryId: string) => ['entries', entryId, 'special'] as const,
++ },
+```
+
+**Política de invalidación al cambiar activeEntry:** el `setActiveEntry()` del provider hace:
+```typescript
+queryClient.invalidateQueries({ queryKey: ['entries'] });          // todos los entries.*
+queryClient.invalidateQueries({ queryKey: ['leaderboard', 'entry'] }); // around específico
+```
+
+Esto fuerza refetch al cambiar entry, incluso si la page se quedó montada. Los caches de leaderboard global/phase/league NO se invalidan (son globales, no per-entry).
+
+**Optimistic update con activeEntry mid-mutation:** el `useMutation` para `upsertPrediction` toma el snapshot `currentEntryId` en `onMutate`. Si el user cambia el activeEntry antes de que llegue la response:
+- onSettled invalida `entries.predictions(currentEntryId)` (el entry de la mutation)
+- El nuevo activeEntry queda inválido también vía la invalidation general al cambiar
+- Toast clarificador: "Predicción guardada en {entry.alias || \`Mi prode #\${position}\`}"
+
+### 5.6 Persistencia y deep links
+
+Precedencia explícita al resolver activeEntry en mount:
+1. **`?entry=ID` en URL** — si está y existe en la lista de `/entries/me`: usar (NO sobrescribir localStorage; respeta share link temporal)
+2. **`localStorage["prode.activeEntryId"]`** — si existe y válido en la lista
+3. **Entry con menor `position`** (fallback)
+
+Si el `entryId` resuelto NO existe en la lista (ej: entry borrada, BD reseteada en dev): fallback al menor position + clean del localStorage + log warn.
+
+XSS note: el `activeEntryId` no es secreto — un atacante con XSS puede leer qué entry estás viendo, pero el access token sigue solo en memoria de JS (variable de módulo per spec frontend §5.1). El daño de leer activeEntryId es despreciable.
+
 ### 5.5 PointsCelebration y leaderboard ranking
 
 El leaderboard muestra rows de **entries**, no users. Si Juan tiene 2 entries:
@@ -595,9 +794,30 @@ Esto NO es feature-flag controlable: cuando se mergea, todo el sistema cambia at
 8. **Admin:** columna entries en /admin/usuarios, /admin/entries page, max_entries en /admin/configuracion
 9. **Tests:** adaptación de los tests existentes + E2E "user agrega segundo prode"
 
-### Total: ~2.5 días
+### Total estimado: ~3.5 días
 
-Ningún plan que cubra todo en menos tiempo es honesto.
+**Re-estimación realista** (era ~2.5 inicialmente):
+- Backend: 1.5 días → **2 días** (la migración multi-fase + script de backfill + dry-run + tests es más laborioso de lo asumido)
+- Frontend: 1 día → **1 día** (sin cambios mayores)
+- Test refactor: NO estaba contado por separado → **0.5 día** (cualquier test que asume `User.predictions` o factories `prisma.prediction.create({ userId })` rompe; estimamos 80-120 tests modificados sobre los 344 existentes)
+
+### Política de deploy
+
+**Deploy atómico backend + frontend (NO desacoplado).**
+
+Ningún feature flag, no hay aliases legacy. Backend y frontend cambian sus contratos en lockstep:
+- Endpoint `/predictions/me` → `/entries/:entryId/predictions`
+- Endpoint `/leaderboard/me/around` → `/leaderboard/entry/:entryId/around`
+- Endpoints `/leagues` cambian shape de body
+- queryKeys del frontend cambian shape
+
+Procedimiento del release:
+1. Mergear el PR multi-prode al main
+2. CI buildea ambos containers
+3. Manualmente desde Dokploy panel: stop frontend, deploy backend (corre M1 + backfill script + M2), restart frontend con nuevo build, verificar healthcheck
+4. Total downtime estimado: ~5-10 minutos
+
+Como el sistema todavía está pre-launch (no hay tráfico real), el downtime es invisible. Para lanzamientos post-Mundial, considerar deploy con feature flag o aliases legacy si se requiere zero-downtime.
 
 ---
 
@@ -626,7 +846,12 @@ Ningún plan que cubra todo en menos tiempo es honesto.
 | Admin baja el cap a 3 cuando hay users con 5 entries | Existing entries no se tocan; nuevos /payments/init devuelven 409 |
 | User cambia activeEntry mid-mutation de prediction | Optimistic update apunta al entry pre-cambio; queries se invalidan al cambiar; un toast confirma "Predicción guardada en {entry.alias}" |
 | Webhook MP duplicado tras Entry ya creada | Idempotente: el `Entry.paymentId @unique` rechaza el segundo insert; logged y skipped |
-| User logueado completa /payments/init pero la session expira mid-flow | El JWT debe estar válido en el `init`. Si expira durante el redirect a MP, el webhook usa el `Payment.userId` ya guardado — la session expira no lo afecta |
+| User logueado completa /entries/init-payment pero la session expira mid-flow | El JWT debe estar válido en el `init`. Si expira durante el redirect a MP, el webhook usa el `Payment.userId` ya guardado — la session expira no lo afecta. Cuando vuelve, el AuthProvider hace refresh y resuelve la nueva entry vía polling de /entries/me |
+| Webhook llega después del cap bajado | Re-check en el webhook tira `OVER_CAP`. Payment queda en estado raro, AdminAlerts notifica, admin decide refund manual |
+| Frontend renderea selector con 1 entry | Muestra display read-only del nombre/alias, sin dropdown. El "+ Crear otro" CTA aparece solo en hover/tap del display. |
+| MockCheckoutProvider en E2E tests | Necesita actualizarse para soportar el flow logueado: aceptar JWT en headers + retornar `back_urls.success` con `?logged=1`. Test E2E "user agrega segundo prode" cubrirá el flow completo |
+| User refresca la página post-pago antes de que el webhook procese | /predicciones?entry=newEntryId muestra "Cargando entradas..." (polling /entries/me cada 2s, max 10s). Si después del timeout no aparece: mensaje "Tu pago se procesó. Si en 1 min no aparece, contactá al admin" |
+| Deploy atómico falla a mitad | Backend desplegado nuevo + frontend viejo: 500s en /entries/* (no existen aún en frontend); 404 en /predictions/me (ya no existe en backend). Mitigación: rollback rápido del backend al snapshot pre-M1 + frontend ya quedó. Probar en staging primero. |
 | User logueado y abre flujo público en otra pestaña | Backend distingue por presencia de JWT; si la otra pestaña no tiene JWT, va por flow público (Payment.userId=null) — termina creando un User NUEVO con DNI distinto. Si quería crear "otro prode" del mismo user, debería usar el flujo logueado |
 | User borra `localStorage["prode.activeEntryId"]` manualmente | El provider re-resuelve a entry de menor position |
 | Liga con cap de members lleno + user con 2 entries quiere unir ambas | Cada `LeagueMembership` cuenta para el cap. Si el cap es 50 y hay 49 entries, sólo un entry de Juan puede unirse |
