@@ -129,6 +129,18 @@ export class AdminUsersController {
         },
       });
 
+      // Multi-prode: every paying user gets Entry #1 inline. Same shape
+      // as the public flow's complete-registration, just using the
+      // CASH/TRANSFER payment as paymentId.
+      const entry = await tx.entry.create({
+        data: {
+          userId: user.id,
+          paymentId: payment.id,
+          position: 1,
+          status: 'ACTIVE',
+        },
+      });
+
       await tx.auditLog.create({
         data: {
           userId: admin.id,
@@ -138,6 +150,7 @@ export class AdminUsersController {
           changes: {
             dni: maskDni(dto.dni),
             paymentId: payment.id,
+            entryId: entry.id,
             paymentMethod: dto.paymentMethod,
             amount: dto.amount,
           },
@@ -146,7 +159,24 @@ export class AdminUsersController {
         },
       });
 
-      return { user, payment };
+      await tx.auditLog.create({
+        data: {
+          userId: admin.id,
+          action: 'entry.created',
+          entity: 'entry',
+          entityId: entry.id,
+          changes: {
+            paymentId: payment.id,
+            position: 1,
+            source: 'admin_manual',
+            ownerUserId: user.id,
+          },
+          ipAddress: ctx.ipAddress ?? null,
+          userAgent: ctx.userAgent ?? null,
+        },
+      });
+
+      return { user, payment, entry };
     });
 
     this.logger.log(
@@ -168,6 +198,11 @@ export class AdminUsersController {
         amount: Number(result.payment.amount),
         method: result.payment.method,
         status: result.payment.status,
+      },
+      entry: {
+        id: result.entry.id,
+        position: result.entry.position,
+        status: result.entry.status,
       },
     };
   }

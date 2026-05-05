@@ -452,6 +452,18 @@ export class AuthController {
         whatsappOptIn: true,
         createdAt: true,
         lastLoginAt: true,
+        entries: {
+          where: { status: 'ACTIVE' },
+          orderBy: { position: 'asc' },
+          select: {
+            id: true,
+            position: true,
+            alias: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
       },
     });
     if (!user) {
@@ -673,13 +685,37 @@ export class AuthController {
         data: { userId: created.id, completedAt: new Date() },
       });
 
+      // Multi-prode: every payer gets Entry #1 inline. Spec 4.1 — the
+      // user never sees the entry concept until they buy a second
+      // prode; the first one is created transparently here.
+      const entry = await tx.entry.create({
+        data: {
+          userId: created.id,
+          paymentId: payment.id,
+          position: 1,
+          status: 'ACTIVE',
+        },
+      });
+
       await tx.auditLog.create({
         data: {
           userId: created.id,
           action: 'auth.registration_completed',
           entity: 'user',
           entityId: created.id,
-          changes: { paymentId: payment.id },
+          changes: { paymentId: payment.id, entryId: entry.id },
+          ipAddress: ctx.ipAddress ?? null,
+          userAgent: ctx.userAgent ?? null,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: created.id,
+          action: 'entry.created',
+          entity: 'entry',
+          entityId: entry.id,
+          changes: { paymentId: payment.id, position: 1, source: 'registration' },
           ipAddress: ctx.ipAddress ?? null,
           userAgent: ctx.userAgent ?? null,
         },

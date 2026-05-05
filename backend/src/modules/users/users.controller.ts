@@ -10,22 +10,17 @@ import type { Cache } from '@nestjs/cache-manager';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 
-/**
- * Cache window for `GET /users/:id/public-profile`. The leaderboard's
- * row drilldown is the main consumer; pages of 50 rows × multiple users
- * tapped per session benefit from a short shared cache. 60s mirrors the
- * stats endpoint and avoids stale FINISHED-prediction lists for more
- * than ~1 minute after a match closes.
- */
 const PROFILE_TTL_MS = 60 * 1000;
 
-/** Shape returned by the public profile endpoint. Type-only, exported
- * so the frontend can `import type` later without depending on the
- * Prisma generated types. */
-export interface PublicProfile {
+/**
+ * Per-entry breakdown surfaced on the public profile for users with
+ * multiple prodes. Aggregates predictions for FINISHED matches by entry.
+ */
+export interface PublicProfileEntry {
   id: string;
-  firstName: string;
-  lastName: string;
+  position: number;
+  alias: string | null;
+  totalPoints: number;
   predictionsFinished: Array<{
     matchId: string;
     scoreHome: number;
@@ -45,6 +40,16 @@ export interface PublicProfile {
   }>;
 }
 
+export interface PublicProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  /** Aggregate of every entry's pointsEarned. */
+  totalPoints: number;
+  /** One element per ACTIVE entry of the user. */
+  entries: PublicProfileEntry[];
+}
+
 @Controller('users')
 export class UsersController {
   constructor(
@@ -54,23 +59,22 @@ export class UsersController {
 
   /**
    * Public read-only profile used by the leaderboard drawer when an
-   * anonymous visitor (or any signed-in user) taps a row. Returns only:
+   * anonymous visitor (or any signed-in user) taps a row. Returns:
    *   - id / firstName / lastName (no DNI, whatsapp, role, status, ...)
-   *   - the user's predictions for matches that have FINISHED, with
-   *     team + score data so the drawer can render compact result rows.
+   *   - one breakdown per ACTIVE entry of the user, with the entry's
+   *     FINISHED-match predictions and per-entry total points.
    *
    * Edge cases:
    *   - User doesn't exist → 404.
    *   - User exists but status is BANNED → 404 (don't acknowledge them).
-   *   - User exists, role=ADMIN: still returns the row — admins can
-   *     have predictions and the leaderboard surface might list them.
+   *   - Users with no entry yet (admin / pre-payment): empty entries[].
    *
    * Cached 60s in the in-memory cache-manager store.
    */
   @Public()
   @Get(':id/public-profile')
   async publicProfile(@Param('id') id: string): Promise<PublicProfile> {
-    const cacheKey = `users:public-profile:${id}:v1`;
+    const cacheKey = `users:public-profile:${id}:v2`;
     const cached = await this.cache.get<PublicProfile>(cacheKey);
     if (cached) return cached;
 
@@ -84,42 +88,61 @@ export class UsersController {
       },
     });
     if (!user || user.status === 'BANNED') {
-      // 404 on BANNED so we don't even acknowledge the row exists.
       throw new NotFoundException();
     }
 
-    const predictions = await this.prisma.prediction.findMany({
-      where: {
-        userId: id,
-        match: { status: 'FINISHED' },
-      },
-      orderBy: { match: { kickoffAt: 'asc' } },
+    const entries = await this.prisma.entry.findMany({
+      where: { userId: id, status: 'ACTIVE' },
+      orderBy: { position: 'asc' },
       select: {
-        matchId: true,
-        scoreHome: true,
-        scoreAway: true,
-        outcomeType: true,
-        pointsEarned: true,
-        match: {
+        id: true,
+        position: true,
+        alias: true,
+        predictions: {
+          where: { match: { status: 'FINISHED' } },
+          orderBy: { match: { kickoffAt: 'asc' } },
           select: {
-            id: true,
-            matchNumber: true,
-            phase: true,
-            kickoffAt: true,
+            matchId: true,
             scoreHome: true,
             scoreAway: true,
-            homeTeam: { select: { fifaCode: true, name: true } },
-            awayTeam: { select: { fifaCode: true, name: true } },
+            outcomeType: true,
+            pointsEarned: true,
+            match: {
+              select: {
+                id: true,
+                matchNumber: true,
+                phase: true,
+                kickoffAt: true,
+                scoreHome: true,
+                scoreAway: true,
+                homeTeam: { select: { fifaCode: true, name: true } },
+                awayTeam: { select: { fifaCode: true, name: true } },
+              },
+            },
           },
         },
       },
     });
 
+    const entryBreakdown: PublicProfileEntry[] = entries.map((e) => ({
+      id: e.id,
+      position: e.position,
+      alias: e.alias,
+      totalPoints: e.predictions.reduce((sum, p) => sum + p.pointsEarned, 0),
+      predictionsFinished: e.predictions,
+    }));
+
+    const totalPoints = entryBreakdown.reduce(
+      (sum, e) => sum + e.totalPoints,
+      0,
+    );
+
     const result: PublicProfile = {
       id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
-      predictionsFinished: predictions,
+      totalPoints,
+      entries: entryBreakdown,
     };
 
     await this.cache.set(cacheKey, result, PROFILE_TTL_MS);

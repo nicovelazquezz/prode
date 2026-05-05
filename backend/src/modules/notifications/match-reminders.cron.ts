@@ -84,25 +84,44 @@ export class MatchRemindersCron {
         continue;
       }
 
-      // Find every ACTIVE opt-in user who has NOT yet predicted this
-      // match. The `notIn` over a sub-select keeps the work in Postgres
-      // instead of streaming all predictions to Node.
-      const usersWithPrediction = await this.prisma.prediction.findMany({
+      // Multi-prode: predictions live on entries. We send a single
+      // reminder per user when at least ONE of their ACTIVE entries
+      // hasn't predicted this match — the entry-level granularity
+      // would be spammy in chat ("you haven't predicted with prode #2"
+      // ×3). The dedup key stays user-keyed.
+      const entriesWithPrediction = await this.prisma.prediction.findMany({
         where: { matchId: match.id },
-        select: { userId: true },
+        select: { entryId: true },
       });
-      const predictedUserIds = usersWithPrediction.map((p) => p.userId);
+      const predictedEntryIds = entriesWithPrediction.map((p) => p.entryId);
 
-      const eligibleUsers = await this.prisma.user.findMany({
+      // ACTIVE entries that did NOT predict this match.
+      const missingEntries = await this.prisma.entry.findMany({
         where: {
           status: 'ACTIVE',
-          whatsappOptIn: true,
-          ...(predictedUserIds.length > 0
-            ? { id: { notIn: predictedUserIds } }
+          ...(predictedEntryIds.length > 0
+            ? { id: { notIn: predictedEntryIds } }
             : {}),
+          user: { status: 'ACTIVE', whatsappOptIn: true },
         },
-        select: { id: true, whatsapp: true },
+        select: {
+          userId: true,
+          user: { select: { whatsapp: true } },
+        },
       });
+
+      // De-dup by user — one reminder per person regardless of how
+      // many entries are missing.
+      const eligibleUsersMap = new Map<string, { id: string; whatsapp: string }>();
+      for (const e of missingEntries) {
+        if (!eligibleUsersMap.has(e.userId)) {
+          eligibleUsersMap.set(e.userId, {
+            id: e.userId,
+            whatsapp: e.user.whatsapp,
+          });
+        }
+      }
+      const eligibleUsers = Array.from(eligibleUsersMap.values());
 
       for (const user of eligibleUsers) {
         const dedupKey = `match-reminder:${user.id}:${match.id}`;
