@@ -64,7 +64,7 @@ const SPECIAL_PRIZE_RULES = [
 ];
 
 const APP_CONFIG = [
-  { key: 'inscripcion_precio', value: '15000', description: 'Precio de inscripción en ARS' },
+  { key: 'inscripcion_precio', value: '10000', description: 'Precio de inscripción en ARS' },
   { key: 'inscripcion_cierre', value: '2026-06-11T19:00:00-03:00', description: 'Fecha límite para inscribirse (ISO 8601)' },
   { key: 'pozo_dist_top1', value: '0.25', description: 'Porcentaje del pozo para el primer puesto' },
   { key: 'pozo_dist_top2', value: '0.12', description: 'Porcentaje del pozo para el segundo puesto' },
