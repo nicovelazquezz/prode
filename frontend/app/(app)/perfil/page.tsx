@@ -17,9 +17,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { IosInstallHint } from "@/components/domain/ios-install-hint";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { changePassword } from "@/lib/api/auth";
@@ -29,10 +26,32 @@ import { cn } from "@/lib/utils/cn";
  * /perfil — datos personales (read-only), editables (whatsapp +
  * notificaciones), cambio de password, hint instalar app, logout.
  *
- * El endpoint para actualizar whatsapp / opt-in no esta documentado
- * en el plan; dejamos UI con mutation TODO para conectar cuando el
- * backend exponga PATCH /auth/me o equivalente.
+ * Visual: dark editorial. Cada section es un card de surface bg con
+ * border line-strong. Inputs surface bg + line-strong border, focus
+ * outline gold + green underline. Logout outlined con border-strong.
  */
+
+const sectionTitle =
+  "font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight leading-none text-[var(--color-landing-text)]";
+
+const labelClasses =
+  "font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]";
+
+const inputClasses =
+  "h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)] px-3 text-base text-[var(--color-landing-text)] placeholder:text-[var(--color-landing-text-muted)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)] focus:border-[var(--color-landing-green)]";
+
+const errorText =
+  "font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.16em] text-[var(--color-landing-red)]";
+
+const cardSurface =
+  "rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5";
+
+const buttonPrimary =
+  "inline-flex items-center justify-center gap-2 rounded-sm bg-[var(--color-landing-red)] px-6 py-3 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)] disabled:cursor-not-allowed disabled:opacity-40";
+
+const buttonOutlined =
+  "inline-flex items-center justify-center gap-2 rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-6 py-3 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]";
+
 export default function PerfilPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -40,7 +59,7 @@ export default function PerfilPage() {
   if (!user) {
     return (
       <section className="mx-auto max-w-xl px-4 py-12 text-center">
-        <p className="font-sans text-sm text-[var(--color-prode-text-secondary)]">
+        <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
           Cargando perfil...
         </p>
       </section>
@@ -53,10 +72,15 @@ export default function PerfilPage() {
   };
 
   return (
-    <section className="mx-auto max-w-xl px-4 py-6 md:px-8 space-y-8">
+    <section className="mx-auto max-w-xl px-4 pb-20 pt-10 md:px-8 md:pb-24 md:pt-14 space-y-10">
       <header>
-        <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide leading-none text-[var(--color-prode-near-black)]">
-          Mi perfil
+        <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+          Tu cuenta
+        </div>
+        <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)]">
+          <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+            Perfil.
+          </span>
         </h1>
       </header>
 
@@ -74,30 +98,22 @@ export default function PerfilPage() {
 
       <ChangePasswordSection />
 
-      <section
-        aria-labelledby="install-section-title"
-        className="space-y-3"
-      >
-        <h2
-          id="install-section-title"
-          className="font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]"
-        >
+      <section aria-labelledby="install-section-title" className="space-y-3">
+        <h2 id="install-section-title" className={sectionTitle}>
           Instalar app
         </h2>
         <IosInstallHint />
       </section>
 
-      <section className="border-t border-[var(--color-prode-border)] pt-6">
-        <Button
+      <section className="border-t border-[var(--color-landing-line-strong)] pt-8">
+        <button
           type="button"
-          variant="outlined"
-          size="lg"
           onClick={handleLogout}
-          className="w-full justify-center gap-2"
+          className={cn(buttonOutlined, "w-full")}
         >
-          <LogOut className="h-5 w-5" aria-hidden />
-          Cerrar sesion
-        </Button>
+          <LogOut className="h-4 w-4" aria-hidden />
+          Cerrar sesión
+        </button>
       </section>
     </section>
   );
@@ -115,31 +131,23 @@ function PersonalDataSection({
   role: "USER" | "ADMIN";
 }) {
   return (
-    <section
-      aria-labelledby="personal-section-title"
-      className="space-y-3"
-    >
-      <h2
-        id="personal-section-title"
-        className="font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]"
-      >
+    <section aria-labelledby="personal-section-title" className="space-y-3">
+      <h2 id="personal-section-title" className={sectionTitle}>
         Datos personales
       </h2>
-      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-sm border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-5">
+      <dl className={cn("grid grid-cols-1 sm:grid-cols-2 gap-5", cardSurface)}>
         <Field label="DNI" value={dni} />
         <Field label="Nombre" value={firstName} />
         <Field label="Apellido" value={lastName} />
-        <div className="flex flex-col gap-1">
-          <dt className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-            Rol
-          </dt>
+        <div className="flex flex-col gap-1.5">
+          <dt className={labelClasses}>Rol</dt>
           <dd>
             <span
               className={cn(
-                "inline-flex items-center gap-1 rounded-sm px-2 py-0.5 font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.16em]",
+                "inline-flex items-center gap-1 rounded-sm px-2 py-0.5 font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-landing-text)]",
                 role === "ADMIN"
-                  ? "bg-[var(--color-landing-red)] text-[var(--color-landing-text)]"
-                  : "bg-[var(--color-landing-green)] text-[var(--color-landing-text)]",
+                  ? "bg-[var(--color-landing-red)]"
+                  : "bg-[var(--color-landing-green)]",
               )}
             >
               <ShieldCheck className="h-3 w-3" aria-hidden />
@@ -154,11 +162,9 @@ function PersonalDataSection({
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-1">
-      <dt className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-        {label}
-      </dt>
-      <dd className="font-sans text-base text-[var(--color-prode-near-black)]">
+    <div className="flex flex-col gap-1.5">
+      <dt className={labelClasses}>{label}</dt>
+      <dd className="font-sans text-base text-[var(--color-landing-text)]">
         {value}
       </dd>
     </div>
@@ -192,11 +198,7 @@ function ContactSection({
     },
   });
 
-  // TODO(backend): cuando el backend exponga PATCH /auth/me (o
-  // /users/me), conectar la mutation. Por ahora muestra toast con
-  // confirmacion visual para que el flujo UI quede testeado.
   const saveWhatsapp = (data: WhatsappForm) => {
-    // Placeholder: replace with `updateMe(data)` when backend ships.
     void data;
     toast.success("Cambios guardados (mock — backend pendiente).");
     form.reset(data);
@@ -205,7 +207,6 @@ function ContactSection({
 
   const onSubmit = (data: WhatsappForm) => {
     if (data.whatsapp !== whatsapp) {
-      // El cambio de numero requiere confirmacion explicita.
       setConfirmDialog(data);
     } else {
       saveWhatsapp(data);
@@ -213,32 +214,29 @@ function ContactSection({
   };
 
   return (
-    <section
-      aria-labelledby="contact-section-title"
-      className="space-y-3"
-    >
-      <h2
-        id="contact-section-title"
-        className="font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]"
-      >
+    <section aria-labelledby="contact-section-title" className="space-y-3">
+      <h2 id="contact-section-title" className={sectionTitle}>
         Contacto
       </h2>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-4 rounded-sm border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-5"
+        className={cn("space-y-5", cardSurface)}
       >
         <div className="flex flex-col gap-2">
-          <Label htmlFor="whatsapp">WhatsApp</Label>
-          <Input
+          <label htmlFor="whatsapp" className={labelClasses}>
+            WhatsApp
+          </label>
+          <input
             id="whatsapp"
             type="tel"
             inputMode="tel"
             autoComplete="tel"
             aria-invalid={form.formState.errors.whatsapp ? "true" : "false"}
+            className={inputClasses}
             {...form.register("whatsapp")}
           />
           {form.formState.errors.whatsapp ? (
-            <p className="font-sans text-xs text-[var(--color-prode-accent)]">
+            <p className={errorText}>
               {form.formState.errors.whatsapp.message}
             </p>
           ) : null}
@@ -248,32 +246,33 @@ function ContactSection({
           <input
             type="checkbox"
             className={cn(
-              "mt-1 h-5 w-5 shrink-0 rounded border-2 border-[var(--color-prode-border)]",
-              "checked:bg-[var(--color-prode-near-black)] checked:border-[var(--color-prode-near-black)]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)] focus-visible:ring-offset-2",
+              "mt-1 h-5 w-5 shrink-0 rounded-sm appearance-none cursor-pointer",
+              "border-2 border-[var(--color-landing-line-strong)] bg-transparent",
+              "checked:bg-[var(--color-landing-green)] checked:border-[var(--color-landing-green)]",
+              "checked:bg-[length:14px_14px] checked:bg-no-repeat checked:bg-center",
+              "checked:[background-image:url('data:image/svg+xml;utf8,<svg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2024%2024%22%20fill=%22none%22%20stroke=%22%23f1ece0%22%20stroke-width=%223%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22><polyline%20points=%2220%206%209%2017%204%2012%22/></svg>')]",
+              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]",
             )}
             {...form.register("whatsappOptIn")}
           />
           <div className="min-w-0">
-            <p className="font-sans text-sm font-medium text-[var(--color-prode-near-black)]">
+            <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text)]">
               Recibir notificaciones por WhatsApp
             </p>
-            <p className="font-sans text-xs text-[var(--color-prode-text-secondary)]">
+            <p className="mt-1 text-xs leading-relaxed text-[var(--color-landing-text-muted)]">
               Recordatorios de partidos y resultados.
             </p>
           </div>
         </label>
 
-        <Button
+        <button
           type="submit"
-          variant="primary"
-          size="default"
           disabled={!form.formState.isDirty}
-          className="gap-2"
+          className={buttonPrimary}
         >
           <Save className="h-4 w-4" aria-hidden />
           Guardar cambios
-        </Button>
+        </button>
       </form>
 
       <Dialog
@@ -282,30 +281,32 @@ function ContactSection({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmar cambio</DialogTitle>
-            <DialogDescription>
-              Vamos a actualizar tu numero de WhatsApp a{" "}
-              <span className="font-bold text-[var(--color-prode-near-black)]">
+            <DialogTitle className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
+              Confirmar cambio
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+              Vamos a actualizar tu número de WhatsApp a{" "}
+              <span className="font-[family-name:var(--font-landing-mono)] text-[var(--color-landing-gold)]">
                 {confirmDialog?.whatsapp}
               </span>
-              . Es por aca que vas a recibir todas las notificaciones.
+              . Es por acá que vas a recibir todas las notificaciones.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-stretch">
+            <button
               type="button"
-              variant="ghost"
               onClick={() => setConfirmDialog(null)}
+              className={cn(buttonOutlined, "flex-1")}
             >
               Cancelar
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              variant="primary"
               onClick={() => confirmDialog && saveWhatsapp(confirmDialog)}
+              className={cn(buttonPrimary, "flex-1")}
             >
               Confirmar
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -371,80 +372,82 @@ function ChangePasswordSection() {
   };
 
   return (
-    <section
-      aria-labelledby="password-section-title"
-      className="space-y-3"
-    >
-      <h2
-        id="password-section-title"
-        className="font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]"
-      >
-        Cambiar contrasena
+    <section aria-labelledby="password-section-title" className="space-y-3">
+      <h2 id="password-section-title" className={sectionTitle}>
+        Cambiar contraseña
       </h2>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-4 rounded-sm border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-5"
+        className={cn("space-y-5", cardSurface)}
       >
         <div className="flex flex-col gap-2">
-          <Label htmlFor="currentPassword">Contrasena actual</Label>
-          <Input
+          <label htmlFor="currentPassword" className={labelClasses}>
+            Contraseña actual
+          </label>
+          <input
             id="currentPassword"
             type="password"
             autoComplete="current-password"
             aria-invalid={
               form.formState.errors.currentPassword ? "true" : "false"
             }
+            className={inputClasses}
             {...form.register("currentPassword")}
           />
           {form.formState.errors.currentPassword ? (
-            <p className="font-sans text-xs text-[var(--color-prode-accent)]">
+            <p className={errorText}>
               {form.formState.errors.currentPassword.message}
             </p>
           ) : null}
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="newPassword">Contrasena nueva</Label>
-          <Input
+          <label htmlFor="newPassword" className={labelClasses}>
+            Contraseña nueva
+          </label>
+          <input
             id="newPassword"
             type="password"
             autoComplete="new-password"
             aria-invalid={form.formState.errors.newPassword ? "true" : "false"}
+            className={inputClasses}
             {...form.register("newPassword")}
           />
           {form.formState.errors.newPassword ? (
-            <p className="font-sans text-xs text-[var(--color-prode-accent)]">
+            <p className={errorText}>
               {form.formState.errors.newPassword.message}
             </p>
           ) : null}
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="confirmNewPassword">Repetir nueva contrasena</Label>
-          <Input
+          <label htmlFor="confirmNewPassword" className={labelClasses}>
+            Repetir nueva contraseña
+          </label>
+          <input
             id="confirmNewPassword"
             type="password"
             autoComplete="new-password"
             aria-invalid={
               form.formState.errors.confirmNewPassword ? "true" : "false"
             }
+            className={inputClasses}
             {...form.register("confirmNewPassword")}
           />
           {form.formState.errors.confirmNewPassword ? (
-            <p className="font-sans text-xs text-[var(--color-prode-accent)]">
+            <p className={errorText}>
               {form.formState.errors.confirmNewPassword.message}
             </p>
           ) : null}
         </div>
-        <p className="font-sans text-xs text-[var(--color-prode-text-secondary)]">
-          Tendras que volver a iniciar sesion en otros dispositivos.
+        <p className="text-xs leading-relaxed text-[var(--color-landing-text-muted)]">
+          Tendrás que volver a iniciar sesión en otros dispositivos.
         </p>
-        <Button
+        <button
           type="submit"
-          variant="primary"
-          size="default"
           disabled={mutation.isPending}
+          className={buttonPrimary}
         >
-          {mutation.isPending ? "Cambiando..." : "Cambiar contrasena"}
-        </Button>
+          {mutation.isPending ? "Cambiando..." : "Cambiar contraseña"}
+        </button>
       </form>
     </section>
   );

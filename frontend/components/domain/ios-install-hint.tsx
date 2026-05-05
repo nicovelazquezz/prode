@@ -21,10 +21,8 @@ function detectPlatform(): Platform {
  */
 function detectStandalone(): boolean {
   if (typeof window === "undefined") return false;
-  // iOS Safari: navigator.standalone (boolean).
   const nav = window.navigator as Navigator & { standalone?: boolean };
   if ("standalone" in nav && nav.standalone === true) return true;
-  // Android Chrome y otros: matchMedia.
   if (typeof window.matchMedia === "function") {
     return window.matchMedia("(display-mode: standalone)").matches;
   }
@@ -39,8 +37,8 @@ interface IosInstallHintProps {
  * Card explicativa "Agregar a inicio". Solo se renderiza en mobile
  * (iOS o Android) cuando la app NO esta en modo standalone.
  *
- * En iOS muestra los pasos especificos del menu Compartir; en
- * Android, el equivalente del menu del navegador.
+ * Visual: dark editorial (surface bg + line-strong border, typography
+ * mono uppercase para steps + display title).
  *
  * SSR-safe: renderiza nada en server, decide en cliente despues
  * del primer mount (evita hydration mismatch).
@@ -58,10 +56,13 @@ export function IosInstallHint({ className }: IosInstallHintProps) {
   if (isStandalone) return null;
   if (platform === "other") return null;
 
+  const stepNumber =
+    "font-[family-name:var(--font-landing-display)] text-base text-[var(--color-landing-gold)] mr-2";
+
   return (
     <aside
       className={cn(
-        "rounded-md border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-4",
+        "rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5",
         className,
       )}
       aria-label={
@@ -70,38 +71,59 @@ export function IosInstallHint({ className }: IosInstallHintProps) {
           : "Como agregar la app al inicio en Android"
       }
     >
-      <div className="flex items-start gap-3">
-        <div className="shrink-0 rounded-full bg-white p-2 border border-[var(--color-prode-border)]">
-          <Smartphone className="h-5 w-5 text-[var(--color-prode-near-black)]" aria-hidden />
+      <div className="flex items-start gap-4">
+        <div className="shrink-0 rounded-sm bg-[var(--color-landing-surface-2)] p-2 border border-[var(--color-landing-line-strong)]">
+          <Smartphone
+            className="h-5 w-5 text-[var(--color-landing-text)]"
+            aria-hidden
+          />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-display text-lg font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
-            Instala la app
+          <p className="font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight leading-none text-[var(--color-landing-text)]">
+            Instalá la app
           </p>
           {platform === "ios" ? (
-            <ol className="mt-2 space-y-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
-              <li className="inline-flex items-center gap-1">
-                <span className="font-bold text-[var(--color-prode-near-black)]">1.</span>
-                Toca <Share className="inline h-4 w-4 align-text-bottom" aria-label="boton compartir" /> Compartir abajo de Safari.
+            <ol className="mt-3 space-y-2 text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+              <li>
+                <span className={stepNumber}>1.</span>
+                Tocá{" "}
+                <Share
+                  className="inline h-4 w-4 align-text-bottom text-[var(--color-landing-text)]"
+                  aria-label="boton compartir"
+                />{" "}
+                Compartir abajo de Safari.
               </li>
-              <li className="inline-flex items-center gap-1">
-                <span className="font-bold text-[var(--color-prode-near-black)]">2.</span>
-                Toca <span className="font-medium text-[var(--color-prode-near-black)]">"Agregar a inicio"</span>.
+              <li>
+                <span className={stepNumber}>2.</span>
+                Tocá{" "}
+                <span className="text-[var(--color-landing-text)]">
+                  "Agregar a inicio"
+                </span>
+                .
               </li>
-              <li className="inline-flex items-center gap-1">
-                <span className="font-bold text-[var(--color-prode-near-black)]">3.</span>
-                Confirma con <Plus className="inline h-4 w-4 align-text-bottom" aria-hidden /> Agregar.
+              <li>
+                <span className={stepNumber}>3.</span>
+                Confirmá con{" "}
+                <Plus
+                  className="inline h-4 w-4 align-text-bottom text-[var(--color-landing-text)]"
+                  aria-hidden
+                />{" "}
+                Agregar.
               </li>
             </ol>
           ) : (
-            <ol className="mt-2 space-y-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+            <ol className="mt-3 space-y-2 text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
               <li>
-                <span className="font-bold text-[var(--color-prode-near-black)]">1.</span>{" "}
-                Toca el menu del navegador (3 puntos arriba a la derecha).
+                <span className={stepNumber}>1.</span>
+                Tocá el menú del navegador (3 puntos arriba a la derecha).
               </li>
               <li>
-                <span className="font-bold text-[var(--color-prode-near-black)]">2.</span>{" "}
-                Elegi <span className="font-medium text-[var(--color-prode-near-black)]">"Agregar a la pantalla principal"</span>.
+                <span className={stepNumber}>2.</span>
+                Elegí{" "}
+                <span className="text-[var(--color-landing-text)]">
+                  "Agregar a la pantalla principal"
+                </span>
+                .
               </li>
             </ol>
           )}
