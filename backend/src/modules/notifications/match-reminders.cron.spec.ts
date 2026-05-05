@@ -31,6 +31,7 @@ describe('MatchRemindersCron.sendReminders (integration)', () => {
   let eligibleUserId: string;
   let predictedUserId: string;
   let optedOutUserId: string;
+  let predictedEntryId: string;
   let targetMatchId: string;
 
   type MatchSnapshot = {
@@ -85,49 +86,74 @@ describe('MatchRemindersCron.sendReminders (integration)', () => {
     const bcrypt = await import('bcrypt');
     const passwordHash = await bcrypt.hash('SeedPass123', 10);
 
-    const eligible = await prisma.user.create({
-      data: {
-        dni: eligibleDni,
-        firstName: 'Reminder',
-        lastName: 'Eligible',
-        whatsapp: `549${String(8_000_000_000 + stamp).slice(-9)}`.slice(0, 13),
-        passwordHash,
-        whatsappOptIn: true,
-        status: 'ACTIVE',
-      },
-    });
-    eligibleUserId = eligible.id;
+    // Helper: user → APPROVED Payment → Entry #1.
+    async function makeUserWithEntry(args: {
+      dni: string;
+      lastName: string;
+      whatsapp: string;
+      whatsappOptIn: boolean;
+    }): Promise<{ userId: string; entryId: string }> {
+      const u = await prisma.user.create({
+        data: {
+          dni: args.dni,
+          firstName: 'Reminder',
+          lastName: args.lastName,
+          whatsapp: args.whatsapp,
+          passwordHash,
+          whatsappOptIn: args.whatsappOptIn,
+          status: 'ACTIVE',
+        },
+      });
+      const pmt = await prisma.payment.create({
+        data: {
+          userId: u.id,
+          amount: 10_000,
+          method: 'CASH',
+          status: 'APPROVED',
+          paidAt: new Date(),
+          completedAt: new Date(),
+        },
+      });
+      const entry = await prisma.entry.create({
+        data: {
+          userId: u.id,
+          paymentId: pmt.id,
+          position: 1,
+          status: 'ACTIVE',
+        },
+      });
+      return { userId: u.id, entryId: entry.id };
+    }
 
-    const predicted = await prisma.user.create({
-      data: {
-        dni: predictedDni,
-        firstName: 'Reminder',
-        lastName: 'Predicted',
-        whatsapp: `549${String(8_100_000_000 + stamp).slice(-9)}`.slice(0, 13),
-        passwordHash,
-        whatsappOptIn: true,
-        status: 'ACTIVE',
-      },
+    const eligible = await makeUserWithEntry({
+      dni: eligibleDni,
+      lastName: 'Eligible',
+      whatsapp: `549${String(8_000_000_000 + stamp).slice(-9)}`.slice(0, 13),
+      whatsappOptIn: true,
     });
-    predictedUserId = predicted.id;
+    eligibleUserId = eligible.userId;
 
-    const optedOut = await prisma.user.create({
-      data: {
-        dni: optedOutDni,
-        firstName: 'Reminder',
-        lastName: 'OptOut',
-        whatsapp: `549${String(8_200_000_000 + stamp).slice(-9)}`.slice(0, 13),
-        passwordHash,
-        whatsappOptIn: false, // opted out — must NOT receive a reminder
-        status: 'ACTIVE',
-      },
+    const predicted = await makeUserWithEntry({
+      dni: predictedDni,
+      lastName: 'Predicted',
+      whatsapp: `549${String(8_100_000_000 + stamp).slice(-9)}`.slice(0, 13),
+      whatsappOptIn: true,
     });
-    optedOutUserId = optedOut.id;
+    predictedUserId = predicted.userId;
+    predictedEntryId = predicted.entryId;
 
-    // Predicted user has a row for the target match.
+    const optedOut = await makeUserWithEntry({
+      dni: optedOutDni,
+      lastName: 'OptOut',
+      whatsapp: `549${String(8_200_000_000 + stamp).slice(-9)}`.slice(0, 13),
+      whatsappOptIn: false,
+    });
+    optedOutUserId = optedOut.userId;
+
+    // Predicted user's entry has a row for the target match.
     await prisma.prediction.create({
       data: {
-        userId: predictedUserId,
+        entryId: predictedEntryId,
         matchId: targetMatchId,
         scoreHome: 1,
         scoreAway: 1,
@@ -147,9 +173,8 @@ describe('MatchRemindersCron.sendReminders (integration)', () => {
           userId: { in: [eligibleUserId, predictedUserId, optedOutUserId] },
         },
       });
-      await prisma.prediction.deleteMany({
-        where: { userId: { in: [predictedUserId, eligibleUserId] } },
-      });
+      // Predictions cascade off entries; deleting the users wipes the
+      // entry → prediction tree via FK CASCADE.
       await prisma.user.deleteMany({
         where: { id: { in: [eligibleUserId, predictedUserId, optedOutUserId] } },
       });

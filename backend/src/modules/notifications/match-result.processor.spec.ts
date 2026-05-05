@@ -41,6 +41,9 @@ describe('MatchResultProcessor.handle (integration)', () => {
   let winnerId: string;
   let misserId: string;
   let optedOutId: string;
+  let winnerEntryId: string;
+  let misserEntryId: string;
+  let optedOutEntryId: string;
   let matchId: string;
 
   type MatchSnapshot = {
@@ -97,52 +100,74 @@ describe('MatchResultProcessor.handle (integration)', () => {
     const bcrypt = await import('bcrypt');
     const passwordHash = await bcrypt.hash('SeedPass123', 10);
 
-    const winner = await prisma.user.create({
-      data: {
-        dni: winnerDni,
-        firstName: 'MR',
-        lastName: 'Winner',
-        whatsapp: `549${String(8_400_000_000 + stamp).slice(-9)}`.slice(0, 13),
-        passwordHash,
-        whatsappOptIn: true,
-      },
-    });
-    winnerId = winner.id;
+    async function makeUserWithEntry(args: {
+      dni: string;
+      lastName: string;
+      whatsapp: string;
+      whatsappOptIn: boolean;
+    }): Promise<{ userId: string; entryId: string }> {
+      const u = await prisma.user.create({
+        data: {
+          dni: args.dni,
+          firstName: 'MR',
+          lastName: args.lastName,
+          whatsapp: args.whatsapp,
+          passwordHash,
+          whatsappOptIn: args.whatsappOptIn,
+        },
+      });
+      const pmt = await prisma.payment.create({
+        data: {
+          userId: u.id,
+          amount: 10_000,
+          method: 'CASH',
+          status: 'APPROVED',
+          paidAt: new Date(),
+          completedAt: new Date(),
+        },
+      });
+      const entry = await prisma.entry.create({
+        data: {
+          userId: u.id,
+          paymentId: pmt.id,
+          position: 1,
+          status: 'ACTIVE',
+        },
+      });
+      return { userId: u.id, entryId: entry.id };
+    }
 
-    const misser = await prisma.user.create({
-      data: {
-        dni: misserDni,
-        firstName: 'MR',
-        lastName: 'Misser',
-        whatsapp: `549${String(8_500_000_000 + stamp).slice(-9)}`.slice(0, 13),
-        passwordHash,
-        whatsappOptIn: true,
-      },
+    const winner = await makeUserWithEntry({
+      dni: winnerDni,
+      lastName: 'Winner',
+      whatsapp: `549${String(8_400_000_000 + stamp).slice(-9)}`.slice(0, 13),
+      whatsappOptIn: true,
     });
-    misserId = misser.id;
+    winnerId = winner.userId;
+    winnerEntryId = winner.entryId;
 
-    const optedOut = await prisma.user.create({
-      data: {
-        dni: optedOutDni,
-        firstName: 'MR',
-        lastName: 'OptOut',
-        whatsapp: `549${String(8_600_000_000 + stamp).slice(-9)}`.slice(0, 13),
-        passwordHash,
-        whatsappOptIn: false,
-      },
+    const misser = await makeUserWithEntry({
+      dni: misserDni,
+      lastName: 'Misser',
+      whatsapp: `549${String(8_500_000_000 + stamp).slice(-9)}`.slice(0, 13),
+      whatsappOptIn: true,
     });
-    optedOutId = optedOut.id;
+    misserId = misser.userId;
+    misserEntryId = misser.entryId;
 
-    // Predictions:
-    //   - winner: exact match (1-1) → pointsEarned = 10 (or whatever
-    //     scoring rules dictate; we set the exact field manually since
-    //     this test bypasses ScoringService).
-    //   - misser: pointsEarned = 0.
-    //   - optedOut: same as winner but won't be notified.
+    const optedOut = await makeUserWithEntry({
+      dni: optedOutDni,
+      lastName: 'OptOut',
+      whatsapp: `549${String(8_600_000_000 + stamp).slice(-9)}`.slice(0, 13),
+      whatsappOptIn: false,
+    });
+    optedOutId = optedOut.userId;
+    optedOutEntryId = optedOut.entryId;
+
     await prisma.prediction.createMany({
       data: [
         {
-          userId: winnerId,
+          entryId: winnerEntryId,
           matchId,
           scoreHome: 1,
           scoreAway: 1,
@@ -152,7 +177,7 @@ describe('MatchResultProcessor.handle (integration)', () => {
           evaluatedAt: new Date(),
         },
         {
-          userId: misserId,
+          entryId: misserEntryId,
           matchId,
           scoreHome: 0,
           scoreAway: 3,
@@ -162,7 +187,7 @@ describe('MatchResultProcessor.handle (integration)', () => {
           evaluatedAt: new Date(),
         },
         {
-          userId: optedOutId,
+          entryId: optedOutEntryId,
           matchId,
           scoreHome: 1,
           scoreAway: 1,
@@ -185,9 +210,7 @@ describe('MatchResultProcessor.handle (integration)', () => {
           ],
         },
       });
-      await prisma.prediction.deleteMany({
-        where: { matchId, userId: { in: [winnerId, misserId, optedOutId] } },
-      });
+      // Predictions cascade off entries; deleting users wipes the tree.
       await prisma.user.deleteMany({
         where: { id: { in: [winnerId, misserId, optedOutId] } },
       });
@@ -217,11 +240,13 @@ describe('MatchResultProcessor.handle (integration)', () => {
     } as unknown as Job<MatchResultJobData>;
   }
 
-  it('enqueues a recap for scoring opted-in users only', async () => {
+  it('enqueues a recap for scoring opted-in entries only', async () => {
     const enqueued = await processor.handle(makeJob(matchId));
     expect(enqueued).toBe(1);
 
-    const winnerKey = `match-result:${winnerId}:${matchId}`;
+    // Multi-prode: dedupKey is keyed by entryId (not userId) so two
+    // entries of the same user can each get their own message.
+    const winnerKey = `match-result:${winnerEntryId}:${matchId}`;
     createdNotificationDedupKeys.push(winnerKey);
 
     const winnerRow = await prisma.notification.findUnique({
@@ -254,11 +279,11 @@ describe('MatchResultProcessor.handle (integration)', () => {
     expect(optedOutRows).toHaveLength(0);
   });
 
-  it('is idempotent on re-run (recálculo): no duplicate row for the same user/match', async () => {
+  it('is idempotent on re-run (recálculo): no duplicate row for the same entry/match', async () => {
     await processor.handle(makeJob(matchId));
     await processor.handle(makeJob(matchId));
 
-    const winnerKey = `match-result:${winnerId}:${matchId}`;
+    const winnerKey = `match-result:${winnerEntryId}:${matchId}`;
     const rows = await prisma.notification.findMany({
       where: { dedupKey: winnerKey },
     });
