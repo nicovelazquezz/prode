@@ -21,6 +21,7 @@ import { PredictionsModule } from './modules/predictions/predictions.module.js';
 import { ScoringModule } from './modules/scoring/scoring.module.js';
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module.js';
 import { LeaguesModule } from './modules/leagues/leagues.module.js';
+import { EntriesModule } from './modules/entries/entries.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 import { StatsModule } from './modules/stats/stats.module.js';
 import { DevModule } from './modules/dev/dev.module.js';
@@ -113,6 +114,7 @@ const IS_NON_PROD = process.env.NODE_ENV !== 'production';
     ScoringModule,
     LeaderboardModule,
     LeaguesModule,
+    EntriesModule,
     AdminModule,
     StatsModule,
     // DevModule mounts `POST /dev/simulate-webhook` so the local

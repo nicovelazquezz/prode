@@ -72,6 +72,9 @@ const APP_CONFIG = [
   { key: 'pozo_dist_fase', value: '0.05', description: 'Porcentaje del pozo para el ganador de cada fase' },
   { key: 'pozo_club', value: '0.20', description: 'Porcentaje del pozo retenido por el club' },
   { key: 'pozo_reserva', value: '0.05', description: 'Porcentaje del pozo retenido como reserva / fondo de premios especiales' },
+  // Multi-prode (v1.1): cap on how many entries a user can hold. Editable
+  // from /admin/configuracion. Default 5 per spec §1 alcance.
+  { key: 'max_entries_per_user', value: '5', description: 'Máximo de entradas (prodes) por usuario' },
 ];
 
 async function seedScoringRules() {
