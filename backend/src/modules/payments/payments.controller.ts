@@ -9,10 +9,12 @@ import {
   Param,
   Post,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { Public } from '../../common/decorators/public.decorator.js';
+import { TurnstileGuard } from '../../common/guards/turnstile.guard.js';
 import { PaymentsService } from './payments.service.js';
 import { InitPaymentDto } from './dto/init-payment.dto.js';
 import {
@@ -37,6 +39,7 @@ export class PaymentsController {
   ) {}
 
   @Public()
+  @UseGuards(TurnstileGuard)
   @Throttle({ 'payments-init': { limit: 5, ttl: 3_600_000 } })
   @Post('init')
   @HttpCode(HttpStatus.CREATED)
