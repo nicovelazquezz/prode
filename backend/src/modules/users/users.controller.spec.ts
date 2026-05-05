@@ -40,6 +40,16 @@ describe('GET /users/:id/public-profile (integration)', () => {
     prisma = app.get(PrismaService);
     authService = app.get(AuthService);
 
+    // Belt-and-suspenders cleanup: the seed owns matchNumber 1..104;
+    // anything above that range is leftover from a prior run whose
+    // afterAll didn't complete. Drop it before we start so the count
+    // assertions in sibling specs (matches.controller.spec) stay
+    // deterministic when this suite runs first.
+    await prisma.prediction.deleteMany({
+      where: { match: { matchNumber: { gt: 104 } } },
+    });
+    await prisma.match.deleteMany({ where: { matchNumber: { gt: 104 } } });
+
     const dniSuffix = Date.now().toString().slice(-7);
     const passwordHash = await authService.hashPassword('whatever1');
 

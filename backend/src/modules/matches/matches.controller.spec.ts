@@ -63,6 +63,16 @@ describe('MatchesController (integration)', () => {
     await app.init();
     prisma = app.get(PrismaService);
 
+    // Drop any leftover matches from prior failed test runs. The seed
+    // owns matchNumber 1..104; any matchNumber outside that range was
+    // produced by a sibling integration spec (`users.controller.spec`
+    // creates 9xxx-numbered matches) whose `afterAll` may have aborted.
+    // Without this guard, the count assertions below see stale rows.
+    await prisma.prediction.deleteMany({
+      where: { match: { matchNumber: { gt: 104 } } },
+    });
+    await prisma.match.deleteMany({ where: { matchNumber: { gt: 104 } } });
+
     // Sanity check: the seed must have run so we have rows to query.
     const count = await prisma.match.count();
     if (count < 104) {
