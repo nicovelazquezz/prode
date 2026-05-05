@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ListChecks, Trophy, Users, User } from "lucide-react";
+import { ListChecks, Star, Trophy, Users, User } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface NavItem {
@@ -13,6 +13,7 @@ interface NavItem {
 
 const ITEMS: NavItem[] = [
   { href: "/predicciones", label: "Predic", Icon: ListChecks },
+  { href: "/especiales", label: "Especial", Icon: Star },
   { href: "/leaderboard", label: "Tabla", Icon: Trophy },
   { href: "/ligas", label: "Ligas", Icon: Users },
   { href: "/perfil", label: "Perfil", Icon: User },
@@ -23,12 +24,13 @@ interface BottomNavProps {
 }
 
 /**
- * Bottom nav mobile-only para zonas autenticadas. 4 items con
- * icons Lucide + labels, active state highlight near-black.
- * Hidden en desktop (md+).
+ * Bottom nav mobile-only para zonas autenticadas. 5 items con
+ * icons Lucide + labels en mono uppercase tracked. Active state:
+ * cream con icon stroke 2.5; inactive: muted.
  *
- * El layout `(app)` debe agregar `pb-16` al main para reservar
- * espacio para esta nav.
+ * Hidden en desktop (md+) — el `<AppHeader>` cubre la navegacion
+ * con tabs centradas. El layout `(app)` reserva `pb-16` en mobile
+ * para el espacio de esta nav.
  */
 export function BottomNav({ className }: BottomNavProps) {
   const pathname = usePathname();
@@ -37,8 +39,8 @@ export function BottomNav({ className }: BottomNavProps) {
     <nav
       className={cn(
         "fixed bottom-0 left-0 right-0 z-40 md:hidden",
-        "h-16 bg-[var(--color-prode-bg)] border-t border-[var(--color-prode-border)]",
-        "grid grid-cols-4",
+        "h-16 bg-[var(--color-landing-bg)] border-t border-[var(--color-landing-line)]",
+        "grid grid-cols-5",
         className,
       )}
       aria-label="Navegacion principal"
@@ -52,11 +54,12 @@ export function BottomNav({ className }: BottomNavProps) {
             href={href}
             className={cn(
               "flex flex-col items-center justify-center gap-1",
-              "font-sans text-xs",
-              "transition-colors duration-300",
+              "font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em]",
+              "transition-colors duration-200",
+              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--color-landing-gold)]",
               isActive
-                ? "text-[var(--color-prode-near-black)]"
-                : "text-[var(--color-prode-text-secondary)] hover:text-[var(--color-prode-near-black)]",
+                ? "text-[var(--color-landing-text)]"
+                : "text-[var(--color-landing-text-muted)] hover:text-[var(--color-landing-text)]",
             )}
             aria-current={isActive ? "page" : undefined}
           >
@@ -64,7 +67,7 @@ export function BottomNav({ className }: BottomNavProps) {
               className={cn("h-5 w-5", isActive && "stroke-[2.5]")}
               aria-hidden="true"
             />
-            <span className={cn(isActive && "font-bold")}>{label}</span>
+            <span>{label}</span>
           </Link>
         );
       })}
