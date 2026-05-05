@@ -57,6 +57,25 @@ describe('SpecialPredictions endpoints (integration)', () => {
       },
     });
     userId = user.id;
+    // Multi-prode: every payer has Entry #1.
+    const payment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    await prisma.entry.create({
+      data: {
+        userId: user.id,
+        paymentId: payment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
 
     const login = await request(app.getHttpServer())
       .post('/auth/login')
@@ -82,7 +101,8 @@ describe('SpecialPredictions endpoints (integration)', () => {
 
   afterAll(async () => {
     if (prisma) {
-      await prisma.specialPrediction.deleteMany({ where: { userId } });
+      // Special predictions cascade off entries; deleting the user
+      // wipes the entry → specialPrediction tree.
       await prisma.auditLog.deleteMany({ where: { userId } });
       await prisma.refreshToken.deleteMany({ where: { userId } });
       await prisma.user.delete({ where: { id: userId } }).catch(() => undefined);
@@ -121,7 +141,8 @@ describe('SpecialPredictions endpoints (integration)', () => {
           totalGoals: 145,
         });
       expect(res.status).toBe(201);
-      expect(res.body.userId).toBe(userId);
+      // Multi-prode: special predictions are keyed by entryId now.
+      expect(res.body.entryId).toBeDefined();
       expect(res.body.championTeamId).toBe(teamAId);
       expect(res.body.runnerUpTeamId).toBe(teamBId);
       expect(res.body.thirdPlaceTeamId).toBe(teamCId);
@@ -182,9 +203,13 @@ describe('SpecialPredictions endpoints (integration)', () => {
     });
 
     it('rejects when lockedAt is set (SPECIAL_PREDICTION_LOCKED)', async () => {
-      // Simulate the cron from spec 5.3.
+      // Simulate the cron from spec 5.3. Multi-prode: keyed by entryId.
+      const entry = await prisma.entry.findFirstOrThrow({
+        where: { userId, status: 'ACTIVE' },
+        orderBy: { position: 'asc' },
+      });
       await prisma.specialPrediction.update({
-        where: { userId },
+        where: { entryId: entry.id },
         data: { lockedAt: new Date() },
       });
 
@@ -197,7 +222,7 @@ describe('SpecialPredictions endpoints (integration)', () => {
 
       // Restore lockedAt for the GET test below.
       await prisma.specialPrediction.update({
-        where: { userId },
+        where: { entryId: entry.id },
         data: { lockedAt: null },
       });
     });

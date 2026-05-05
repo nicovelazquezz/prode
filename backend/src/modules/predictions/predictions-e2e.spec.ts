@@ -56,15 +56,18 @@ describe('Predictions E2E (registration → predict → lock)', () => {
           })
           .catch(() => undefined);
       }
+      // Multi-prode: predictions cascade off entries, entries cascade
+      // off users. Delete users first; payments must come AFTER because
+      // Entry.paymentId is ON DELETE RESTRICT.
       if (createdUserIds.length > 0) {
-        await prisma.prediction.deleteMany({
-          where: { userId: { in: createdUserIds } },
-        });
         await prisma.refreshToken.deleteMany({
           where: { userId: { in: createdUserIds } },
         });
         await prisma.auditLog.deleteMany({
           where: { userId: { in: createdUserIds } },
+        });
+        await prisma.user.deleteMany({
+          where: { id: { in: createdUserIds } },
         });
       }
       if (createdPaymentIds.length > 0) {
@@ -75,11 +78,6 @@ describe('Predictions E2E (registration → predict → lock)', () => {
         });
         await prisma.payment.deleteMany({
           where: { id: { in: createdPaymentIds } },
-        });
-      }
-      if (createdUserIds.length > 0) {
-        await prisma.user.deleteMany({
-          where: { id: { in: createdUserIds } },
         });
       }
     }

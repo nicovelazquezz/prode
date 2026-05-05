@@ -22,6 +22,7 @@ describe('PredictionsController (integration)', () => {
   // Throwaway user + JWT minted at boot.
   let userId: string;
   let userToken: string;
+  let paymentId: string;
 
   // Matches we'll mutate. Each one is restored on teardown.
   let matchOpenId: string;
@@ -73,6 +74,7 @@ describe('PredictionsController (integration)', () => {
         completedAt: new Date(),
       },
     });
+    paymentId = payment.id;
     await prisma.entry.create({
       data: {
         userId: user.id,
@@ -116,10 +118,17 @@ describe('PredictionsController (integration)', () => {
   afterAll(async () => {
     if (prisma) {
       // Predictions cascade from Entry → User; deleting the user
-      // unwinds the entry/predictions tree via FK CASCADE.
+      // unwinds the entry/predictions tree via FK CASCADE. Payment
+      // is NOT cascaded (Entry.paymentId is ON DELETE RESTRICT) so
+      // delete it explicitly after the user goes.
       await prisma.auditLog.deleteMany({ where: { userId } });
       await prisma.refreshToken.deleteMany({ where: { userId } });
       await prisma.user.delete({ where: { id: userId } }).catch(() => undefined);
+      // Payment.userId got set to NULL via the user delete cascade rule
+      // (ON DELETE SET NULL); delete the payment by id.
+      if (paymentId) {
+        await prisma.payment.delete({ where: { id: paymentId } }).catch(() => undefined);
+      }
       if (matchLockedId && originalLock) {
         await prisma.match.update({
           where: { id: matchLockedId },
