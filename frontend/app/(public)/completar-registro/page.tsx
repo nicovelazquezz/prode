@@ -36,11 +36,13 @@ const schema = z.object({
   firstName: z.string().min(1, "Ingresa tu nombre").max(60),
   lastName: z.string().min(1, "Ingresa tu apellido").max(60),
   // El usuario tipea: codigo de area + numero (sin 549). Ej: 2914123456.
+  // Cap superior 12 (no 13): el backend valida ^\d{10,15}$ sobre
+  // "549" + raw, asi que el raw maximo real es 15 - 3 = 12 digitos.
   whatsappRaw: z
     .string()
-    .min(10, "Codigo de area + numero (10 a 13 digitos)")
-    .max(13, "Codigo de area + numero (10 a 13 digitos)")
-    .regex(/^\d{10,13}$/, "Solo numeros, sin espacios ni guiones"),
+    .min(10, "Codigo de area + numero (10 a 12 digitos)")
+    .max(12, "Codigo de area + numero (10 a 12 digitos)")
+    .regex(/^\d{10,12}$/, "Solo numeros, sin espacios ni guiones"),
   password: z
     .string()
     .min(8, "La contrasena debe tener al menos 8 caracteres")
