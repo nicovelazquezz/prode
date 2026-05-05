@@ -21,6 +21,7 @@ import { PredictionsModule } from './modules/predictions/predictions.module.js';
 import { ScoringModule } from './modules/scoring/scoring.module.js';
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module.js';
 import { LeaguesModule } from './modules/leagues/leagues.module.js';
+import { AdminModule } from './modules/admin/admin.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
@@ -104,6 +105,7 @@ function buildLoggerParams() {
     ScoringModule,
     LeaderboardModule,
     LeaguesModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [
