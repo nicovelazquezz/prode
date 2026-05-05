@@ -294,12 +294,13 @@ function AuditRow({
         </td>
       </tr>
       {expanded ? (
-        <tr className="border-b border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)]">
-          <td colSpan={7} className="px-4 py-4">
+        <tr className="border-b border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)]">
+          <td colSpan={7} className="px-4 py-5">
             <ChangesViewer changes={entry.changes} />
             {entry.userAgent ? (
-              <p className="mt-3 font-mono text-xs text-[var(--color-landing-text-muted)]">
-                UA: {entry.userAgent}
+              <p className="mt-3 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)]">
+                <span className="text-[var(--color-landing-gold)]">UA:</span>{" "}
+                {entry.userAgent}
               </p>
             ) : null}
           </td>
@@ -322,23 +323,29 @@ function ChangesViewer({ changes }: { changes: unknown }) {
     changes !== null &&
     ("before" in changes || "after" in changes);
 
+  const codeBlockBase =
+    "max-h-64 overflow-auto rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-bg)] p-3 font-[family-name:var(--font-landing-mono)] text-[11px] leading-relaxed text-[var(--color-landing-text)]";
+
+  const labelBase =
+    "font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em]";
+
   if (hasBeforeAfter) {
     const obj = changes as { before?: unknown; after?: unknown };
     return (
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div>
-          <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
+          <p className={cn(labelBase, "text-[var(--color-landing-red)]")}>
             Before
           </p>
-          <pre className="mt-1 max-h-64 overflow-auto rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-3 font-mono text-xs">
+          <pre className={cn(codeBlockBase, "mt-1 [border-left-color:var(--color-landing-red)] border-l-[3px]")}>
             {JSON.stringify(obj.before ?? null, null, 2)}
           </pre>
         </div>
         <div>
-          <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
+          <p className={cn(labelBase, "text-[var(--color-landing-green)]")}>
             After
           </p>
-          <pre className="mt-1 max-h-64 overflow-auto rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-3 font-mono text-xs">
+          <pre className={cn(codeBlockBase, "mt-1 [border-left-color:var(--color-landing-green)] border-l-[3px]")}>
             {JSON.stringify(obj.after ?? null, null, 2)}
           </pre>
         </div>
@@ -347,7 +354,7 @@ function ChangesViewer({ changes }: { changes: unknown }) {
   }
 
   return (
-    <pre className="max-h-64 overflow-auto rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-3 font-mono text-xs">
+    <pre className={codeBlockBase}>
       {JSON.stringify(changes, null, 2)}
     </pre>
   );
