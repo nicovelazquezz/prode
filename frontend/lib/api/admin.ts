@@ -245,14 +245,58 @@ export async function refreshLeaderboard(): Promise<{ ok: true }> {
 
 // ── Notifications ───────────────────────────────────────────────
 
+export type NotificationSegment =
+  | "ALL"
+  | "PAID"
+  | "PENDING"
+  | "WITHOUT_PREDICTIONS";
+
 export async function broadcastNotification(dto: {
   title: string;
   message: string;
   channel: "WHATSAPP" | "EMAIL";
+  segment?: NotificationSegment;
 }): Promise<{ queued: number }> {
   return api
     .post("admin/notifications/broadcast", { json: dto })
     .json<{ queued: number }>();
+}
+
+export async function sendDirectNotification(dto: {
+  userId: string;
+  title: string;
+  message: string;
+  channel: "WHATSAPP" | "EMAIL";
+}): Promise<{ id: string }> {
+  // TODO(backend): POST /admin/notifications/direct — enviar a 1 user.
+  return api
+    .post("admin/notifications/direct", { json: dto })
+    .json<{ id: string }>();
+}
+
+export interface NotificationHistoryEntry {
+  id: string;
+  type: string;
+  channel: "WHATSAPP" | "EMAIL";
+  status: "PENDING" | "SENT" | "FAILED" | "DELIVERED";
+  userId: string | null;
+  recipientLabel: string | null;
+  title: string;
+  message: string;
+  createdAt: string;
+  sentAt: string | null;
+}
+
+export async function listNotificationHistory(query?: {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  channel?: string;
+}): Promise<Paginated<NotificationHistoryEntry>> {
+  // TODO(backend): GET /admin/notifications — historial paginado.
+  return api
+    .get("admin/notifications", { searchParams: cleanParams(query) })
+    .json<Paginated<NotificationHistoryEntry>>();
 }
 
 // ── Audit ───────────────────────────────────────────────────────
