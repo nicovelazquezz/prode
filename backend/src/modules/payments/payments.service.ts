@@ -185,6 +185,25 @@ export class PaymentsService {
     if (!dataId) return { received: true };
 
     const mpPayment = await this.checkoutProvider.getPayment(String(dataId));
+    return this.applyProviderPayment(mpPayment);
+  }
+
+  /**
+   * Applies a fully-resolved `ProviderPayment` to local state. Extracted
+   * from `processWebhook` so the dev-only `POST /dev/simulate-webhook`
+   * endpoint (NODE_ENV !== 'production') can drive the same TX +
+   * notification + admin-alert pipeline without hitting MP's API or the
+   * HMAC verification path.
+   *
+   * Production flow still goes through `processWebhook` → HMAC verify
+   * (controller) → provider.getPayment → applyProviderPayment.
+   *
+   * Returns the same `{ received: true }` envelope so callers stay
+   * interchangeable.
+   */
+  async applyProviderPayment(
+    mpPayment: ProviderPayment,
+  ): Promise<{ received: true }> {
     const newStatus = mpPayment.status;
 
     let didTransition = false;
@@ -207,7 +226,7 @@ export class PaymentsService {
       }
       if (!local) {
         this.logger.error(
-          `Webhook: payment not found locally (mp data.id=${dataId}, preferenceId=${mpPayment.preferenceId ?? '-'})`,
+          `Webhook: payment not found locally (mp id=${mpPayment.id}, preferenceId=${mpPayment.preferenceId ?? '-'})`,
         );
         return;
       }

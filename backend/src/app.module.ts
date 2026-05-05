@@ -22,6 +22,7 @@ import { ScoringModule } from './modules/scoring/scoring.module.js';
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module.js';
 import { LeaguesModule } from './modules/leagues/leagues.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
+import { DevModule } from './modules/dev/dev.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
@@ -80,6 +81,12 @@ function buildLoggerParams() {
   };
 }
 
+// Dev-only modules guard: AppModule is imported by integration tests
+// too, where `NODE_ENV === 'test'`. We treat anything that's not
+// `production` as a dev-like environment so `simulate-webhook` is
+// available locally and from inside Jest, but never in prod builds.
+const IS_NON_PROD = process.env.NODE_ENV !== 'production';
+
 @Module({
   imports: [
     // Pino logger goes first so feature modules that emit during boot
@@ -106,6 +113,10 @@ function buildLoggerParams() {
     LeaderboardModule,
     LeaguesModule,
     AdminModule,
+    // DevModule mounts `POST /dev/simulate-webhook` so the local
+    // frontend can drive the public payment flow without MercadoPago.
+    // Excluded entirely from the prod bundle.
+    ...(IS_NON_PROD ? [DevModule] : []),
   ],
   controllers: [AppController],
   providers: [
