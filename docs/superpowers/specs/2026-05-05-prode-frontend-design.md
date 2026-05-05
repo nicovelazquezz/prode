@@ -705,7 +705,7 @@ La password queda hasheada en BD por bcrypt; el modal es la única vez que el ad
 | Componente | Responsabilidad | Notable |
 |------------|-----------------|---------|
 | `<CountdownTimer>` | Cuenta regresiva al kickoff | SSR-safe (placeholder), cleanup interval |
-| `<MatchCard>` | Card de un partido en lista | 4 estados visuales |
+| `<MatchCard>` | Card de un partido en lista | 5 estados visuales |
 | `<PredictionInput>` | Input numérico touch-friendly | Bottom sheet en mobile, input en desktop |
 | `<NumberPadSheet>` | Number pad grande para mobile | Haptic feedback |
 | `<LeaderboardTable>` | Tabla con highlight de "vos" | Sticky row, scroll into view |
