@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 /**
- * Pagina /inscripcion/success?token=xxx — la URL a la que el backend
- * redirige despues de un pago aprobado (real o mock).
+ * Página /inscripcion/success?token=xxx — la URL a la que el backend
+ * redirige después de un pago aprobado (real o mock).
  *
- * Auto-redirect a /completar-registro?token=xxx despues de 1.5s con
- * un mensaje breve. Si por algun motivo no hay token, mostramos un
+ * Auto-redirect a /completar-registro?token=xxx después de 1.5s con
+ * un mensaje breve. Si por algún motivo no hay token, mostramos un
  * fallback con CTA "Ir al inicio".
  */
 export default function InscripcionSuccessPage() {
@@ -17,8 +17,8 @@ export default function InscripcionSuccessPage() {
     <Suspense
       fallback={
         <div className="mx-auto flex w-full max-w-md flex-col items-center px-4 py-16">
-          <p className="font-sans text-sm text-[var(--color-prode-text-secondary)]">
-            Cargando...
+          <p className="font-[family-name:var(--font-landing-mono)] text-xs uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
+            Cargando…
           </p>
         </div>
       }
@@ -42,27 +42,32 @@ function SuccessContent() {
   }, [token, router]);
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-16 md:py-24">
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-16 md:py-24">
       <span
         aria-hidden="true"
-        className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-prode-accent)] text-white text-3xl font-display font-black"
+        className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-landing-green)] font-[family-name:var(--font-landing-display)] text-3xl text-[var(--color-landing-text)]"
       >
         ✓
       </span>
-      <h1 className="font-display text-4xl md:text-6xl font-black uppercase tracking-tight text-[var(--color-prode-near-black)]">
+      <div className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-green)]">
         Pago confirmado
+      </div>
+      <h1 className="font-[family-name:var(--font-landing-display)] text-4xl uppercase leading-[0.85] tracking-tight md:text-6xl">
+        <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+          Listo.
+        </span>
       </h1>
-      <p className="font-sans text-base md:text-lg text-[var(--color-prode-text-secondary)]">
+      <p className="text-base leading-relaxed text-[var(--color-landing-text-muted)] md:text-lg">
         {token
-          ? "Te llevamos a completar tu registro..."
-          : "No encontramos el token de continuacion. Revisa tu WhatsApp o escribi al admin."}
+          ? "Te llevamos a completar tu registro…"
+          : "No encontramos el token de continuación. Revisá tu WhatsApp o escribí al admin."}
       </p>
       {!token && (
         <Link
           href="/"
-          className="font-sans text-sm text-[var(--color-prode-near-black)] underline-offset-4 hover:underline"
+          className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.1em] text-[var(--color-landing-text-muted)] underline-offset-4 transition-colors hover:text-[var(--color-landing-text)] hover:underline"
         >
-          Volver al inicio
+          ← Volver al inicio
         </Link>
       )}
     </div>

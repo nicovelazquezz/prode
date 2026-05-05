@@ -4,7 +4,7 @@ const ADMIN_WHATSAPP = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP ?? "";
 
 function buildAdminWhatsApp(): string {
   const text = encodeURIComponent(
-    "Hola! Intente pagar el Prode pero el pago me dio error.",
+    "Hola! Intenté pagar el Prode pero el pago me dio error.",
   );
   const num = ADMIN_WHATSAPP.replace(/\D/g, "");
   return num
@@ -13,37 +13,35 @@ function buildAdminWhatsApp(): string {
 }
 
 /**
- * Pagina /inscripcion/failure — backend redirige aca cuando un pago
+ * Página /inscripcion/failure — backend redirige acá cuando un pago
  * MercadoPago falla (rejected o el user cancela). No hay token
- * porque el pago no se completo.
- *
- * UX: mensaje claro + CTA "Reintentar pago" que vuelve al landing
- * para iniciar de nuevo + link auxiliar a WhatsApp.
- *
- * Server Component puro (sin estado/interactividad).
+ * porque el pago no se completó.
  */
 export default function InscripcionFailurePage() {
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-16 md:py-24">
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-16 md:py-24">
       <span
         aria-hidden="true"
-        className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-prode-accent)] text-white text-3xl font-display font-black"
+        className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-landing-red)] font-[family-name:var(--font-landing-display)] text-3xl text-[var(--color-landing-text)]"
       >
         ×
       </span>
-      <h1 className="font-display text-4xl md:text-6xl font-black uppercase tracking-tight text-[var(--color-prode-accent)]">
+      <div className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-red)]">
         Pago rechazado
+      </div>
+      <h1 className="font-[family-name:var(--font-landing-display)] text-4xl uppercase leading-[0.85] tracking-tight md:text-6xl">
+        Algo salió mal.
       </h1>
-      <p className="font-sans text-base md:text-lg text-[var(--color-prode-text-secondary)]">
+      <p className="text-base leading-relaxed text-[var(--color-landing-text-muted)] md:text-lg">
         El pago no se pudo completar. Puede ser por fondos insuficientes,
         un error de la tarjeta o que hayas cancelado en MercadoPago.
         Intentá de nuevo desde el inicio.
       </p>
 
-      <div className="flex flex-col gap-3 sm:max-w-xs">
+      <div className="mt-2 flex flex-col gap-3 sm:max-w-sm">
         <Link
           href="/"
-          className="inline-flex h-12 items-center justify-center rounded-2xl bg-[var(--color-prode-near-black)] px-8 font-sans text-sm font-medium text-white hover:opacity-90"
+          className="rounded-sm bg-[var(--color-landing-red)] px-8 py-[18px] text-center text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-landing-gold)]"
         >
           Reintentar pago
         </Link>
@@ -51,7 +49,7 @@ export default function InscripcionFailurePage() {
           href={buildAdminWhatsApp()}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-12 items-center justify-center rounded-2xl border-2 border-[var(--color-prode-border)] bg-white px-8 font-sans text-sm font-medium text-[var(--color-prode-near-black)] hover:border-[var(--color-prode-near-black)]"
+          className="rounded-sm border border-[var(--color-landing-line-strong)] px-8 py-[18px] text-center text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-landing-gold)]"
         >
           Escribir al admin
         </a>
