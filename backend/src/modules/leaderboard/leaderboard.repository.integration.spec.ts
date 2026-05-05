@@ -22,6 +22,7 @@ describe('LeaderboardRepository (integration)', () => {
   // a sticky DB don't collide on unique constraints.
   const stamp = (Date.now() + Math.floor(Math.random() * 1_000_000)) % 99_000_000;
   const userIds: string[] = [];
+  const entryIds: string[] = [];
   let leagueId: string | null = null;
   let matchId: string;
   // Snapshot of the original match state so the suite can restore it.
@@ -65,6 +66,7 @@ describe('LeaderboardRepository (integration)', () => {
     });
 
     // Three users: alpha (5 EXACT pts), beta (1 hit), gamma (no preds).
+    // Multi-prode: each user has Entry #1 backed by an APPROVED Payment.
     const users = await Promise.all(
       ['Alpha', 'Beta', 'Gamma'].map((name, i) =>
         prisma.user.create({
@@ -80,10 +82,32 @@ describe('LeaderboardRepository (integration)', () => {
     );
     userIds.push(...users.map((u) => u.id));
 
+    for (const u of users) {
+      const payment = await prisma.payment.create({
+        data: {
+          userId: u.id,
+          amount: 10_000,
+          method: 'CASH',
+          status: 'APPROVED',
+          paidAt: new Date(),
+          completedAt: new Date(),
+        },
+      });
+      const entry = await prisma.entry.create({
+        data: {
+          userId: u.id,
+          paymentId: payment.id,
+          position: 1,
+          status: 'ACTIVE',
+        },
+      });
+      entryIds.push(entry.id);
+    }
+
     // alpha — EXACT prediction, 5 base × 1.0 multiplier (GROUPS).
     await prisma.prediction.create({
       data: {
-        userId: users[0].id,
+        entryId: entryIds[0],
         matchId,
         scoreHome: 2,
         scoreAway: 1,
@@ -97,7 +121,7 @@ describe('LeaderboardRepository (integration)', () => {
     // beta — WINNER_ONLY hit, 1 point.
     await prisma.prediction.create({
       data: {
-        userId: users[1].id,
+        entryId: entryIds[1],
         matchId,
         scoreHome: 3,
         scoreAway: 0,
@@ -110,14 +134,14 @@ describe('LeaderboardRepository (integration)', () => {
     });
     // gamma — no prediction, no points. Still appears in MV with 0.
 
-    // Create a league with alpha + gamma as members (skip beta).
+    // Create a league with alpha's entry + gamma's entry as members (skip beta).
     const league = await prisma.league.create({
       data: {
         name: `Lb-Test-League-${stamp}`,
         inviteCode: `LB${stamp}`.slice(0, 16),
         ownerId: users[0].id,
         members: {
-          create: [{ userId: users[0].id }, { userId: users[2].id }],
+          create: [{ entryId: entryIds[0] }, { entryId: entryIds[2] }],
         },
       },
     });
@@ -137,7 +161,8 @@ describe('LeaderboardRepository (integration)', () => {
       await prisma.league.delete({ where: { id: leagueId } }).catch(() => undefined);
     }
     if (userIds.length) {
-      await prisma.prediction.deleteMany({ where: { userId: { in: userIds } } });
+      // Predictions cascade off entries; deleting the user wipes the
+      // entry → prediction tree via FK CASCADE.
       await prisma.user.deleteMany({ where: { id: { in: userIds } } });
     }
     if (matchId) {
@@ -152,12 +177,12 @@ describe('LeaderboardRepository (integration)', () => {
     if (app) await app.close();
   }, 30_000);
 
-  it('getGlobal: returns paged rows with the alpha user above beta', async () => {
+  it('getGlobal: returns paged rows with the alpha entry above beta', async () => {
     const { rows, total } = await repo.getGlobal(1, 200);
 
-    const alpha = rows.find((r) => r.user_id === userIds[0]);
-    const beta = rows.find((r) => r.user_id === userIds[1]);
-    const gamma = rows.find((r) => r.user_id === userIds[2]);
+    const alpha = rows.find((r) => r.entry_id === entryIds[0]);
+    const beta = rows.find((r) => r.entry_id === entryIds[1]);
+    const gamma = rows.find((r) => r.entry_id === entryIds[2]);
 
     expect(alpha).toBeDefined();
     expect(beta).toBeDefined();
@@ -173,15 +198,15 @@ describe('LeaderboardRepository (integration)', () => {
     expect(total).toBeGreaterThanOrEqual(3);
 
     // Order check: alpha must precede beta in the list.
-    const indexAlpha = rows.findIndex((r) => r.user_id === userIds[0]);
-    const indexBeta = rows.findIndex((r) => r.user_id === userIds[1]);
+    const indexAlpha = rows.findIndex((r) => r.entry_id === entryIds[0]);
+    const indexBeta = rows.findIndex((r) => r.entry_id === entryIds[1]);
     expect(indexAlpha).toBeLessThan(indexBeta);
   });
 
-  it('getGlobalAroundUser: returns alpha at her own rank with neighbours', async () => {
-    const around = await repo.getGlobalAroundUser(userIds[0], 1);
+  it('getGlobalAroundEntry: returns alpha at her own rank with neighbours', async () => {
+    const around = await repo.getGlobalAroundEntry(entryIds[0], 1);
     expect(around.length).toBeGreaterThan(0);
-    const me = around.find((r) => r.user_id === userIds[0]);
+    const me = around.find((r) => r.entry_id === entryIds[0]);
     expect(me).toBeDefined();
     expect(me!.total_points).toBe(5);
     expect(typeof me!.rank).toBe('number');
@@ -193,7 +218,7 @@ describe('LeaderboardRepository (integration)', () => {
 
   it('getByPhase(GROUPS): aggregates only matches of the given phase', async () => {
     const { rows } = await repo.getByPhase('GROUPS', 1, 200);
-    const alpha = rows.find((r) => r.user_id === userIds[0]);
+    const alpha = rows.find((r) => r.entry_id === entryIds[0]);
     expect(alpha).toBeDefined();
     expect(alpha!.total_points).toBe(5);
     expect(alpha!.exact_count).toBe(1);
@@ -202,22 +227,22 @@ describe('LeaderboardRepository (integration)', () => {
     // Other phases should have alpha at 0 — the LEFT JOIN m.phase = X
     // filter ensures predictions for non-matching phases drop out.
     const { rows: finalRows } = await repo.getByPhase('FINAL', 1, 200);
-    const alphaFinal = finalRows.find((r) => r.user_id === userIds[0]);
+    const alphaFinal = finalRows.find((r) => r.entry_id === entryIds[0]);
     expect(alphaFinal).toBeDefined();
     expect(alphaFinal!.total_points).toBe(0);
   });
 
   it('getByLeague: only returns members of that league', async () => {
     const { rows, total } = await repo.getByLeague(leagueId!, 1, 200);
-    const ids = rows.map((r) => r.user_id);
-    expect(ids).toContain(userIds[0]); // alpha — member, has points
-    expect(ids).toContain(userIds[2]); // gamma — member, 0 points
-    expect(ids).not.toContain(userIds[1]); // beta — not a member
+    const ids = rows.map((r) => r.entry_id);
+    expect(ids).toContain(entryIds[0]); // alpha — member, has points
+    expect(ids).toContain(entryIds[2]); // gamma — member, 0 points
+    expect(ids).not.toContain(entryIds[1]); // beta — not a member
     expect(total).toBe(2);
 
     // Tie-break ordering: alpha (5 pts) ahead of gamma (0 pts).
-    const indexAlpha = rows.findIndex((r) => r.user_id === userIds[0]);
-    const indexGamma = rows.findIndex((r) => r.user_id === userIds[2]);
+    const indexAlpha = rows.findIndex((r) => r.entry_id === entryIds[0]);
+    const indexGamma = rows.findIndex((r) => r.entry_id === entryIds[2]);
     expect(indexAlpha).toBeLessThan(indexGamma);
   });
 });

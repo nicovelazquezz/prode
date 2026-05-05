@@ -215,9 +215,14 @@ describe('Predictions E2E (registration → predict → lock)', () => {
     expect(put.status).toBe(400);
     expect(put.body.code).toBe('PREDICTION_LOCKED');
 
-    // The original prediction is unchanged.
+    // The original prediction is unchanged. Multi-prode: query by the
+    // user's primary entry (created automatically at registration).
+    const entry = await prisma.entry.findFirstOrThrow({
+      where: { userId: created.id, status: 'ACTIVE' },
+      orderBy: { position: 'asc' },
+    });
     const inDb = await prisma.prediction.findUniqueOrThrow({
-      where: { userId_matchId: { userId: created.id, matchId: target.id } },
+      where: { entryId_matchId: { entryId: entry.id, matchId: target.id } },
     });
     expect(inDb.scoreHome).toBe(3);
     expect(inDb.scoreAway).toBe(2);

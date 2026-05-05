@@ -48,6 +48,26 @@ describe('LeaguesController (integration — create + list)', () => {
       },
     });
     userId = user.id;
+    // Multi-prode: leagues are owned by users but membership is by entry.
+    // Both users need an Entry #1 so they can create / join leagues.
+    const userPayment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    await prisma.entry.create({
+      data: {
+        userId: user.id,
+        paymentId: userPayment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
     const secondUser = await prisma.user.create({
       data: {
         dni: secondDni,
@@ -58,6 +78,24 @@ describe('LeaguesController (integration — create + list)', () => {
       },
     });
     secondUserId = secondUser.id;
+    const secondPayment = await prisma.payment.create({
+      data: {
+        userId: secondUser.id,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    await prisma.entry.create({
+      data: {
+        userId: secondUser.id,
+        paymentId: secondPayment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
 
     const userLogin = await request(app.getHttpServer())
       .post('/auth/login')
@@ -115,9 +153,9 @@ describe('LeaguesController (integration — create + list)', () => {
     expect(res.body.isPublic).toBe(false);
     createdLeagueIds.push(res.body.id);
 
-    // Owner membership row materialised.
-    const membership = await prisma.leagueMembership.findUnique({
-      where: { leagueId_userId: { leagueId: res.body.id, userId } },
+    // Owner membership row materialised — keyed by entry now.
+    const membership = await prisma.leagueMembership.findFirst({
+      where: { leagueId: res.body.id, entry: { userId } },
     });
     expect(membership).not.toBeNull();
   });

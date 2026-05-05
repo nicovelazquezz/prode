@@ -65,6 +65,25 @@ describe('LeaderboardController (integration)', () => {
       },
     });
     userId = user.id;
+    // Multi-prode: regular user gets a Payment + Entry #1.
+    const userPayment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    const userEntry = await prisma.entry.create({
+      data: {
+        userId: user.id,
+        paymentId: userPayment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
 
     const userLogin = await request(app.getHttpServer())
       .post('/auth/login')
@@ -72,15 +91,40 @@ describe('LeaderboardController (integration)', () => {
     expect(userLogin.status).toBe(200);
     userToken = userLogin.body.accessToken;
 
-    // League: admin owns it, user is a member.
+    // League: admin owns it, user is a member. Both need entries; admin
+    // probably doesn't have one in the seed, so create one for them too.
     const adminUser = await prisma.user.findFirstOrThrow({ where: { dni: ADMIN_DNI } });
+    let adminEntry = await prisma.entry.findFirst({
+      where: { userId: adminUser.id, status: 'ACTIVE' },
+      orderBy: { position: 'asc' },
+    });
+    if (!adminEntry) {
+      const adminPayment = await prisma.payment.create({
+        data: {
+          userId: adminUser.id,
+          amount: 10_000,
+          method: 'CASH',
+          status: 'APPROVED',
+          paidAt: new Date(),
+          completedAt: new Date(),
+        },
+      });
+      adminEntry = await prisma.entry.create({
+        data: {
+          userId: adminUser.id,
+          paymentId: adminPayment.id,
+          position: 1,
+          status: 'ACTIVE',
+        },
+      });
+    }
     const league = await prisma.league.create({
       data: {
         name: `Lb-Ctrl-${stamp}`,
         inviteCode: `LBC${stamp}`.slice(0, 16),
         ownerId: adminUser.id,
         members: {
-          create: [{ userId: adminUser.id }, { userId: user.id }],
+          create: [{ entryId: adminEntry.id }, { entryId: userEntry.id }],
         },
       },
     });

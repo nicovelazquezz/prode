@@ -28,7 +28,7 @@ describe('LeaguesController leaderboard (integration)', () => {
   async function createUser(dni: string, suffix: string, waPrefix: number) {
     const bcrypt = await import('bcrypt');
     const passwordHash = await bcrypt.hash(password, 10);
-    return prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         dni,
         firstName: `Lg-${suffix}`,
@@ -37,6 +37,26 @@ describe('LeaguesController leaderboard (integration)', () => {
         passwordHash,
       },
     });
+    // Multi-prode: every user has Entry #1.
+    const payment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    const entry = await prisma.entry.create({
+      data: {
+        userId: user.id,
+        paymentId: payment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
+    return Object.assign(user, { _entryId: entry.id });
   }
 
   async function loginAccessToken(dni: string): Promise<string> {
@@ -62,20 +82,21 @@ describe('LeaguesController leaderboard (integration)', () => {
 
     const member = await createUser(memberDni, 'Member', 8_600_000_000);
     memberId = member.id;
+    const memberEntryId = (member as { _entryId: string })._entryId;
     const outsider = await createUser(outsiderDni, 'Outsider', 8_700_000_000);
     outsiderId = outsider.id;
 
     memberToken = await loginAccessToken(memberDni);
     outsiderToken = await loginAccessToken(outsiderDni);
 
-    // League is owned by `member`; member is the only seeded
+    // League is owned by `member`; member's entry is the only seeded
     // membership row at the start.
     const league = await prisma.league.create({
       data: {
         name: `Liga-Lb-${stamp}`,
         inviteCode: `LBL${String(stamp)}`.slice(0, 6).padEnd(6, 'A'),
         ownerId: memberId,
-        members: { create: { userId: memberId } },
+        members: { create: { entryId: memberEntryId } },
       },
     });
     leagueId = league.id;

@@ -7,8 +7,11 @@ import { PredictionLockedException } from '../../common/exceptions/domain.except
 
 /**
  * Pure unit tests for `PredictionsService.upsertMatchPrediction`. We mock
- * Prisma + AuditService — the integration path against the real DB lives in
- * `predictions.controller.spec.ts` (Task 7.2 / 7.7).
+ * Prisma + AuditService — the integration path against the real DB lives
+ * in `predictions.controller.spec.ts`.
+ *
+ * Multi-prode (post v1.1): the service is keyed by entryId, with the
+ * owning userId passed via the audit context for trail anchoring.
  *
  * Coverage focus:
  *   - 404 when match doesn't exist
@@ -63,7 +66,7 @@ describe('PredictionsService.upsertMatchPrediction (unit)', () => {
   it('throws NotFound when the match does not exist', async () => {
     const { service } = makeService({ match: null });
     await expect(
-      service.upsertMatchPrediction('user-1', 'missing', {
+      service.upsertMatchPrediction('entry-1', 'missing', {
         scoreHome: 1,
         scoreAway: 0,
       }),
@@ -75,7 +78,7 @@ describe('PredictionsService.upsertMatchPrediction (unit)', () => {
       match: { id: 'm1', predictionsLockAt: pastLock },
     });
     await expect(
-      service.upsertMatchPrediction('user-1', 'm1', {
+      service.upsertMatchPrediction('entry-1', 'm1', {
         scoreHome: 1,
         scoreAway: 0,
       }),
@@ -87,7 +90,7 @@ describe('PredictionsService.upsertMatchPrediction (unit)', () => {
       match: { id: 'm1', predictionsLockAt: futureLock },
     });
     await expect(
-      service.upsertMatchPrediction('u', 'm1', {
+      service.upsertMatchPrediction('e', 'm1', {
         scoreHome: -1,
         scoreAway: 0,
       }),
@@ -99,7 +102,7 @@ describe('PredictionsService.upsertMatchPrediction (unit)', () => {
       match: { id: 'm1', predictionsLockAt: futureLock },
     });
     await expect(
-      service.upsertMatchPrediction('u', 'm1', {
+      service.upsertMatchPrediction('e', 'm1', {
         scoreHome: 100,
         scoreAway: 0,
       }),
@@ -111,7 +114,7 @@ describe('PredictionsService.upsertMatchPrediction (unit)', () => {
       match: { id: 'm1', predictionsLockAt: futureLock },
     });
     await expect(
-      service.upsertMatchPrediction('u', 'm1', {
+      service.upsertMatchPrediction('e', 'm1', {
         scoreHome: 1.5,
         scoreAway: 0,
       }),
@@ -125,10 +128,10 @@ describe('PredictionsService.upsertMatchPrediction (unit)', () => {
       upsertResult: { id: 'pred-new', scoreHome: 2, scoreAway: 1 },
     });
     const result = await service.upsertMatchPrediction(
-      'user-7',
+      'entry-7',
       'm1',
       { scoreHome: 2, scoreAway: 1 },
-      { ipAddress: '127.0.0.1', userAgent: 'jest' },
+      { ipAddress: '127.0.0.1', userAgent: 'jest', userId: 'user-7' },
     );
     expect(result.id).toBe('pred-new');
     // Allow the fire-and-forget audit promise to settle.
@@ -140,6 +143,8 @@ describe('PredictionsService.upsertMatchPrediction (unit)', () => {
       entity: 'prediction',
       entityId: 'pred-new',
     });
+    const changes = auditCalls[0]!.changes as Record<string, unknown>;
+    expect(changes.entryId).toBe('entry-7');
   });
 
   it('writes an audit row with action prediction.updated when row exists', async () => {
@@ -148,10 +153,12 @@ describe('PredictionsService.upsertMatchPrediction (unit)', () => {
       existing: { id: 'pred-1', scoreHome: 1, scoreAway: 1 },
       upsertResult: { id: 'pred-1', scoreHome: 3, scoreAway: 2 },
     });
-    await service.upsertMatchPrediction('user-7', 'm1', {
-      scoreHome: 3,
-      scoreAway: 2,
-    });
+    await service.upsertMatchPrediction(
+      'entry-7',
+      'm1',
+      { scoreHome: 3, scoreAway: 2 },
+      { userId: 'user-7' },
+    );
     await new Promise((r) => setImmediate(r));
     expect(auditCalls).toHaveLength(1);
     expect(auditCalls[0]).toMatchObject({
@@ -162,26 +169,28 @@ describe('PredictionsService.upsertMatchPrediction (unit)', () => {
     const changes = auditCalls[0]!.changes as Record<string, unknown>;
     expect(changes.before).toEqual({ scoreHome: 1, scoreAway: 1 });
     expect(changes.after).toEqual({ scoreHome: 3, scoreAway: 2 });
+    expect(changes.entryId).toBe('entry-7');
   });
 
-  it('passes scores verbatim into prisma.prediction.upsert', async () => {
+  it('passes scores verbatim into prisma.prediction.upsert (keyed by entryId)', async () => {
     const { service, upsertCalls } = makeService({
       match: { id: 'm1', predictionsLockAt: futureLock },
     });
-    await service.upsertMatchPrediction('user-1', 'm1', {
+    await service.upsertMatchPrediction('entry-1', 'm1', {
       scoreHome: 0,
       scoreAway: 0,
     });
     expect(upsertCalls).toHaveLength(1);
     const args = upsertCalls[0] as {
-      where: { userId_matchId: { userId: string; matchId: string } };
-      create: { scoreHome: number; scoreAway: number };
+      where: { entryId_matchId: { entryId: string; matchId: string } };
+      create: { entryId: string; matchId: string; scoreHome: number; scoreAway: number };
       update: { scoreHome: number; scoreAway: number };
     };
-    expect(args.where.userId_matchId).toEqual({
-      userId: 'user-1',
+    expect(args.where.entryId_matchId).toEqual({
+      entryId: 'entry-1',
       matchId: 'm1',
     });
+    expect(args.create.entryId).toBe('entry-1');
     expect(args.create.scoreHome).toBe(0);
     expect(args.update.scoreAway).toBe(0);
   });
