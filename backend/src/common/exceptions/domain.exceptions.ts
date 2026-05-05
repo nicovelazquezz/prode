@@ -134,3 +134,21 @@ export class AlreadyLeagueMemberException extends ConflictException {
     super({ statusCode: 409, code: 'ALREADY_LEAGUE_MEMBER', message });
   }
 }
+
+/**
+ * Thrown when a logged-in user tries to add another prode but already
+ * reached the configured `max_entries_per_user` cap. Spec multi-prode §3.2.
+ * 409 Conflict — request is well-formed, server-side state has no room.
+ * Body carries `current` and `cap` so the UI can render an exact message.
+ */
+export class EntryCapReachedException extends ConflictException {
+  constructor(current: number, cap: number) {
+    super({
+      statusCode: 409,
+      code: 'ENTRY_CAP_REACHED',
+      message: `Llegaste al máximo de ${cap} entradas`,
+      current,
+      cap,
+    });
+  }
+}

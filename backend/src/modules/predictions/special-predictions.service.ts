@@ -16,10 +16,12 @@ export interface UpsertSpecialPredictionInput {
 interface AuditContext {
   ipAddress?: string;
   userAgent?: string;
+  /** Owning user id for audit anchoring; resolved by the caller. */
+  userId?: string;
 }
 
 /**
- * Service backing `/predictions/special` (Phase 7 Task 7.3).
+ * Service backing the entry-scoped special prediction endpoints.
  *
  * Ownership:
  *   - Cross-field invariants on the picks (champion / runnerUp / third must
@@ -29,7 +31,7 @@ interface AuditContext {
  *     further mutation throws `SpecialPredictionLockedException`;
  *   - Audit logs (`special_prediction.created` / `special_prediction.updated`).
  *
- * The `(userId)` is the natural unique key — every user has at most one
+ * The `entryId` is the natural unique key — every entry has at most one
  * SpecialPrediction row, enforced by `@@unique` in Prisma. We do a
  * read-then-upsert in two queries so the audit row can carry a clean
  * before/after diff; the slim race window is acceptable noise (audit
@@ -45,19 +47,16 @@ export class SpecialPredictionsService {
   ) {}
 
   /**
-   * Validates input and upserts the row keyed on `userId`.
+   * Validates input and upserts the row keyed on `entryId`.
    *
    * Edge case: `lockedAt` is checked against the EXISTING row (not the
-   * input). If the user has no row yet AND the cron has already locked,
-   * we still throw — using a quick `findUnique({ where: { userId } })`
+   * input). If the entry has no row yet AND the cron has already locked,
+   * we still throw — using a quick `findUnique({ where: { entryId } })`
    * isn't enough to cover that case, so we additionally check whether ANY
-   * SpecialPrediction in the DB already has a non-null `lockedAt`. Cron
-   * 5.3 sets all rows in a single UPDATE, so the presence of any locked
-   * row means the inaugural match has already started and new rows must
-   * be rejected too.
+   * SpecialPrediction in the DB already has a non-null `lockedAt`.
    */
   async upsertSpecialPrediction(
-    userId: string,
+    entryId: string,
     input: UpsertSpecialPredictionInput,
     ctx: AuditContext = {},
   ): Promise<SpecialPrediction> {
@@ -80,18 +79,13 @@ export class SpecialPredictionsService {
     }
 
     const existing = await this.prisma.specialPrediction.findUnique({
-      where: { userId },
+      where: { entryId },
     });
 
     if (existing?.lockedAt) {
       throw new SpecialPredictionLockedException();
     }
 
-    // If the user has no row yet, check the global lock (spec 5.3 — cron
-    // sets `lockedAt` on every existing row in one UPDATE; the absence of
-    // any locked row at all means the inaugural match hasn't started, so
-    // newcomers are still allowed). We only count when we have to so the
-    // happy path stays at one query.
     if (!existing) {
       const anyLocked = await this.prisma.specialPrediction.findFirst({
         where: { lockedAt: { not: null } },
@@ -103,13 +97,10 @@ export class SpecialPredictionsService {
     }
 
     // ── Persistence ──────────────────────────────────────────────
-    // The row is keyed on userId (UNIQUE), so `upsert` on that key is the
-    // natural fit. We pass each field through verbatim — `undefined` keeps
-    // the previous value on update, which is what the partial DTO wants.
     const upserted = await this.prisma.specialPrediction.upsert({
-      where: { userId },
+      where: { entryId },
       create: {
-        userId,
+        entryId,
         championTeamId: input.championTeamId,
         runnerUpTeamId: input.runnerUpTeamId,
         thirdPlaceTeamId: input.thirdPlaceTeamId,
@@ -118,9 +109,6 @@ export class SpecialPredictionsService {
         totalGoals: input.totalGoals,
       },
       update: {
-        // `??` keeps existing values when the field is undefined, but
-        // Prisma already does that natively for `undefined` — we still
-        // pass undefined through so the PATCH semantics are explicit.
         championTeamId: input.championTeamId,
         runnerUpTeamId: input.runnerUpTeamId,
         thirdPlaceTeamId: input.thirdPlaceTeamId,
@@ -131,7 +119,7 @@ export class SpecialPredictionsService {
     });
 
     void this.audit.log({
-      userId,
+      userId: ctx.userId,
       action: existing
         ? 'special_prediction.updated'
         : 'special_prediction.created',
@@ -155,6 +143,7 @@ export class SpecialPredictionsService {
               topScorerName: upserted.topScorerName,
               totalGoals: upserted.totalGoals,
             },
+            entryId,
           }
         : {
             championTeamId: upserted.championTeamId,
@@ -163,6 +152,7 @@ export class SpecialPredictionsService {
             topScorerId: upserted.topScorerId,
             topScorerName: upserted.topScorerName,
             totalGoals: upserted.totalGoals,
+            entryId,
           },
       ipAddress: ctx.ipAddress,
       userAgent: ctx.userAgent,
@@ -172,14 +162,14 @@ export class SpecialPredictionsService {
   }
 
   /**
-   * Returns the user's special prediction, or `null` if they haven't
-   * created one yet. The `champion / runnerUp / thirdPlace` team relations
-   * are included so the frontend can render flags and team names without
-   * an extra round-trip.
+   * Returns the entry's special prediction, or `null` if not created.
+   * The `champion / runnerUp / thirdPlace` team relations are included
+   * so the frontend can render flags and team names without an extra
+   * round-trip.
    */
-  async findForUser(userId: string): Promise<SpecialPrediction | null> {
+  async findForEntry(entryId: string): Promise<SpecialPrediction | null> {
     return this.prisma.specialPrediction.findUnique({
-      where: { userId },
+      where: { entryId },
       include: {
         championTeam: true,
         runnerUpTeam: true,

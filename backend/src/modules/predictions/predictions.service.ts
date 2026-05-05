@@ -25,6 +25,12 @@ export interface UpsertMatchPredictionInput {
 interface AuditContext {
   ipAddress?: string;
   userAgent?: string;
+  /**
+   * Owning user id. Predictions live on entries (post multi-prode); the
+   * audit row still anchors to the human user so admins can search by
+   * person. Caller resolves it (controller / job).
+   */
+  userId?: string;
 }
 
 /**
@@ -38,13 +44,13 @@ const MAX_SCORE = 99;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 200;
 
-export interface ListUserPredictionsParams {
+export interface ListEntryPredictionsParams {
   page?: number;
   pageSize?: number;
   phase?: Phase;
 }
 
-export interface PaginatedUserPredictions {
+export interface PaginatedEntryPredictions {
   data: unknown[];
   page: number;
   pageSize: number;
@@ -53,14 +59,18 @@ export interface PaginatedUserPredictions {
 }
 
 /**
- * Service backing `/predictions/match/:matchId` (Phase 7 task 7.1). Owns:
+ * Service backing the entry-scoped prediction endpoints. Owns:
  *   - lock-window enforcement (`now() < match.predictionsLockAt`);
  *   - score range validation (defence-in-depth, also in DTO);
- *   - the `(userId, matchId)` upsert that powers both POST and PUT verbs;
+ *   - the `(entryId, matchId)` upsert that powers both POST and PUT verbs;
  *   - audit logs (`prediction.created` / `prediction.updated`).
  *
- * Cache invalidation is handled by the controller (Task 7.6) so the service
- * stays cache-agnostic and unit-testable without a Cache instance.
+ * Cache invalidation is handled by the controller so the service stays
+ * cache-agnostic and unit-testable without a Cache instance.
+ *
+ * Authorization: callers MUST resolve `entryId` from a user-owned entry
+ * before invoking these methods. The service does not re-validate
+ * ownership; controller / guard does.
  */
 @Injectable()
 export class PredictionsService {
@@ -72,18 +82,16 @@ export class PredictionsService {
   ) {}
 
   /**
-   * Upserts the user's prediction for a single match. Returns the resulting
+   * Upserts the entry's prediction for a single match. Returns the resulting
    * row. Does NOT include the match relation by default — callers that need
-   * it should re-fetch via {@link findUserPrediction}.
+   * it should re-fetch via {@link findEntryPrediction}.
    */
   async upsertMatchPrediction(
-    userId: string,
+    entryId: string,
     matchId: string,
     input: UpsertMatchPredictionInput,
     ctx: AuditContext = {},
   ): Promise<Prediction> {
-    // Server-side range check. Mirrors the DTO @Min/@Max so non-HTTP
-    // callers can't bypass the validator.
     if (
       !Number.isInteger(input.scoreHome) ||
       !Number.isInteger(input.scoreAway) ||
@@ -105,28 +113,19 @@ export class PredictionsService {
       throw new NotFoundException(`Match ${matchId} not found`);
     }
 
-    // Lock window: predictions close 10 minutes before kickoff (spec 5.3).
-    // We compare to the row's stored `predictionsLockAt` rather than
-    // recomputing from kickoff so an admin-edited lock time is honoured.
     if (Date.now() >= match.predictionsLockAt.getTime()) {
       throw new PredictionLockedException();
     }
 
-    // Was there already a prediction? We need to know to pick the audit
-    // action. `findUnique` on the composite unique avoids racing with the
-    // upsert below — even if a parallel request creates the row between the
-    // two queries, the upsert still does the right thing; only the audit
-    // action might say `created` for what's effectively an update, which is
-    // acceptable noise.
     const existing = await this.prisma.prediction.findUnique({
-      where: { userId_matchId: { userId, matchId } },
+      where: { entryId_matchId: { entryId, matchId } },
       select: { id: true, scoreHome: true, scoreAway: true },
     });
 
     const upserted = await this.prisma.prediction.upsert({
-      where: { userId_matchId: { userId, matchId } },
+      where: { entryId_matchId: { entryId, matchId } },
       create: {
-        userId,
+        entryId,
         matchId,
         scoreHome: input.scoreHome,
         scoreAway: input.scoreAway,
@@ -138,7 +137,7 @@ export class PredictionsService {
     });
 
     void this.audit.log({
-      userId,
+      userId: ctx.userId,
       action: existing ? 'prediction.updated' : 'prediction.created',
       entity: 'prediction',
       entityId: upserted.id,
@@ -152,11 +151,13 @@ export class PredictionsService {
               scoreHome: upserted.scoreHome,
               scoreAway: upserted.scoreAway,
             },
+            entryId,
             matchId,
           }
         : {
             scoreHome: upserted.scoreHome,
             scoreAway: upserted.scoreAway,
+            entryId,
             matchId,
           },
       ipAddress: ctx.ipAddress,
@@ -167,24 +168,21 @@ export class PredictionsService {
   }
 
   /**
-   * Lists every prediction the user has loaded, joined with the underlying
+   * Lists every prediction for a single entry, joined with the underlying
    * match (and both team relations) so the frontend can render score +
-   * opponent in a single payload. Sorted by `match.kickoffAt` ASC so the
-   * caller sees their own predictions in chronological order.
+   * opponent in a single payload. Sorted by `match.kickoffAt` ASC.
    */
-  async listUserPredictions(
-    userId: string,
-    params: ListUserPredictionsParams = {},
-  ): Promise<PaginatedUserPredictions> {
+  async listEntryPredictions(
+    entryId: string,
+    params: ListEntryPredictionsParams = {},
+  ): Promise<PaginatedEntryPredictions> {
     const page = Math.max(1, params.page ?? 1);
     const pageSize = Math.min(
       MAX_PAGE_SIZE,
       Math.max(1, params.pageSize ?? DEFAULT_PAGE_SIZE),
     );
 
-    // Filtering by phase requires going through the match relation. Prisma
-    // supports the nested `match: { phase }` filter natively.
-    const where: { userId: string; match?: { phase: Phase } } = { userId };
+    const where: { entryId: string; match?: { phase: Phase } } = { entryId };
     if (params.phase) {
       where.match = { phase: params.phase };
     }
@@ -214,16 +212,16 @@ export class PredictionsService {
   }
 
   /**
-   * Returns the user's prediction for a single match — `null` if they
-   * haven't loaded one yet. The frontend uses this to pre-fill the input
-   * when the user revisits a match's prediction page.
+   * Returns the entry's prediction for a single match — `null` if not
+   * created. The frontend uses this to pre-fill the input when the user
+   * revisits a match's prediction page.
    */
-  async findUserPrediction(
-    userId: string,
+  async findEntryPrediction(
+    entryId: string,
     matchId: string,
   ): Promise<Prediction | null> {
     return this.prisma.prediction.findUnique({
-      where: { userId_matchId: { userId, matchId } },
+      where: { entryId_matchId: { entryId, matchId } },
       include: {
         match: {
           include: { homeTeam: true, awayTeam: true },
@@ -233,12 +231,10 @@ export class PredictionsService {
   }
 
   /**
-   * Counts how many users have submitted a prediction for the given match.
-   * Used by the public `GET /matches/:matchId/predictions/count` endpoint
-   * (Task 7.5) to fuel "X usuarios ya predijeron este partido" badges in
-   * the frontend. Returns 0 if the match doesn't exist — choosing not to
-   * 404 keeps the call safe behind a 60 s cache and avoids leaking match
-   * existence to unauthenticated callers.
+   * Counts how many entries have submitted a prediction for the given
+   * match. Public counter, used to fuel "X usuarios ya predijeron este
+   * partido" badges in the frontend. Returns 0 if the match doesn't
+   * exist — choosing not to 404 keeps the call safe behind a 60 s cache.
    */
   async countForMatch(matchId: string): Promise<number> {
     return this.prisma.prediction.count({ where: { matchId } });
