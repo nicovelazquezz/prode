@@ -28,8 +28,8 @@ interface PublicProfileDrawerProps {
  * nombre + lista de predicciones de partidos finalizados con
  * los puntos de cada una.
  *
- * Se monta desde la tabla de leaderboard al click en una row.
- * La query se habilita solo cuando `userId !== null`.
+ * Visual: dark editorial. Cada item con bg surface-2, border line;
+ * cuando la prediccion sumo puntos, border-left verde + texto verde.
  */
 export function PublicProfileDrawer({
   userId,
@@ -70,21 +70,24 @@ export function PublicProfileDrawer({
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-20 rounded-md bg-[var(--color-prode-surface)] animate-pulse"
+                  className="h-20 rounded-sm bg-[var(--color-landing-surface-2)] border border-[var(--color-landing-line)] animate-pulse"
                 />
               ))}
             </div>
           ) : profileQuery.isError ? (
-            <p className="font-sans text-sm text-[var(--color-prode-text-secondary)]">
+            <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
               No pudimos cargar el perfil.
             </p>
           ) : !profileQuery.data ||
             profileQuery.data.predictionsFinished.length === 0 ? (
-            <p className="font-sans text-sm text-[var(--color-prode-text-secondary)]">
-              Aun no hay predicciones evaluadas.
+            <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
+              Aún no hay predicciones evaluadas.
             </p>
           ) : (
-            <ul className="flex flex-col gap-2" aria-label="Predicciones finalizadas">
+            <ul
+              className="flex flex-col gap-2"
+              aria-label="Predicciones finalizadas"
+            >
               {profileQuery.data.predictionsFinished.map((p) => (
                 <PredictionItem key={p.matchId} prediction={p} />
               ))}
@@ -121,17 +124,17 @@ function PredictionItem({ prediction: p }: ItemProps) {
   return (
     <li
       className={cn(
-        "flex items-center justify-between gap-3 rounded-md border bg-[var(--color-prode-surface)] p-3",
+        "flex items-center justify-between gap-3 rounded-sm border bg-[var(--color-landing-surface-2)] p-3 border-l-[3px]",
         isCorrect
-          ? "border-[var(--color-prode-accent)]"
-          : "border-[var(--color-prode-border)]",
+          ? "border-[var(--color-landing-line-strong)] [border-left-color:var(--color-landing-green)]"
+          : "border-[var(--color-landing-line-strong)] [border-left-color:transparent]",
       )}
     >
       <div className="flex items-center gap-2 min-w-0">
         {p.match.homeTeam?.fifaCode ? (
           <TeamFlag fifaCode={p.match.homeTeam.fifaCode} size={20} />
         ) : null}
-        <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-prode-text-secondary)] truncate">
+        <span className="font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)] truncate">
           {homeName} vs {awayName}
         </span>
         {p.match.awayTeam?.fifaCode ? (
@@ -140,7 +143,7 @@ function PredictionItem({ prediction: p }: ItemProps) {
       </div>
       <div className="flex items-center gap-3 shrink-0">
         <div className="flex flex-col items-end">
-          <span className="font-sans text-[10px] uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+          <span className="font-[family-name:var(--font-landing-mono)] text-[9px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
             Resultado
           </span>
           {p.match.scoreHome !== null && p.match.scoreAway !== null ? (
@@ -150,11 +153,13 @@ function PredictionItem({ prediction: p }: ItemProps) {
               size="sm"
             />
           ) : (
-            <span className="font-sans text-xs text-[var(--color-prode-text-muted)]">—</span>
+            <span className="text-xs text-[var(--color-landing-text-muted)]">
+              —
+            </span>
           )}
         </div>
         <div className="flex flex-col items-end">
-          <span className="font-sans text-[10px] uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+          <span className="font-[family-name:var(--font-landing-mono)] text-[9px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
             Pred
           </span>
           <ScoreDisplay
@@ -166,10 +171,10 @@ function PredictionItem({ prediction: p }: ItemProps) {
         </div>
         <span
           className={cn(
-            "font-sans text-xs font-bold uppercase tracking-wider",
+            "font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em]",
             isCorrect
-              ? "text-[var(--color-prode-accent)]"
-              : "text-[var(--color-prode-text-secondary)]",
+              ? "text-[var(--color-landing-green)]"
+              : "text-[var(--color-landing-text-muted)]",
           )}
         >
           {p.pointsEarned > 0 ? `+${p.pointsEarned}` : "0"} pts
