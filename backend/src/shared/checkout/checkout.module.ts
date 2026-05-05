@@ -6,10 +6,13 @@ import { MercadoPagoCheckoutProvider } from './mercadopago.provider.js';
 /**
  * Wires the active `CheckoutProvider` implementation into DI.
  *
- * Selection rule: `NODE_ENV === 'test'` binds the in-memory mock so E2E
- * tests can drive the public payment flow deterministically. Every other
- * environment (development, staging, production) binds the real
- * MercadoPago SDK-backed provider.
+ * Selection rule:
+ *   - `NODE_ENV === 'test'` → MockCheckoutProvider (backend E2E specs).
+ *   - `NODE_ENV === 'development'` → MockCheckoutProvider so the
+ *     frontend's `/dev/mock-checkout` page can drive the flow via the
+ *     initPoint the mock returns. The real MP SDK is not viable locally
+ *     because `MP_ACCESS_TOKEN` is a placeholder.
+ *   - everything else (staging, production) → MercadoPagoCheckoutProvider.
  *
  * Marked `@Global` so the future PaymentsModule can inject the token
  * without re-importing this module everywhere.
@@ -24,7 +27,10 @@ import { MercadoPagoCheckoutProvider } from './mercadopago.provider.js';
       useFactory: (
         mock: MockCheckoutProvider,
         mp: MercadoPagoCheckoutProvider,
-      ) => (process.env.NODE_ENV === 'test' ? mock : mp),
+      ) => {
+        const env = process.env.NODE_ENV;
+        return env === 'test' || env === 'development' ? mock : mp;
+      },
       inject: [MockCheckoutProvider, MercadoPagoCheckoutProvider],
     },
   ],

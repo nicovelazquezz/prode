@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { loadEnv } from '../../config/env.js';
 import type { CheckoutProvider } from './checkout.provider.js';
 import type {
   CreatePreferenceParams,
@@ -68,10 +69,19 @@ export class MockCheckoutProvider implements CheckoutProvider {
       amount: params.amount,
       completionTokenPlain: params.completionTokenPlain,
     });
-    return {
-      preferenceId,
-      initPoint: `https://mock.local/checkout/${preferenceId}`,
-    };
+    // In NODE_ENV=development the frontend's `/dev/mock-checkout` page
+    // takes over for the MP UI. Point initPoint there so the browser
+    // redirect from `POST /payments/init` lands on a working page
+    // (otherwise it would 404 on the placeholder mock.local host).
+    //
+    // In NODE_ENV=test, unit tests assert the preferenceId is in the
+    // URL path — keep the legacy `https://mock.local/checkout/...`
+    // shape so they don't have to know about FRONTEND_URL.
+    const initPoint =
+      process.env.NODE_ENV === 'development'
+        ? `${loadEnv().FRONTEND_URL}/dev/mock-checkout?paymentId=${encodeURIComponent(params.paymentId)}&token=${encodeURIComponent(params.completionTokenPlain)}&preferenceId=${encodeURIComponent(preferenceId)}`
+        : `https://mock.local/checkout/${preferenceId}`;
+    return { preferenceId, initPoint };
   }
 
   async getPayment(externalId: string): Promise<ProviderPayment> {
