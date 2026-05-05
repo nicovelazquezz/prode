@@ -1,8 +1,12 @@
 "use client";
 
+import { useContext, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { EntrySwitcher } from "@/components/domain/entry-switcher";
+import { NewEntryModal } from "@/components/domain/new-entry-modal";
+import { ActiveEntryContext } from "@/providers/active-entry-provider";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { cn } from "@/lib/utils/cn";
 
@@ -46,6 +50,11 @@ const NAV_TABS: NavTab[] = [
 export function AppHeader({ userName = "Usuario", className }: AppHeaderProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
+  // Lectura "soft" del ActiveEntryContext: si el header se monta fuera
+  // del provider (tests aislados, /admin), simplemente no renderiza el
+  // EntrySwitcher en lugar de tirar.
+  const activeEntryCtx = useContext(ActiveEntryContext);
+  const [newEntryOpen, setNewEntryOpen] = useState(false);
 
   const handleLogout = () => {
     void logout();
@@ -61,23 +70,34 @@ export function AppHeader({ userName = "Usuario", className }: AppHeaderProps) {
       )}
     >
       <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-4 px-4 md:px-8">
-        {/* Brand + greeting */}
-        <Link
-          href="/predicciones"
-          className="flex items-center gap-3 min-w-0"
-          aria-label="Ir a mis predicciones"
-        >
-          <span
-            className="font-[family-name:var(--font-landing-display)] text-[18px] uppercase tracking-[0.04em] leading-none text-[var(--color-landing-text)]"
+        {/* Brand + greeting + switcher */}
+        <div className="flex items-center gap-3 min-w-0">
+          <Link
+            href="/predicciones"
+            className="flex items-center gap-3 min-w-0"
+            aria-label="Ir a mis predicciones"
           >
-            Prode
-          </span>
-          <span
-            className="hidden sm:inline font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)] truncate max-w-[180px]"
-          >
-            Hola, {userName}
-          </span>
-        </Link>
+            <span
+              className="font-[family-name:var(--font-landing-display)] text-[18px] uppercase tracking-[0.04em] leading-none text-[var(--color-landing-text)]"
+            >
+              Prode
+            </span>
+            <span
+              className="hidden sm:inline font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)] truncate max-w-[180px]"
+            >
+              Hola, {userName}
+            </span>
+          </Link>
+          {/*
+            EntrySwitcher: visible cuando el header se monta dentro del
+            ActiveEntryProvider (todo el (app)). Se renderiza tanto en
+            mobile como desktop — en mobile aparece pegado al saludo,
+            con el dropdown abriéndose hacia abajo desde el header.
+          */}
+          {activeEntryCtx ? (
+            <EntrySwitcher onCreateNew={() => setNewEntryOpen(true)} />
+          ) : null}
+        </div>
 
         {/* Desktop tabs (centro) */}
         <nav
@@ -129,6 +149,17 @@ export function AppHeader({ userName = "Usuario", className }: AppHeaderProps) {
           <span className="hidden md:inline">Salir</span>
         </button>
       </div>
+      {/*
+        NewEntryModal: vive a nivel del header para que el CTA del
+        EntrySwitcher pueda abrirlo sin acoplar el switcher al modal.
+        No se monta si el header corre fuera del ActiveEntryProvider.
+      */}
+      {activeEntryCtx ? (
+        <NewEntryModal
+          open={newEntryOpen}
+          onOpenChange={setNewEntryOpen}
+        />
+      ) : null}
     </header>
   );
 }
