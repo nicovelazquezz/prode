@@ -71,22 +71,23 @@ export default function LeagueLeaderboardPage({
 
   if (isForbidden || isNotFound) {
     return (
-      <section className="mx-auto max-w-2xl px-4 py-12 md:px-8 text-center">
-        <p className="font-display text-3xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
-          {isNotFound ? "Liga inexistente" : "Sin acceso"}
+      <section className="mx-auto max-w-2xl px-4 py-16 md:px-8 text-center">
+        <div className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+          {isNotFound ? "404" : "403"}
+        </div>
+        <p className="mt-3 font-[family-name:var(--font-landing-display)] text-4xl uppercase tracking-tight leading-[0.9] text-[var(--color-landing-text)]">
+          <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+            {isNotFound ? "Liga inexistente" : "Sin acceso"}
+          </span>
         </p>
-        <p className="mt-3 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+        <p className="mt-5 text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
           {isForbidden
             ? "No sos miembro de esta mini-liga."
             : "La liga que buscas no existe."}
         </p>
         <Link
           href="/leaderboard"
-          className={cn(
-            "mt-6 inline-flex items-center gap-2 rounded-md bg-[var(--color-prode-near-black)] px-6 py-3",
-            "font-sans text-sm font-bold uppercase tracking-wider text-white",
-            "transition-opacity duration-200 hover:opacity-90",
-          )}
+          className="mt-8 inline-flex items-center gap-2 rounded-sm bg-[var(--color-landing-red)] px-6 py-3 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Volver
@@ -97,22 +98,27 @@ export default function LeagueLeaderboardPage({
 
   return (
     <>
-      <section className="mx-auto max-w-3xl px-4 py-6 md:px-8">
+      <section className="mx-auto max-w-3xl px-4 pb-20 pt-10 md:px-8 md:pb-24 md:pt-14">
         <Link
           href="/leaderboard"
-          className="inline-flex items-center gap-2 mb-3 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)] hover:text-[var(--color-prode-near-black)]"
+          className="inline-flex items-center gap-2 mb-4 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)] transition-colors hover:text-[var(--color-landing-text)]"
         >
           <ArrowLeft className="h-3 w-3" aria-hidden />
           Volver al leaderboard
         </Link>
 
-        <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="flex items-start justify-between gap-3 mb-6">
           <div className="min-w-0">
-            <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide leading-none text-[var(--color-prode-near-black)] truncate">
-              {league?.name ?? "Liga"}
+            <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+              Mini-liga
+            </div>
+            <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)] truncate">
+              <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+                {league?.name ?? "Liga"}
+              </span>
             </h1>
             {league ? (
-              <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+              <p className="mt-3 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
                 {league.memberCount ?? 0} miembros
               </p>
             ) : null}
@@ -121,15 +127,21 @@ export default function LeagueLeaderboardPage({
             type="button"
             onClick={() => leaderboardQuery.refetch()}
             aria-label="Refrescar tabla"
-            className={cn(
-              "shrink-0 inline-flex items-center gap-2 rounded-md border border-[var(--color-prode-border)] bg-white px-3 py-2",
-              "font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-near-black)]",
-              "transition-colors duration-200 hover:bg-[var(--color-prode-surface)]",
-            )}
+            className="shrink-0 inline-flex items-center gap-2 rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-3 py-2 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
           >
+            <span
+              role="status"
+              aria-label={leaderboardQuery.isFetching ? "Refrescando" : "Actualizado"}
+              className={cn(
+                "inline-block h-1.5 w-1.5 rounded-full",
+                leaderboardQuery.isFetching
+                  ? "bg-[var(--color-landing-red)] landing-pulse"
+                  : "bg-[var(--color-landing-text-muted)]",
+              )}
+            />
             <RefreshCw
               className={cn(
-                "h-4 w-4",
+                "h-3.5 w-3.5",
                 leaderboardQuery.isFetching && "animate-spin",
               )}
               aria-hidden
@@ -177,36 +189,29 @@ function Pagination({
   onPageChange: (next: number) => void;
 }) {
   const totalPages = Math.max(1, Math.ceil(total / Math.max(1, pageSize)));
+  const navBtn =
+    "rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-4 py-2 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] disabled:opacity-40 disabled:pointer-events-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]";
+
   return (
-    <div className="mt-4 flex items-center justify-between gap-3">
+    <div className="mt-5 flex items-center justify-between gap-3">
       <button
         type="button"
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
-        className={cn(
-          "rounded-md border border-[var(--color-prode-border)] bg-white px-4 py-2",
-          "font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-near-black)]",
-          "disabled:opacity-50 disabled:pointer-events-none",
-          "transition-colors duration-200 hover:bg-[var(--color-prode-surface)]",
-        )}
+        className={navBtn}
       >
-        Anterior
+        ← Anterior
       </button>
-      <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-        Pagina {page} de {totalPages}
+      <span className="font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
+        Página {page} / {totalPages}
       </span>
       <button
         type="button"
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
-        className={cn(
-          "rounded-md border border-[var(--color-prode-border)] bg-white px-4 py-2",
-          "font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-near-black)]",
-          "disabled:opacity-50 disabled:pointer-events-none",
-          "transition-colors duration-200 hover:bg-[var(--color-prode-surface)]",
-        )}
+        className={navBtn}
       >
-        Siguiente
+        Siguiente →
       </button>
     </div>
   );
