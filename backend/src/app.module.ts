@@ -22,6 +22,7 @@ import { ScoringModule } from './modules/scoring/scoring.module.js';
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module.js';
 import { LeaguesModule } from './modules/leagues/leagues.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
+import { StatsModule } from './modules/stats/stats.module.js';
 import { DevModule } from './modules/dev/dev.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor.js';
@@ -113,6 +114,7 @@ const IS_NON_PROD = process.env.NODE_ENV !== 'production';
     LeaderboardModule,
     LeaguesModule,
     AdminModule,
+    StatsModule,
     // DevModule mounts `POST /dev/simulate-webhook` so the local
     // frontend can drive the public payment flow without MercadoPago.
     // Excluded entirely from the prod bundle.
