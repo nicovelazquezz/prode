@@ -160,6 +160,8 @@ describe('E2E flow #3: phase close (FINAL)', () => {
 
     // Drain any leftover phase-winner / leaderboard.refresh jobs from
     // earlier suites so the queue snapshot we take below is meaningful.
+    // BullMQ can return undefined entries when jobs transition states
+    // mid-iteration, so guard explicitly.
     const stale = await queue.getJobs([
       'waiting',
       'delayed',
@@ -167,6 +169,7 @@ describe('E2E flow #3: phase close (FINAL)', () => {
       'failed',
     ]);
     for (const j of stale) {
+      if (!j) continue;
       if (j.name === 'phase-winner' || j.name === 'leaderboard.refresh') {
         await j.remove().catch(() => undefined);
       }
@@ -259,7 +262,7 @@ describe('E2E flow #3: phase close (FINAL)', () => {
         'delayed',
         'completed',
       ]);
-      if (jobs.some((j) => j.name === 'phase-winner')) {
+      if (jobs.some((j) => j && j.name === 'phase-winner')) {
         saw = true;
         break;
       }
