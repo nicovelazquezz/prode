@@ -176,6 +176,67 @@ export async function closePhase(
     .json<{ ok: true; winnerUserId: string | null; amount: number }>();
 }
 
+/**
+ * Resumen por fase: total partidos, finalizados, top 10 puntos en
+ * la fase, ganador propuesto si la fase esta lista para cerrar.
+ *
+ * TODO(backend): si /admin/phases/summary no existe todavia, el
+ * panel muestra placeholder con todas las fases en cero hasta que
+ * el endpoint este disponible.
+ */
+export interface PhaseSummary {
+  phase: Phase;
+  matchesTotal: number;
+  matchesFinished: number;
+  closed: boolean;
+  proposedWinner: {
+    userId: string;
+    firstName: string;
+    lastName: string;
+    points: number;
+  } | null;
+  prizeAmount: number;
+  topTen: Array<{
+    userId: string;
+    firstName: string;
+    lastName: string;
+    points: number;
+  }>;
+}
+
+export async function listPhaseSummaries(): Promise<PhaseSummary[]> {
+  return api.get("admin/phases/summary").json<PhaseSummary[]>();
+}
+
+// ── Prizes ──────────────────────────────────────────────────────
+
+export interface AdminPrize {
+  id: string;
+  type:
+    | "GENERAL_FIRST"
+    | "GENERAL_SECOND"
+    | "GENERAL_THIRD"
+    | "PHASE_WINNER";
+  phase: Phase | null;
+  amount: number;
+  recipientUserId: string | null;
+  recipientName: string | null;
+  status: "PENDING" | "PAID";
+  paidAt: string | null;
+}
+
+export async function listPrizes(): Promise<AdminPrize[]> {
+  // TODO(backend): GET /admin/prizes — devuelve todos los premios
+  // (3 generales + 6 de fase + final) con su estado.
+  return api.get("admin/prizes").json<AdminPrize[]>();
+}
+
+export async function markPrizePaid(id: string): Promise<AdminPrize> {
+  // TODO(backend): POST /admin/prizes/:id/pay — marca como pagado y
+  // registra audit log.
+  return api.post(`admin/prizes/${id}/pay`).json<AdminPrize>();
+}
+
 // ── Leaderboard ─────────────────────────────────────────────────
 
 export async function refreshLeaderboard(): Promise<{ ok: true }> {

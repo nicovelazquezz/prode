@@ -71,8 +71,16 @@ export const queryKeys = {
     matches: {
       detail: (id: string) => ["admin", "matches", id] as const,
     },
+    phases: {
+      summary: () => ["admin", "phases", "summary"] as const,
+    },
+    prizes: () => ["admin", "prizes"] as const,
     audit: (filters?: Record<string, unknown>) =>
       ["admin", "audit", filters ?? {}] as const,
     config: () => ["admin", "config"] as const,
+    notifications: {
+      history: (filters?: Record<string, unknown>) =>
+        ["admin", "notifications", "history", filters ?? {}] as const,
+    },
   },
 } as const;
