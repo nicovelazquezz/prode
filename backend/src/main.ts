@@ -30,8 +30,21 @@ async function bootstrap() {
   app.use(cookieParser());
   applyHttpHardening(app, env);
 
-  // Graceful shutdown hooks (Phase 12.6).
+  // Graceful shutdown hooks (Phase 12.6). With this on:
+  //   - BullMQ workers (NotificationsProcessor) close cleanly via the
+  //     `OnApplicationShutdown` hook implemented by `@nestjs/bullmq`'s
+  //     `BullExplorer` — drains in-flight jobs before exit.
+  //   - PrismaService and RedisService implement `OnModuleDestroy` so
+  //     they close their own connections after queues finish.
+  // Log SIGTERM/SIGINT so an operator running `kill -SIGTERM <pid>` sees
+  // proof the signal was caught (Nest swallows it otherwise).
   app.enableShutdownHooks();
+  for (const sig of ['SIGTERM', 'SIGINT'] as const) {
+    process.on(sig, () => {
+      // eslint-disable-next-line no-console
+      console.log(`[shutdown] received ${sig}, shutting down gracefully`);
+    });
+  }
 
   const port = Number(process.env.PORT ?? 3001);
   await app.listen(port);
