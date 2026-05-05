@@ -130,45 +130,45 @@ export default function AdminAuditoriaPage() {
 
       <div className="overflow-x-auto rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)]">
         <table className="w-full border-collapse" aria-label="Tabla de auditoria">
-          <thead className="border-b border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)]">
+          <thead className="border-b border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)]">
             <tr>
               <th
                 scope="col"
-                className="w-10 px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]"
+                className="w-10 px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               />
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]"
+                className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               >
                 Fecha
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]"
+                className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               >
                 Entity
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]"
+                className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               >
                 Action
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]"
+                className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               >
                 User
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]"
+                className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               >
                 Entity ID
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]"
+                className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               >
                 IP
               </th>
@@ -216,7 +216,7 @@ export default function AdminAuditoriaPage() {
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-[var(--color-landing-surface)]"
+            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-4 py-2 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] disabled:opacity-40 disabled:pointer-events-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
           >
             Anterior
           </button>
@@ -227,7 +227,7 @@ export default function AdminAuditoriaPage() {
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-[var(--color-landing-surface)]"
+            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-4 py-2 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] disabled:opacity-40 disabled:pointer-events-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
           >
             Siguiente
           </button>

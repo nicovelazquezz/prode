@@ -210,7 +210,7 @@ export default function NuevoUsuarioPage() {
           >
             <select
               {...form.register("paymentMethod")}
-              className="h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-gold)] focus:ring-offset-2"
+              className="h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)] px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-gold)] focus:ring-offset-2"
             >
               <option value="CASH">Efectivo</option>
               <option value="TRANSFER">Transferencia</option>
