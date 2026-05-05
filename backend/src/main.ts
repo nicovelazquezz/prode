@@ -10,6 +10,7 @@ initSentry(env);
 
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module.js';
 import { applyHttpHardening } from './common/security/http-hardening.js';
 
@@ -23,7 +24,9 @@ import { applyHttpHardening } from './common/security/http-hardening.js';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true, // necesario para verificación de firma MP
+    bufferLogs: true, // hold logs until nestjs-pino takes over
   });
+  app.useLogger(app.get(Logger));
   app.use(cookieParser());
   applyHttpHardening(app, env);
 
