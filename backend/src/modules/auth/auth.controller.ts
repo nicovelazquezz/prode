@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Post,
   Req,
   Res,
@@ -413,6 +415,47 @@ export class AuthController {
       }
     }
     clearAuthCookies(res, this.env.NODE_ENV === 'production');
+  }
+
+  /**
+   * Returns the currently-authenticated user. The frontend calls this
+   * after `auth/refresh` on landing to populate its in-memory user
+   * shape. Sensitive columns (passwordHash, refreshTokens, etc.) are
+   * deliberately omitted via the explicit `select` — *never* spread the
+   * Prisma User object into the response.
+   *
+   * 401 (via the global JwtAuthGuard) when the access token is missing
+   * or invalid; 404 when the JWT is valid but the user vanished from
+   * the DB (e.g. cleaned up between issue and consumption — extremely
+   * rare but cheaper to assert than to debug a TypeError later).
+   */
+  @Get('me')
+  async me(@CurrentUser() current: AuthenticatedUser | undefined) {
+    if (!current) {
+      // Defense in depth: the global guard should have already rejected
+      // an anonymous request, but if `@Public()` ever leaks onto a
+      // parent decorator we surface the failure loudly here.
+      throw new UnauthorizedException('Authentication required');
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id: current.id },
+      select: {
+        id: true,
+        dni: true,
+        firstName: true,
+        lastName: true,
+        whatsapp: true,
+        role: true,
+        status: true,
+        whatsappOptIn: true,
+        createdAt: true,
+        lastLoginAt: true,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 
   /**

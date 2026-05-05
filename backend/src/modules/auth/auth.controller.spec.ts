@@ -570,3 +570,102 @@ describe('POST /auth/reset-password (integration)', () => {
     ).toBe(200);
   });
 });
+
+/**
+ * Tests for `GET /auth/me`. The endpoint backs the AuthProvider's
+ * "rehydrate session on landing" flow — the frontend calls it after
+ * /auth/refresh to populate the in-memory user object.
+ *
+ * Critical guarantees:
+ *   - 401 without a valid access token (global guard).
+ *   - 200 with a curated subset of User columns; passwordHash MUST
+ *     never appear in the response.
+ *   - The shape lines up with the public User type the frontend
+ *     consumes (see spec §5).
+ */
+describe('GET /auth/me (integration)', () => {
+  let app: INestApplication;
+  const ADMIN_DNI = process.env.ADMIN_DEFAULT_DNI ?? '00000000';
+  const ADMIN_PASSWORD =
+    process.env.ADMIN_DEFAULT_PASSWORD ?? 'ChangeMe_DevOnly!';
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    app.use(cookieParser());
+    await app.init();
+  }, 30_000);
+
+  afterAll(async () => {
+    if (app) await app.close();
+  });
+
+  async function loginAndGrabAccessToken(): Promise<string> {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ dni: ADMIN_DNI, password: ADMIN_PASSWORD });
+    expect(res.status).toBe(200);
+    return res.body.accessToken;
+  }
+
+  it('returns 401 when no Authorization header is present', async () => {
+    const res = await request(app.getHttpServer()).get('/auth/me');
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 401 with an invalid bearer token', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', 'Bearer not-a-real-jwt');
+    expect(res.status).toBe(401);
+  });
+
+  it('returns the curated user payload for a valid bearer token', async () => {
+    const token = await loginAndGrabAccessToken();
+    const res = await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      dni: ADMIN_DNI,
+      role: 'ADMIN',
+      status: 'ACTIVE',
+    });
+    // Required surface for the frontend AuthProvider.
+    expect(res.body).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        dni: expect.any(String),
+        firstName: expect.any(String),
+        lastName: expect.any(String),
+        whatsapp: expect.any(String),
+        role: expect.any(String),
+        status: expect.any(String),
+        whatsappOptIn: expect.any(Boolean),
+        // createdAt + lastLoginAt are ISO strings on the wire.
+        createdAt: expect.any(String),
+      }),
+    );
+    // lastLoginAt may be null on a freshly-seeded admin if the suite
+    // restored it; tolerate both.
+    expect(['string', 'object']).toContain(typeof res.body.lastLoginAt);
+  });
+
+  it('NEVER leaks passwordHash, refreshTokens, or other sensitive fields', async () => {
+    const token = await loginAndGrabAccessToken();
+    const res = await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    // The select in the controller is the gate — this assertion catches
+    // any future regression where a maintainer swaps to `findUnique({})`
+    // without an explicit select clause.
+    expect(res.body).not.toHaveProperty('passwordHash');
+    expect(res.body).not.toHaveProperty('refreshTokens');
+    expect(res.body).not.toHaveProperty('passwordResets');
+  });
+});
