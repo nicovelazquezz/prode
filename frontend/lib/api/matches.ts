@@ -1,25 +1,42 @@
 import { api } from "./client";
 import type { Match, Phase } from "./types";
 
+/**
+ * El backend devuelve `GET /matches` paginado: `{ data: Match[], total,
+ * page, pageSize }`. Aceptamos ambas formas (array directo o paginado)
+ * para no romper si en el futuro un endpoint cambia. El consumer
+ * siempre recibe `Match[]`.
+ */
+type MatchListResponse = Match[] | { data: Match[]; total?: number };
+
+function unwrapMatches(raw: MatchListResponse): Match[] {
+  return Array.isArray(raw) ? raw : raw.data ?? [];
+}
+
 export async function getMatches(query?: {
   phase?: Phase;
   status?: string;
   page?: number;
   pageSize?: number;
 }): Promise<Match[]> {
-  return api.get("matches", { searchParams: cleanParams(query) }).json<Match[]>();
+  const raw = await api
+    .get("matches", { searchParams: cleanParams(query) })
+    .json<MatchListResponse>();
+  return unwrapMatches(raw);
 }
 
 export async function getUpcomingMatches(query?: {
   limit?: number;
 }): Promise<Match[]> {
-  return api
+  const raw = await api
     .get("matches/upcoming", { searchParams: cleanParams(query) })
-    .json<Match[]>();
+    .json<MatchListResponse>();
+  return unwrapMatches(raw);
 }
 
 export async function getMatchesByPhase(phase: Phase): Promise<Match[]> {
-  return api.get(`matches/by-phase/${phase}`).json<Match[]>();
+  const raw = await api.get(`matches/by-phase/${phase}`).json<MatchListResponse>();
+  return unwrapMatches(raw);
 }
 
 /**
