@@ -26,6 +26,14 @@ import {
 const DEFAULT_AMOUNT_ARS = 15_000;
 
 /**
+ * Default cap for `AppConfig.max_entries_per_user`. Mirrors the value
+ * used by EntriesService — duplicated so PaymentsService stays
+ * decoupled from EntriesModule (and so the webhook works even if the
+ * AppConfig row is missing).
+ */
+const DEFAULT_MAX_ENTRIES = 5;
+
+/**
  * TTL of the magic link / completion token, applied when the Payment
  * transitions to APPROVED. Matches spec section 6.5 (7 days from paidAt).
  */
@@ -78,6 +86,28 @@ export class PaymentsService {
     private readonly notificationsQueue: Queue,
   ) {
     this.env = loadEnv();
+  }
+
+  /**
+   * Reads `AppConfig.max_entries_per_user`. Falls back to the spec
+   * default. Used by the webhook re-check (logged-in "agregar otro
+   * prode" flow). Accepts an optional TX client so the read can stay
+   * inside the surrounding transaction for read-after-write
+   * consistency with concurrent admin updates.
+   */
+  private async getMaxEntriesPerUser(
+    tx?: Parameters<Parameters<PrismaService['$transaction']>[0]>[0],
+  ): Promise<number> {
+    const client = tx ?? this.prisma;
+    const row = await client.appConfig.findUnique({
+      where: { key: 'max_entries_per_user' },
+    });
+    const raw = row?.value ?? String(DEFAULT_MAX_ENTRIES);
+    const parsed = Number.parseInt(raw, 10);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      return DEFAULT_MAX_ENTRIES;
+    }
+    return Math.min(20, parsed);
   }
 
   /**
@@ -208,6 +238,12 @@ export class PaymentsService {
 
     let didTransition = false;
     let transitionedPaymentId: string | null = null;
+    /** Whether this webhook landed on a logged-in flow ("agregar otro prode"). */
+    let isLoggedInFlow = false;
+    /** Set when the cap re-check failed and the Payment was forced to OVER_CAP. */
+    let overCapForUserId: string | null = null;
+    /** Set when a new Entry was successfully created in the webhook TX. */
+    let createdEntryId: string | null = null;
 
     await this.prisma.$transaction(async (tx) => {
       // Resolve our local Payment. Prefer preferenceId (set at init) and
@@ -255,31 +291,125 @@ export class PaymentsService {
       if (result.count === 0) return;
       didTransition = true;
       transitionedPaymentId = local.id;
+      isLoggedInFlow = local.userId !== null;
 
       if (newStatus === 'APPROVED') {
-        await this.persistRecoveryNotification(tx, local.id, mpPayment);
+        if (local.userId) {
+          // Logged-in "agregar otro prode" flow. Re-check cap (race
+          // with admin lowering it between init and webhook), then
+          // either create Entry or force the payment to OVER_CAP.
+          const cap = await this.getMaxEntriesPerUser(tx);
+          const lockedRows = await tx.$queryRaw<Array<{ count: bigint }>>`
+            SELECT COUNT(*)::bigint AS count
+            FROM entries
+            WHERE "userId" = ${local.userId}
+            FOR UPDATE
+          `;
+          const current = Number(lockedRows[0]?.count ?? 0);
+          if (current >= cap) {
+            await tx.payment.update({
+              where: { id: local.id },
+              data: { status: 'OVER_CAP' },
+            });
+            await tx.auditLog.create({
+              data: {
+                userId: local.userId,
+                action: 'entry.over_cap_orphaned',
+                entity: 'payment',
+                entityId: local.id,
+                changes: { current, cap, mpPaymentId: mpPayment.id },
+              },
+            });
+            overCapForUserId = local.userId;
+            // Do NOT persist the recovery notification — the user is
+            // already logged in, the payment failed to materialise.
+          } else {
+            const maxPos = await tx.entry.aggregate({
+              where: { userId: local.userId },
+              _max: { position: true },
+            });
+            const nextPosition = (maxPos._max.position ?? 0) + 1;
+            const entry = await tx.entry.create({
+              data: {
+                userId: local.userId,
+                paymentId: local.id,
+                position: nextPosition,
+                alias: local.entryAlias,
+                status: 'ACTIVE',
+              },
+            });
+            createdEntryId = entry.id;
+            await tx.auditLog.create({
+              data: {
+                userId: local.userId,
+                action: 'entry.created',
+                entity: 'entry',
+                entityId: entry.id,
+                changes: {
+                  paymentId: local.id,
+                  position: nextPosition,
+                  source: 'webhook',
+                  alias: local.entryAlias,
+                },
+              },
+            });
+          }
+        } else {
+          // Public flow (anonymous): persist the recovery email so the
+          // user can click through and complete registration.
+          await this.persistRecoveryNotification(tx, local.id, mpPayment);
+        }
       }
     });
 
     // Post-commit side-effects (NOT inside the TX — Redis & WhatsApp must
     // not roll back with the DB).
     if (didTransition && newStatus === 'APPROVED' && transitionedPaymentId) {
-      // Admin alert if we couldn't capture an email — needs to leave the TX
-      // because AdminAlertsService writes its own Notification row.
-      if (!mpPayment.payer.email) {
+      if (overCapForUserId) {
+        // OVER_CAP path: alert admin to refund manually. The Entry was
+        // never created so the user paid for nothing — admin decides
+        // refund vs raise the cap.
         await this.adminAlerts.notify({
-          type: 'PAYMENT_NO_EMAIL',
-          message: `Pago ${transitionedPaymentId} aprobado sin email de payer. ID MP: ${mpPayment.id}. Contactá al usuario manualmente.`,
+          type: 'PAYMENT_OVER_CAP',
+          message:
+            `Payment ${transitionedPaymentId} aprobado pero el user ${overCapForUserId} ` +
+            `está al cap de entries. Decidí refund o raise del cap. ID MP: ${mpPayment.id}.`,
+        });
+        void this.audit.log({
+          action: 'payment.over_cap',
+          entity: 'payment',
+          entityId: transitionedPaymentId,
+          changes: { userId: overCapForUserId, mpPaymentId: mpPayment.id },
+        });
+      } else if (isLoggedInFlow) {
+        // Logged-in flow + Entry created — no recovery email, no
+        // delayed orphan alert (the entry already exists).
+        void this.audit.log({
+          action: 'payment.webhook_approved',
+          entity: 'payment',
+          entityId: transitionedPaymentId,
+          changes: {
+            mpPaymentId: mpPayment.id,
+            entryId: createdEntryId,
+            flow: 'logged_in',
+          },
+        });
+      } else {
+        // Public flow — same behaviour as before.
+        if (!mpPayment.payer.email) {
+          await this.adminAlerts.notify({
+            type: 'PAYMENT_NO_EMAIL',
+            message: `Pago ${transitionedPaymentId} aprobado sin email de payer. ID MP: ${mpPayment.id}. Contactá al usuario manualmente.`,
+          });
+        }
+        await this.enqueueOrphanAlert(transitionedPaymentId);
+        void this.audit.log({
+          action: 'payment.webhook_approved',
+          entity: 'payment',
+          entityId: transitionedPaymentId,
+          changes: { mpPaymentId: mpPayment.id, flow: 'public' },
         });
       }
-      // Delayed orphan-alert. jobId guarantees dedup across webhook retries.
-      await this.enqueueOrphanAlert(transitionedPaymentId);
-      void this.audit.log({
-        action: 'payment.webhook_approved',
-        entity: 'payment',
-        entityId: transitionedPaymentId,
-        changes: { mpPaymentId: mpPayment.id },
-      });
     }
 
     if (didTransition && newStatus === 'REFUNDED' && transitionedPaymentId) {
