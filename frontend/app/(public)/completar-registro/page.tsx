@@ -8,9 +8,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/toaster";
 import { completeRegistration } from "@/lib/api/auth";
 import { getPaymentByToken } from "@/lib/api/payments";
@@ -20,40 +17,45 @@ import { cn } from "@/lib/utils/cn";
 
 const ADMIN_WHATSAPP = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP ?? "";
 
-/**
- * Schema de completar-registro. Validaciones espejadas con backend:
- *   - DNI: 7-8 digitos
- *   - WhatsApp: 10 a 13 digitos del area+numero (luego se prefija
- *     "549" -> resultado "549<digits>" coincide con `^\d{10,15}$`)
- *   - password: 8+ chars con al menos un digito (regla backend)
- */
 const schema = z.object({
   dni: z
     .string()
     .min(7)
     .max(8)
-    .regex(/^\d{7,8}$/, "El DNI debe tener 7 u 8 numeros"),
-  firstName: z.string().min(1, "Ingresa tu nombre").max(60),
-  lastName: z.string().min(1, "Ingresa tu apellido").max(60),
-  // El usuario tipea: codigo de area + numero (sin 549). Ej: 2914123456.
-  // Cap superior 12 (no 13): el backend valida ^\d{10,15}$ sobre
-  // "549" + raw, asi que el raw maximo real es 15 - 3 = 12 digitos.
+    .regex(/^\d{7,8}$/, "El DNI debe tener 7 u 8 números"),
+  firstName: z.string().min(1, "Ingresá tu nombre").max(60),
+  lastName: z.string().min(1, "Ingresá tu apellido").max(60),
   whatsappRaw: z
     .string()
-    .min(10, "Codigo de area + numero (10 a 12 digitos)")
-    .max(12, "Codigo de area + numero (10 a 12 digitos)")
-    .regex(/^\d{10,12}$/, "Solo numeros, sin espacios ni guiones"),
+    .min(10, "Código de área + número (10 a 12 dígitos)")
+    .max(12, "Código de área + número (10 a 12 dígitos)")
+    .regex(/^\d{10,12}$/, "Solo números, sin espacios ni guiones"),
   password: z
     .string()
-    .min(8, "La contrasena debe tener al menos 8 caracteres")
-    .regex(/\d/, "La contrasena debe contener al menos un numero"),
+    .min(8, "La contraseña debe tener al menos 8 caracteres")
+    .regex(/\d/, "La contraseña debe contener al menos un número"),
 });
 
 type FormValues = z.infer<typeof schema>;
 
+const inputClass =
+  "w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-4 py-3 text-base text-[var(--color-landing-text)] placeholder:text-[var(--color-landing-text-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]";
+
+const labelClass =
+  "font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]";
+
+const errorClass =
+  "font-[family-name:var(--font-landing-mono)] text-[11px] text-[var(--color-landing-red)]";
+
+const ctaPrimary =
+  "rounded-sm bg-[var(--color-landing-red)] px-8 py-[18px] text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-landing-gold)] disabled:opacity-60";
+
+const ctaGhost =
+  "rounded-sm border border-[var(--color-landing-line-strong)] px-8 py-[18px] text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-landing-gold)]";
+
 function buildAdminWhatsApp(): string {
   const text = encodeURIComponent(
-    "Hola! Pague pero el link de registro me da error.",
+    "Hola! Pagué pero el link de registro me da error.",
   );
   const num = ADMIN_WHATSAPP.replace(/\D/g, "");
   return num
@@ -61,34 +63,13 @@ function buildAdminWhatsApp(): string {
     : `https://wa.me/?text=${text}`;
 }
 
-/**
- * Pagina /completar-registro?token=xxx.
- *
- * Flow:
- *   1. Lee `?token=` con useSearchParams.
- *   2. Valida con GET /payments/by-token/:token (useQuery).
- *      - 404 / 410 / network error -> pantalla error con CTA WhatsApp.
- *   3. OK -> form con DNI / nombre / apellido / WhatsApp / password.
- *   4. Submit -> completeRegistration() -> redirect /predicciones.
- *
- * UX:
- *   - Mobile: 3 steps con stepper (DNI+nombre / WhatsApp / password).
- *   - Desktop: single page con secciones. Implementado via responsive
- *     hide/show de steps (Tailwind), manteniendo un solo form.
- */
-/**
- * Wrapper que provee el Suspense boundary requerido por
- * `useSearchParams()` en client components prerenderizados.
- * Sin Suspense, Next 16 falla el build estatico ("missing-suspense-
- * with-csr-bailout"). El fallback es un placeholder minimo.
- */
 export default function CompletarRegistroPage() {
   return (
     <Suspense
       fallback={
         <div className="mx-auto flex w-full max-w-md flex-col items-center px-4 py-16">
-          <p className="font-sans text-sm text-[var(--color-prode-text-secondary)]">
-            Cargando...
+          <p className="font-[family-name:var(--font-landing-mono)] text-xs uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
+            Cargando…
           </p>
         </div>
       }
@@ -132,12 +113,11 @@ function CompletarRegistroForm() {
     staleTime: 60_000,
   });
 
-  // ── Token vacio o invalido ────────────────────────────────────
   if (!token) {
     return (
       <ErrorPanel
-        title="Link invalido"
-        description="No encontramos el token de pago en la URL. Pedile al admin que te reenvie el link."
+        title="Link inválido"
+        description="No encontramos el token de pago en la URL. Pedile al admin que te reenvíe el link."
       />
     );
   }
@@ -145,8 +125,8 @@ function CompletarRegistroForm() {
   if (tokenQuery.isLoading) {
     return (
       <div className="mx-auto flex w-full max-w-md flex-col items-center px-4 py-16">
-        <p className="font-sans text-sm text-[var(--color-prode-text-secondary)]">
-          Validando tu pago...
+        <p className="font-[family-name:var(--font-landing-mono)] text-xs uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
+          Validando tu pago…
         </p>
       </div>
     );
@@ -156,13 +136,12 @@ function CompletarRegistroForm() {
     return (
       <ErrorPanel
         title="No pudimos validar tu pago"
-        description="El link expiro o ya fue usado. Si pagaste y este es el link que recibiste, escribinos por WhatsApp y lo destrabamos."
+        description="El link expiró o ya fue usado. Si pagaste y este es el link que recibiste, escribinos por WhatsApp y lo destrabamos."
       />
     );
   }
 
   const onSubmit = async (values: FormValues) => {
-    // Normalizamos a 549<area+numero>: el regex backend es ^\d{10,15}$.
     const whatsappNormalized = `549${values.whatsappRaw}`;
     try {
       await completeRegistration({
@@ -173,7 +152,6 @@ function CompletarRegistroForm() {
         whatsapp: whatsappNormalized,
         password: values.password,
       });
-      // Hidratar el AuthProvider con el user nuevo.
       await refresh();
       router.replace("/predicciones");
     } catch (err) {
@@ -198,16 +176,19 @@ function CompletarRegistroForm() {
   const goBack = () => setStep((s) => (s === 1 ? 1 : ((s - 1) as 1 | 2 | 3)));
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col px-4 py-10 md:py-16">
-      <h1 className="font-display text-4xl md:text-6xl font-black uppercase tracking-tight text-[var(--color-prode-near-black)]">
-        Completá tu registro
+    <div className="mx-auto flex w-full max-w-2xl flex-col px-4 py-12 md:py-20">
+      <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-green)]">
+        Pago confirmado
+      </div>
+      <h1 className="font-[family-name:var(--font-landing-display)] text-4xl uppercase leading-[0.85] tracking-tight md:text-6xl">
+        <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+          Completá tu registro.
+        </span>
       </h1>
-      <p className="mt-3 font-sans text-sm md:text-base text-[var(--color-prode-text-secondary)]">
-        Pago confirmado. Solo nos faltan tus datos para que puedas
-        cargar las predicciones.
+      <p className="mt-4 text-sm leading-relaxed text-[var(--color-landing-text-muted)] md:text-base">
+        Solo nos faltan tus datos para que puedas cargar predicciones.
       </p>
 
-      {/* Stepper visible solo en mobile */}
       <div className="md:hidden mt-8">
         <Stepper current={step} total={3} />
       </div>
@@ -217,73 +198,61 @@ function CompletarRegistroForm() {
         className="mt-8 flex flex-col gap-8"
         noValidate
       >
-        {/* Step 1: DNI + nombre + apellido */}
         <section
           className={cn(
-            "flex flex-col gap-6",
+            "flex flex-col gap-5",
             step !== 1 && "hidden md:flex",
           )}
         >
-          <h2 className="font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)] md:text-2xl">
-            1. Tus datos
+          <h2 className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight">
+            01 · Tus datos
           </h2>
 
-          <Field
-            label="DNI"
-            id="reg-dni"
-            error={errors.dni?.message}
-          >
-            <Input
+          <Field label="DNI" id="reg-dni" error={errors.dni?.message}>
+            <input
               id="reg-dni"
               type="text"
               inputMode="numeric"
               autoComplete="off"
+              className={inputClass}
               {...register("dni")}
             />
           </Field>
 
-          <Field
-            label="Nombre"
-            id="reg-first"
-            error={errors.firstName?.message}
-          >
-            <Input
+          <Field label="Nombre" id="reg-first" error={errors.firstName?.message}>
+            <input
               id="reg-first"
               type="text"
               autoComplete="given-name"
+              className={inputClass}
               {...register("firstName")}
             />
           </Field>
 
-          <Field
-            label="Apellido"
-            id="reg-last"
-            error={errors.lastName?.message}
-          >
-            <Input
+          <Field label="Apellido" id="reg-last" error={errors.lastName?.message}>
+            <input
               id="reg-last"
               type="text"
               autoComplete="family-name"
+              className={inputClass}
               {...register("lastName")}
             />
           </Field>
         </section>
 
-        {/* Step 2: WhatsApp */}
         <section
           className={cn(
-            "flex flex-col gap-6",
+            "flex flex-col gap-5",
             step !== 2 && "hidden md:flex",
           )}
         >
-          <h2 className="font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)] md:text-2xl">
-            2. WhatsApp
+          <h2 className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight">
+            02 · WhatsApp
           </h2>
-          <p className="font-sans text-sm text-[var(--color-prode-text-secondary)] -mt-3">
-            Por aca te avisamos cuando hay novedades del Prode. El
-            prefijo +54 9 ya esta puesto, vos solo tipeas el codigo de
-            area + numero (ej: 2914123456 para Bahia Blanca, 11xxxxxxxx
-            para CABA).
+          <p className="-mt-2 text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+            Por acá te avisamos novedades del Prode. El prefijo +54 9 ya
+            está puesto, vos solo tipeás código de área + número (ej:
+            2914123456 para Bahía Blanca).
           </p>
 
           <Field
@@ -294,57 +263,57 @@ function CompletarRegistroForm() {
             <div className="flex items-center gap-3">
               <span
                 aria-hidden="true"
-                className="select-none font-sans text-base font-medium text-[var(--color-prode-text-secondary)] tabular-nums"
+                className="select-none font-[family-name:var(--font-landing-mono)] text-base text-[var(--color-landing-text-muted)] tabular-nums"
               >
                 +54 9
               </span>
-              <Input
+              <input
                 id="reg-whatsapp"
                 type="tel"
                 inputMode="numeric"
                 autoComplete="tel-national"
                 placeholder="2914123456"
+                className={inputClass}
                 {...register("whatsappRaw")}
               />
             </div>
           </Field>
         </section>
 
-        {/* Step 3: Password */}
         <section
           className={cn(
-            "flex flex-col gap-6",
+            "flex flex-col gap-5",
             step !== 3 && "hidden md:flex",
           )}
         >
-          <h2 className="font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)] md:text-2xl">
-            3. Contrasena
+          <h2 className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight">
+            03 · Contraseña
           </h2>
-          <p className="font-sans text-sm text-[var(--color-prode-text-secondary)] -mt-3">
-            Minimo 8 caracteres con al menos un numero. Vas a usarla
-            con tu DNI cada vez que entres al Prode.
+          <p className="-mt-2 text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+            Mínimo 8 caracteres con al menos un número. Vas a usarla con
+            tu DNI cada vez que entres al Prode.
           </p>
 
           <Field
-            label="Contrasena"
+            label="Contraseña"
             id="reg-password"
             error={errors.password?.message}
           >
             <div className="relative">
-              <Input
+              <input
                 id="reg-password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
+                className={`${inputClass} pr-12`}
                 {...register("password")}
-                className="pr-10"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
                 aria-label={
-                  showPassword ? "Ocultar contrasena" : "Mostrar contrasena"
+                  showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
                 }
-                className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-[var(--color-prode-text-secondary)] hover:text-[var(--color-prode-near-black)]"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-[var(--color-landing-text-muted)] transition-colors hover:text-[var(--color-landing-text)]"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -352,63 +321,50 @@ function CompletarRegistroForm() {
           </Field>
         </section>
 
-        {/* Footer: en mobile cambia segun step. En desktop = solo submit. */}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end md:gap-4">
-          {/* Mobile-only navigation */}
           <div className="md:hidden flex flex-col gap-3">
             {step < 3 ? (
-              <Button
+              <button
                 type="button"
-                variant="primary"
-                size="lg"
-                className="w-full"
                 onClick={goNext}
+                className={`${ctaPrimary} w-full`}
               >
                 Continuar
-              </Button>
+              </button>
             ) : (
-              <Button
+              <button
                 type="submit"
-                variant="primary"
-                size="lg"
-                className="w-full"
                 disabled={isSubmitting}
                 aria-busy={isSubmitting}
+                className={`${ctaPrimary} w-full`}
               >
-                {isSubmitting ? "Guardando..." : "Completar registro"}
-              </Button>
+                {isSubmitting ? "Guardando…" : "Completar registro"}
+              </button>
             )}
             {step > 1 && (
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="lg"
-                className="w-full"
                 onClick={goBack}
+                className={`${ctaGhost} w-full`}
               >
                 Volver
-              </Button>
+              </button>
             )}
           </div>
 
-          {/* Desktop: single submit */}
-          <Button
+          <button
             type="submit"
-            variant="primary"
-            size="lg"
-            className="hidden md:inline-flex md:w-auto md:px-12"
             disabled={isSubmitting}
             aria-busy={isSubmitting}
+            className={`${ctaPrimary} hidden md:inline-flex md:px-12`}
           >
-            {isSubmitting ? "Guardando..." : "Completar registro"}
-          </Button>
+            {isSubmitting ? "Guardando…" : "Completar registro"}
+          </button>
         </div>
       </form>
     </div>
   );
 }
-
-// ── Helpers ────────────────────────────────────────────────────
 
 function Field({
   label,
@@ -423,13 +379,11 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={id}>{label}</Label>
+      <label htmlFor={id} className={labelClass}>
+        {label}
+      </label>
       {children}
-      {error && (
-        <p className="font-sans text-xs text-[var(--color-prode-accent)]">
-          {error}
-        </p>
-      )}
+      {error && <p className={errorClass}>{error}</p>}
     </div>
   );
 }
@@ -442,10 +396,10 @@ function Stepper({ current, total }: { current: number; total: number }) {
           key={n}
           aria-current={n === current ? "step" : undefined}
           className={cn(
-            "flex h-2 flex-1 rounded-pill",
+            "flex h-1 flex-1 rounded-full",
             n <= current
-              ? "bg-[var(--color-prode-near-black)]"
-              : "bg-[var(--color-prode-border)]",
+              ? "bg-[var(--color-landing-green)]"
+              : "bg-[var(--color-landing-line-strong)]",
           )}
         />
       ))}
@@ -461,28 +415,27 @@ function ErrorPanel({
   description: string;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-start gap-4 px-4 py-16">
-      <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-tight text-[var(--color-prode-accent)]">
+    <div className="mx-auto flex w-full max-w-md flex-col items-start gap-5 px-4 py-16">
+      <div className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-red)]">
+        Algo salió mal
+      </div>
+      <h1 className="font-[family-name:var(--font-landing-display)] text-3xl uppercase leading-[0.9] tracking-tight md:text-4xl">
         {title}
       </h1>
-      <p className="font-sans text-sm md:text-base text-[var(--color-prode-text-secondary)]">
+      <p className="text-sm leading-relaxed text-[var(--color-landing-text-muted)] md:text-base">
         {description}
       </p>
       <a
         href={buildAdminWhatsApp()}
         target="_blank"
         rel="noopener noreferrer"
-        className={cn(
-          "mt-2 inline-flex h-12 items-center justify-center rounded-2xl px-8",
-          "bg-[var(--color-prode-near-black)] text-white text-sm font-medium font-sans",
-          "hover:opacity-90",
-        )}
+        className={ctaPrimary}
       >
         Contactar admin por WhatsApp
       </a>
       <Link
         href="/"
-        className="font-sans text-sm text-[var(--color-prode-text-secondary)] hover:text-[var(--color-prode-near-black)]"
+        className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.1em] text-[var(--color-landing-text-muted)] underline-offset-4 transition-colors hover:text-[var(--color-landing-text)] hover:underline"
       >
         Volver al inicio
       </Link>
