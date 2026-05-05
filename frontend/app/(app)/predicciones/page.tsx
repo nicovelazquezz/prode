@@ -57,7 +57,7 @@ export default function PrediccionesPage() {
   // Map matchId → prediction para lookup O(1).
   const predictionsByMatch = useMemo(() => {
     const map = new Map<string, Prediction>();
-    for (const p of predictionsQuery.data?.items ?? []) {
+    for (const p of predictionsQuery.data?.data ?? []) {
       map.set(p.matchId, p);
     }
     return map;
@@ -83,11 +83,11 @@ export default function PrediccionesPage() {
         queryKeys.predictions.me({ pageSize: 200 }),
       );
       if (prev) {
-        const items = [...prev.items];
-        const idx = items.findIndex((p) => p.matchId === matchId);
+        const data = [...prev.data];
+        const idx = data.findIndex((p) => p.matchId === matchId);
         const optimistic: Prediction = {
-          id: idx >= 0 ? items[idx]!.id : `optimistic-${matchId}`,
-          userId: idx >= 0 ? items[idx]!.userId : "me",
+          id: idx >= 0 ? data[idx]!.id : `optimistic-${matchId}`,
+          userId: idx >= 0 ? data[idx]!.userId : "me",
           matchId,
           scoreHome: dto.scoreHome,
           scoreAway: dto.scoreAway,
@@ -97,14 +97,14 @@ export default function PrediccionesPage() {
           pointsEarned: 0,
           evaluatedAt: null,
           createdAt:
-            idx >= 0 ? items[idx]!.createdAt : new Date().toISOString(),
+            idx >= 0 ? data[idx]!.createdAt : new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
-        if (idx >= 0) items[idx] = optimistic;
-        else items.push(optimistic);
+        if (idx >= 0) data[idx] = optimistic;
+        else data.push(optimistic);
         queryClient.setQueryData<Paginated<Prediction>>(
           queryKeys.predictions.me({ pageSize: 200 }),
-          { ...prev, items },
+          { ...prev, data },
         );
       }
       return { prev };

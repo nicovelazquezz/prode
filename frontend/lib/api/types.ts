@@ -233,11 +233,18 @@ export interface AuthResponse {
 
 // ── Pagination utility ─────────────────────────────────────────
 
+/**
+ * Shape returned by every backend pagination endpoint
+ * (`/predictions/me`, `/admin/users`, `/admin/payments`, etc.).
+ * The backend lives in `data` (not `items`) — see
+ * `PaginatedUserPredictions` and friends in
+ * backend/src/modules/predictions/predictions.service.ts.
+ */
 export interface Paginated<T> {
   page: number;
   pageSize: number;
   total: number;
-  items: T[];
+  data: T[];
 }
 
 // ── Public profile ─────────────────────────────────────────────

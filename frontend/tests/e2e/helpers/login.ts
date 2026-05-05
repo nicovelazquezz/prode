@@ -33,7 +33,10 @@ export async function loginAsUser(
     page.waitForURL((url) => url.pathname.startsWith('/predicciones'), {
       timeout: 15_000,
     }),
-    page.getByRole('button', { name: /ingresar/i }).click(),
+    // The public header also has an "Ingresar" link styled as a
+    // button — scope to the form's submit button to avoid the strict
+    // mode violation when both are visible.
+    page.locator('button[type="submit"]').getByText(/ingresar/i).click(),
   ]);
   await expect(page).toHaveURL(/\/predicciones/);
 }
@@ -54,7 +57,10 @@ export async function loginAsAdmin(
     page.waitForURL((url) => url.pathname.startsWith('/admin'), {
       timeout: 15_000,
     }),
-    page.getByRole('button', { name: /ingresar/i }).click(),
+    // The public header also has an "Ingresar" link styled as a
+    // button — scope to the form's submit button to avoid the strict
+    // mode violation when both are visible.
+    page.locator('button[type="submit"]').getByText(/ingresar/i).click(),
   ]);
   await expect(page).toHaveURL(/\/admin/);
 }

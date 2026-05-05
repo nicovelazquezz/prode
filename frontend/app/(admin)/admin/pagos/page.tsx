@@ -164,7 +164,7 @@ export default function AdminPagosPage() {
       </header>
 
       <AdminDataTable
-        data={paymentsQuery.data?.items ?? []}
+        data={paymentsQuery.data?.data ?? []}
         columns={columns}
         loading={paymentsQuery.isLoading}
         emptyMessage="Sin pagos para los filtros aplicados."

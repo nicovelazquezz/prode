@@ -51,7 +51,7 @@ export default function AdminAuditoriaPage() {
   const pageSize = auditQuery.data?.pageSize ?? 50;
   const totalPages = Math.max(1, Math.ceil(total / Math.max(1, pageSize)));
 
-  const items = auditQuery.data?.items ?? [];
+  const items = auditQuery.data?.data ?? [];
 
   return (
     <div className="space-y-6">

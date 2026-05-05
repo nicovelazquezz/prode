@@ -177,7 +177,7 @@ export default function AdminUsuariosPage() {
       </header>
 
       <AdminDataTable
-        data={usersQuery.data?.items ?? []}
+        data={usersQuery.data?.data ?? []}
         columns={columns}
         loading={usersQuery.isLoading}
         emptyMessage="Sin usuarios para los filtros aplicados."

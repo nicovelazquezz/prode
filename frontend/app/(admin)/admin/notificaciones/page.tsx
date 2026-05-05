@@ -438,7 +438,7 @@ function HistoryTable() {
   return (
     <div className="space-y-4">
       <AdminDataTable
-        data={historyQuery.data?.items ?? []}
+        data={historyQuery.data?.data ?? []}
         columns={columns}
         loading={historyQuery.isLoading}
         emptyMessage="Sin notificaciones registradas todavia."
