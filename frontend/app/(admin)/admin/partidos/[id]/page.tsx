@@ -126,20 +126,20 @@ export default function AdminPartidoDetailPage({ params }: PageProps) {
   if (matchQuery.isLoading) {
     return (
       <div className="space-y-4" role="status" aria-busy="true">
-        <div className="h-12 w-1/3 animate-pulse rounded bg-[var(--color-prode-surface)]" />
-        <div className="h-64 animate-pulse rounded bg-[var(--color-prode-surface)]" />
+        <div className="h-12 w-1/3 animate-pulse rounded bg-[var(--color-landing-surface)]" />
+        <div className="h-64 animate-pulse rounded bg-[var(--color-landing-surface)]" />
       </div>
     );
   }
   if (!match) {
     return (
-      <div className="rounded-md border border-dashed border-[var(--color-prode-border)] bg-white p-8 text-center">
-        <p className="font-sans text-sm text-[var(--color-prode-text-secondary)]">
+      <div className="rounded-sm border border-dashed border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-8 text-center">
+        <p className="font-sans text-sm text-[var(--color-landing-text-muted)]">
           No encontramos el partido.
         </p>
         <Link
           href="/admin/partidos"
-          className="mt-4 inline-flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-near-black)] underline"
+          className="mt-4 inline-flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text)] underline"
         >
           <ArrowLeft className="h-3 w-3" aria-hidden /> Volver
         </Link>
@@ -165,50 +165,50 @@ export default function AdminPartidoDetailPage({ params }: PageProps) {
       <div>
         <Link
           href="/admin/partidos"
-          className="inline-flex items-center gap-2 mb-3 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)] hover:text-[var(--color-prode-near-black)]"
+          className="inline-flex items-center gap-2 mb-3 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)] hover:text-[var(--color-landing-text)]"
         >
           <ArrowLeft className="h-3 w-3" aria-hidden />
           Volver a partidos
         </Link>
-        <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+        <h1 className="font-[family-name:var(--font-landing-display)] text-3xl md:text-4xl uppercase tracking-tight text-[var(--color-landing-text)]">
           Partido #{match.matchNumber}
         </h1>
-        <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+        <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
           {match.phase} · Estado actual:{" "}
           <span className="font-bold uppercase">{match.status}</span>
         </p>
       </div>
 
-      <section className="rounded-md border border-[var(--color-prode-border)] bg-white p-5 md:p-6">
-        <h2 className="font-display text-2xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+      <section className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5 md:p-6">
+        <h2 className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
           Resumen
         </h2>
         <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-3">
           <TeamSummary match={match} side="home" />
           <div className="flex flex-col items-center justify-center text-center">
-            <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+            <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
               Resultado
             </p>
             {match.scoreHome !== null && match.scoreAway !== null ? (
               <p
-                className="mt-1 font-display font-black tabular-nums leading-none text-[var(--color-prode-near-black)]"
+                className="mt-1 font-[family-name:var(--font-landing-display)] tabular-nums leading-none text-[var(--color-landing-text)]"
                 style={{ fontSize: "48px" }}
               >
                 {match.scoreHome}
-                <span className="mx-3 text-[var(--color-prode-text-secondary)]">
+                <span className="mx-3 text-[var(--color-landing-text-muted)]">
                   -
                 </span>
                 {match.scoreAway}
               </p>
             ) : (
               <p
-                className="mt-1 font-display font-black leading-none text-[var(--color-prode-text-muted)]"
+                className="mt-1 font-[family-name:var(--font-landing-display)] leading-none text-[var(--color-landing-text-muted)]"
                 style={{ fontSize: "48px" }}
               >
                 —
               </p>
             )}
-            <p className="mt-2 font-sans text-xs text-[var(--color-prode-text-secondary)]">
+            <p className="mt-2 font-sans text-xs text-[var(--color-landing-text-muted)]">
               {formatDateTime(match.kickoffAt)}
             </p>
           </div>
@@ -216,8 +216,8 @@ export default function AdminPartidoDetailPage({ params }: PageProps) {
         </div>
       </section>
 
-      <section className="rounded-md border border-[var(--color-prode-border)] bg-white p-5 md:p-6">
-        <h2 className="font-display text-2xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+      <section className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5 md:p-6">
+        <h2 className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
           Editar
         </h2>
         <form
@@ -233,7 +233,7 @@ export default function AdminPartidoDetailPage({ params }: PageProps) {
               {...form.register("kickoffAt")}
             />
             {form.formState.errors.kickoffAt ? (
-              <p className="mt-1 font-sans text-xs text-[var(--color-prode-accent)]">
+              <p className="mt-1 font-sans text-xs text-[var(--color-landing-red)]">
                 {form.formState.errors.kickoffAt.message}
               </p>
             ) : null}
@@ -280,8 +280,8 @@ export default function AdminPartidoDetailPage({ params }: PageProps) {
         </form>
       </section>
 
-      <section className="rounded-md border border-[var(--color-prode-border)] bg-white p-5 md:p-6">
-        <h2 className="font-display text-2xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+      <section className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5 md:p-6">
+        <h2 className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
           Acciones
         </h2>
         <div className="mt-4 flex flex-wrap gap-3">
@@ -372,20 +372,20 @@ function TeamSummary({
       {team ? (
         <>
           <TeamFlag fifaCode={team.fifaCode} size={48} />
-          <p className="mt-2 font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+          <p className="mt-2 font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight text-[var(--color-landing-text)]">
             {team.name}
           </p>
-          <p className="font-sans text-xs text-[var(--color-prode-text-secondary)]">
+          <p className="font-sans text-xs text-[var(--color-landing-text-muted)]">
             {team.fifaCode}
           </p>
         </>
       ) : (
         <>
-          <div className="h-12 w-12 rounded-md border-2 border-dashed border-[var(--color-prode-border)]" />
-          <p className="mt-2 font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-text-muted)]">
+          <div className="h-12 w-12 rounded-sm border-2 border-dashed border-[var(--color-landing-line-strong)]" />
+          <p className="mt-2 font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight text-[var(--color-landing-text-muted)]">
             {label ?? "TBD"}
           </p>
-          <p className="font-sans text-xs text-[var(--color-prode-text-secondary)]">
+          <p className="font-sans text-xs text-[var(--color-landing-text-muted)]">
             Equipo aun no definido
           </p>
         </>
@@ -456,7 +456,7 @@ function ScoreModal({
             {match.homeTeam ? (
               <TeamFlag fifaCode={match.homeTeam.fifaCode} size={32} />
             ) : null}
-            <p className="mt-2 font-display text-base font-black uppercase tracking-wide">
+            <p className="mt-2 font-[family-name:var(--font-landing-display)] text-base uppercase tracking-tight">
               {match.homeTeam?.shortName ?? match.homeTeamLabel ?? "TBD"}
             </p>
             <div className="mt-3">
@@ -468,14 +468,14 @@ function ScoreModal({
               />
             </div>
           </div>
-          <p className="text-center font-display text-3xl font-black text-[var(--color-prode-text-secondary)]">
+          <p className="text-center font-[family-name:var(--font-landing-display)] text-3xl font-black text-[var(--color-landing-text-muted)]">
             VS
           </p>
           <div className="flex flex-col items-center">
             {match.awayTeam ? (
               <TeamFlag fifaCode={match.awayTeam.fifaCode} size={32} />
             ) : null}
-            <p className="mt-2 font-display text-base font-black uppercase tracking-wide">
+            <p className="mt-2 font-[family-name:var(--font-landing-display)] text-base uppercase tracking-tight">
               {match.awayTeam?.shortName ?? match.awayTeamLabel ?? "TBD"}
             </p>
             <div className="mt-3">
@@ -490,8 +490,8 @@ function ScoreModal({
         </div>
 
         {confirmStep ? (
-          <div className="mt-4 rounded-md border-2 border-[var(--color-prode-accent)] bg-[var(--color-prode-surface)] p-3">
-            <p className="font-sans text-sm font-bold text-[var(--color-prode-accent)]">
+          <div className="mt-4 rounded-sm border-2 border-[var(--color-landing-red)] bg-[var(--color-landing-surface)] p-3">
+            <p className="font-sans text-sm font-bold text-[var(--color-landing-red)]">
               Una vez cargado, todas las predicciones se recalculan y el
               leaderboard cambia. Confirmas?
             </p>
@@ -584,8 +584,8 @@ function RecalcModal({
         {phaseLockedHint ? (
           <p
             className={cn(
-              "rounded-md border border-[var(--color-prode-accent)] bg-[var(--color-prode-surface)] p-3",
-              "font-sans text-xs text-[var(--color-prode-accent)]",
+              "rounded-sm border border-[var(--color-landing-red)] bg-[var(--color-landing-surface)] p-3",
+              "font-sans text-xs text-[var(--color-landing-red)]",
             )}
           >
             {phaseLockedHint}

@@ -99,7 +99,7 @@ export default function AdminPagosPage() {
               <span className="font-medium">
                 {u ? `${u.firstName} ${u.lastName}` : row.original.payerName ?? "—"}
               </span>
-              <span className="font-mono text-xs text-[var(--color-prode-text-secondary)]">
+              <span className="font-mono text-xs text-[var(--color-landing-text-muted)]">
                 {u?.dni ?? "Sin DNI"}
               </span>
             </div>
@@ -117,7 +117,7 @@ export default function AdminPagosPage() {
       {
         header: "Metodo",
         cell: ({ row }) => (
-          <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+          <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-landing-text-muted)]">
             {row.original.method}
           </span>
         ),
@@ -139,7 +139,7 @@ export default function AdminPagosPage() {
       {
         header: "ID MP",
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-[var(--color-prode-text-secondary)]">
+          <span className="font-mono text-xs text-[var(--color-landing-text-muted)]">
             {row.original.mpPaymentId ?? "—"}
           </span>
         ),
@@ -155,10 +155,18 @@ export default function AdminPagosPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
-          Pagos
+        <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">Recaudación</div>
+
+        <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)]">
+
+          <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+
+            Pagos
+
+          </span>
+
         </h1>
-        <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+        <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
           {formatNumber(total)} resultados · click en una fila para ver detalle
         </p>
       </header>
@@ -179,7 +187,7 @@ export default function AdminPagosPage() {
                 setStatus(e.target.value as StatusFilter);
                 setPage(1);
               }}
-              className="h-12 w-full rounded-md border border-[var(--color-prode-border)] bg-white px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-prode-near-black)] focus:ring-offset-2"
+              className="h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-gold)] focus:ring-offset-2"
             >
               {STATUS_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -194,7 +202,7 @@ export default function AdminPagosPage() {
                 setMethod(e.target.value as MethodFilter);
                 setPage(1);
               }}
-              className="h-12 w-full rounded-md border border-[var(--color-prode-border)] bg-white px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-prode-near-black)] focus:ring-offset-2"
+              className="h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-gold)] focus:ring-offset-2"
             >
               {METHOD_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -230,18 +238,18 @@ export default function AdminPagosPage() {
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded-md border border-[var(--color-prode-border)] bg-white px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-[var(--color-prode-surface)]"
+            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-[var(--color-landing-surface)]"
           >
             Anterior
           </button>
-          <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+          <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-landing-text-muted)]">
             Pagina {page} de {totalPages}
           </span>
           <button
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="rounded-md border border-[var(--color-prode-border)] bg-white px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-[var(--color-prode-surface)]"
+            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-[var(--color-landing-surface)]"
           >
             Siguiente
           </button>
@@ -258,18 +266,18 @@ export default function AdminPagosPage() {
 
 function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
   const styles: Record<PaymentStatus, string> = {
-    APPROVED: "bg-[var(--color-prode-near-black)] text-white",
+    APPROVED: "bg-[var(--color-landing-green)] text-[var(--color-landing-text)]",
     PENDING:
-      "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-secondary)]",
-    REJECTED: "bg-[var(--color-prode-accent)] text-white",
+      "bg-[var(--color-landing-surface)] text-[var(--color-landing-text-muted)]",
+    REJECTED: "bg-[var(--color-landing-red)] text-[var(--color-landing-text)]",
     REFUNDED:
-      "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-secondary)]",
-    ORPHANED: "bg-[var(--color-prode-accent)] text-white",
+      "bg-[var(--color-landing-surface)] text-[var(--color-landing-text-muted)]",
+    ORPHANED: "bg-[var(--color-landing-red)] text-[var(--color-landing-text)]",
   };
   return (
     <span
       className={cn(
-        "inline-block rounded-pill px-2 py-1 font-sans text-xs font-bold uppercase tracking-wider",
+        "inline-block rounded-sm px-2 py-1 font-sans text-xs font-bold uppercase tracking-wider",
         styles[status],
       )}
     >
@@ -356,10 +364,10 @@ function PaymentDetailDrawer({
               </dl>
 
               <div className="mt-6">
-                <h3 className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+                <h3 className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
                   mpRawData
                 </h3>
-                <pre className="mt-2 max-h-64 overflow-auto rounded-md border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-3 font-mono text-xs text-[var(--color-prode-near-black)]">
+                <pre className="mt-2 max-h-64 overflow-auto rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-3 font-mono text-xs text-[var(--color-landing-text)]">
                   {payment.mpRawData
                     ? JSON.stringify(payment.mpRawData, null, 2)
                     : "// No hay payload MP almacenado para este pago."}
@@ -427,10 +435,10 @@ function DetailRow({
 }) {
   return (
     <>
-      <dt className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+      <dt className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
         {label}
       </dt>
-      <dd className="font-sans text-sm text-[var(--color-prode-near-black)]">
+      <dd className="font-sans text-sm text-[var(--color-landing-text)]">
         {children}
       </dd>
     </>

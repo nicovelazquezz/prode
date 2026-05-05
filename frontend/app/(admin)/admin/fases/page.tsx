@@ -71,10 +71,18 @@ export default function AdminFasesPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
-          Fases
+        <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">Premios y fixture</div>
+
+        <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)]">
+
+          <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+
+            Fases
+
+          </span>
+
         </h1>
-        <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+        <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
           Cierre de fases con asignacion de premios y top 10 por fase.
         </p>
       </header>
@@ -96,14 +104,14 @@ export default function AdminFasesPage() {
 
       <section
         aria-label="Premios"
-        className="rounded-md border border-[var(--color-prode-border)] bg-white p-5 md:p-6"
+        className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5 md:p-6"
       >
         <div className="flex items-center gap-2">
           <Award
-            className="h-5 w-5 text-[var(--color-prode-accent)]"
+            className="h-5 w-5 text-[var(--color-landing-red)]"
             aria-hidden
           />
-          <h2 className="font-display text-2xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+          <h2 className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
             Premios
           </h2>
         </div>
@@ -126,27 +134,27 @@ function PhaseCard({ summary }: { summary: PhaseSummary }) {
   const canClose = allFinished && !summary.closed;
 
   return (
-    <article className="rounded-md border border-[var(--color-prode-border)] bg-white p-5">
+    <article className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+          <h3 className="font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight text-[var(--color-landing-text)]">
             {PHASE_LABELS[summary.phase]}
           </h3>
-          <p className="font-sans text-xs uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+          <p className="font-sans text-xs uppercase tracking-wider text-[var(--color-landing-text-muted)]">
             {summary.matchesFinished} / {summary.matchesTotal} finalizados
           </p>
         </div>
         {summary.closed ? (
-          <span className="inline-flex items-center gap-1 rounded-pill bg-[var(--color-prode-near-black)] px-2 py-1 font-sans text-[10px] font-bold uppercase tracking-wider text-white">
+          <span className="inline-flex items-center gap-1 rounded-sm bg-[var(--color-landing-red)] px-2 py-1 font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)]">
             <Lock className="h-3 w-3" aria-hidden />
             Cerrada
           </span>
         ) : null}
       </header>
 
-      <div className="mt-4 h-2 rounded-pill bg-[var(--color-prode-surface)]">
+      <div className="mt-4 h-2 rounded-sm bg-[var(--color-landing-surface-2)]">
         <div
-          className="h-full rounded-pill bg-[var(--color-prode-near-black)]"
+          className="h-full rounded-sm bg-[var(--color-landing-green)]"
           style={{
             width: `${
               summary.matchesTotal === 0
@@ -159,11 +167,11 @@ function PhaseCard({ summary }: { summary: PhaseSummary }) {
       </div>
 
       <div className="mt-4">
-        <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+        <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
           Top 10 de la fase
         </p>
         {summary.topTen.length === 0 ? (
-          <p className="mt-2 font-sans text-xs italic text-[var(--color-prode-text-secondary)]">
+          <p className="mt-2 font-sans text-xs italic text-[var(--color-landing-text-muted)]">
             Sin puntos cargados aun.
           </p>
         ) : (
@@ -174,7 +182,7 @@ function PhaseCard({ summary }: { summary: PhaseSummary }) {
                 className="flex items-center justify-between font-sans text-sm"
               >
                 <span className="flex items-center gap-2">
-                  <span className="font-mono w-6 text-right tabular-nums text-[var(--color-prode-text-secondary)]">
+                  <span className="font-mono w-6 text-right tabular-nums text-[var(--color-landing-text-muted)]">
                     {i + 1}
                   </span>
                   <span className="truncate">
@@ -246,13 +254,13 @@ function ClosePhaseDialog({
             pueden recalcular sin reabrir.
           </DialogDescription>
         </DialogHeader>
-        <div className="rounded-md border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-4">
-          <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+        <div className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-4">
+          <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
             Ganador propuesto
           </p>
           {summary.proposedWinner ? (
             <>
-              <p className="mt-1 font-display text-xl font-black uppercase tracking-wide">
+              <p className="mt-1 font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight">
                 {summary.proposedWinner.firstName}{" "}
                 {summary.proposedWinner.lastName}
               </p>
@@ -261,18 +269,18 @@ function ClosePhaseDialog({
               </p>
             </>
           ) : (
-            <p className="mt-1 font-sans text-sm italic text-[var(--color-prode-text-secondary)]">
+            <p className="mt-1 font-sans text-sm italic text-[var(--color-landing-text-muted)]">
               Sin ganador (empate o sin participantes).
             </p>
           )}
         </div>
-        <p className="rounded-md bg-[var(--color-prode-surface)] px-3 py-2 font-sans text-sm">
+        <p className="rounded-sm bg-[var(--color-landing-surface)] px-3 py-2 font-sans text-sm">
           Monto del premio:{" "}
           <span className="font-mono font-bold">
             {formatARS(summary.prizeAmount)}
           </span>
         </p>
-        <p className="font-sans text-xs italic text-[var(--color-prode-text-secondary)]">
+        <p className="font-sans text-xs italic text-[var(--color-landing-text-muted)]">
           Nota: cerrar la fase dispara la notificacion al ganador (si tiene
           opt-in WhatsApp).
         </p>
@@ -323,7 +331,7 @@ function PrizesList({
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
-            className="h-14 animate-pulse rounded bg-[var(--color-prode-surface)]"
+            className="h-14 animate-pulse rounded bg-[var(--color-landing-surface)]"
           />
         ))}
       </div>
@@ -332,7 +340,7 @@ function PrizesList({
 
   if (prizes.length === 0) {
     return (
-      <p className="mt-4 font-sans text-sm italic text-[var(--color-prode-text-secondary)]">
+      <p className="mt-4 font-sans text-sm italic text-[var(--color-landing-text-muted)]">
         Sin premios cargados todavia.
       </p>
     );
@@ -343,14 +351,14 @@ function PrizesList({
       {prizes.map((p) => (
         <li
           key={p.id}
-          className="flex flex-col gap-2 rounded-md border border-[var(--color-prode-border)] bg-white p-3 md:flex-row md:items-center md:justify-between"
+          className="flex flex-col gap-2 rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-3 md:flex-row md:items-center md:justify-between"
         >
           <div className="min-w-0">
-            <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+            <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
               {PRIZE_LABELS[p.type]}
               {p.phase ? ` · ${PHASE_LABELS[p.phase]}` : ""}
             </p>
-            <p className="font-display text-lg font-black uppercase tracking-wide">
+            <p className="font-[family-name:var(--font-landing-display)] text-lg uppercase tracking-tight">
               {p.recipientName ?? "Pendiente de asignar"}
             </p>
             <p className="font-mono text-sm">{formatARS(p.amount)}</p>
@@ -358,10 +366,10 @@ function PrizesList({
           <div className="flex items-center gap-2">
             <span
               className={cn(
-                "inline-block rounded-pill px-2 py-1 font-sans text-[10px] font-bold uppercase tracking-wider",
+                "inline-block rounded-sm px-2 py-1 font-sans text-[10px] font-bold uppercase tracking-wider",
                 p.status === "PAID"
-                  ? "bg-[var(--color-prode-near-black)] text-white"
-                  : "bg-[var(--color-prode-accent)] text-white",
+                  ? "bg-[var(--color-landing-green)] text-[var(--color-landing-text)]"
+                  : "bg-[var(--color-landing-red)] text-[var(--color-landing-text)]",
               )}
             >
               {p.status}
@@ -400,7 +408,7 @@ function BackendHint({
   return (
     <div
       className={cn(
-        "rounded-md border border-dashed border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-3 font-sans text-xs text-[var(--color-prode-text-secondary)]",
+        "rounded-sm border border-dashed border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-3 font-sans text-xs text-[var(--color-landing-text-muted)]",
         className,
       )}
     >

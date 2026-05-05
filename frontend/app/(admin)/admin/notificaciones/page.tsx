@@ -75,10 +75,18 @@ export default function AdminNotificacionesPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
-          Notificaciones
+        <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">Comunicación</div>
+
+        <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)]">
+
+          <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+
+            Notificaciones
+
+          </span>
+
         </h1>
-        <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+        <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
           Envia mensajes 1-a-1 o broadcast por segmento, revisa el historial.
         </p>
       </header>
@@ -149,7 +157,7 @@ function DirectMessageForm() {
         e.preventDefault();
         if (canSend) sendMutation.mutate();
       }}
-      className="space-y-4 rounded-md border border-[var(--color-prode-border)] bg-white p-5 md:p-6"
+      className="space-y-4 rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5 md:p-6"
       noValidate
     >
       <div>
@@ -178,7 +186,7 @@ function DirectMessageForm() {
             onChange={(e) =>
               setChannel(e.target.value as "WHATSAPP" | "EMAIL")
             }
-            className="h-12 w-full rounded-md border border-[var(--color-prode-border)] bg-white px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-prode-near-black)] focus:ring-offset-2"
+            className="h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-gold)] focus:ring-offset-2"
           >
             <option value="WHATSAPP">WhatsApp</option>
             <option value="EMAIL">Email</option>
@@ -192,7 +200,7 @@ function DirectMessageForm() {
           rows={5}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          className="w-full rounded-md border border-[var(--color-prode-border)] bg-white px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-prode-near-black)] focus:ring-offset-2"
+          className="w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-gold)] focus:ring-offset-2"
         />
       </div>
       <div className="flex justify-end">
@@ -247,7 +255,7 @@ function BroadcastForm() {
         }
         if (canSend) broadcastMutation.mutate();
       }}
-      className="space-y-4 rounded-md border border-[var(--color-prode-border)] bg-white p-5 md:p-6"
+      className="space-y-4 rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5 md:p-6"
       noValidate
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -259,7 +267,7 @@ function BroadcastForm() {
             onChange={(e) =>
               setChannel(e.target.value as "WHATSAPP" | "EMAIL")
             }
-            className="h-12 w-full rounded-md border border-[var(--color-prode-border)] bg-white px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-prode-near-black)] focus:ring-offset-2"
+            className="h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-gold)] focus:ring-offset-2"
           >
             <option value="WHATSAPP">WhatsApp</option>
             <option value="EMAIL">Email</option>
@@ -273,7 +281,7 @@ function BroadcastForm() {
             onChange={(e) =>
               setSegment(e.target.value as NotificationSegment)
             }
-            className="h-12 w-full rounded-md border border-[var(--color-prode-border)] bg-white px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-prode-near-black)] focus:ring-offset-2"
+            className="h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-gold)] focus:ring-offset-2"
           >
             <option value="ALL">Todos</option>
             <option value="PAID">Solo pagos confirmados</option>
@@ -297,15 +305,15 @@ function BroadcastForm() {
           rows={5}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          className="w-full rounded-md border border-[var(--color-prode-border)] bg-white px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-prode-near-black)] focus:ring-offset-2"
+          className="w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-gold)] focus:ring-offset-2"
         />
       </div>
       {confirm ? (
         <div
           role="alert"
-          className="rounded-md border-2 border-[var(--color-prode-accent)] bg-[var(--color-prode-surface)] p-3"
+          className="rounded-sm border-2 border-[var(--color-landing-red)] bg-[var(--color-landing-surface)] p-3"
         >
-          <p className="font-sans text-sm font-bold text-[var(--color-prode-accent)]">
+          <p className="font-sans text-sm font-bold text-[var(--color-landing-red)]">
             Confirmas el envio masivo? Una vez disparado no se puede revertir.
           </p>
         </div>
@@ -339,7 +347,7 @@ function BroadcastForm() {
 function TemplatesList() {
   return (
     <div className="space-y-3">
-      <p className="font-sans text-sm text-[var(--color-prode-text-secondary)]">
+      <p className="font-sans text-sm text-[var(--color-landing-text-muted)]">
         Plantillas pre-definidas (read-only por ahora). En el futuro se podra
         editar el contenido y los placeholders desde aca.
       </p>
@@ -347,20 +355,20 @@ function TemplatesList() {
         {TEMPLATES.map((t) => (
           <li
             key={t.key}
-            className="rounded-md border border-[var(--color-prode-border)] bg-white p-4"
+            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-4"
           >
             <div className="flex items-baseline justify-between gap-3">
-              <h3 className="font-display text-base font-black uppercase tracking-wide">
+              <h3 className="font-[family-name:var(--font-landing-display)] text-base uppercase tracking-tight">
                 {t.title}
               </h3>
-              <span className="font-mono text-xs text-[var(--color-prode-text-secondary)]">
+              <span className="font-mono text-xs text-[var(--color-landing-text-muted)]">
                 {t.key}
               </span>
             </div>
-            <p className="mt-1 font-sans text-xs text-[var(--color-prode-text-secondary)]">
+            <p className="mt-1 font-sans text-xs text-[var(--color-landing-text-muted)]">
               {t.description}
             </p>
-            <pre className="mt-3 whitespace-pre-wrap rounded-md bg-[var(--color-prode-surface)] p-3 font-mono text-xs text-[var(--color-prode-near-black)]">
+            <pre className="mt-3 whitespace-pre-wrap rounded-sm bg-[var(--color-landing-surface)] p-3 font-mono text-xs text-[var(--color-landing-text)]">
               {t.body}
             </pre>
           </li>
@@ -414,13 +422,13 @@ function HistoryTable() {
         cell: ({ row }) => (
           <span
             className={cn(
-              "inline-block rounded-pill px-2 py-1 font-sans text-[10px] font-bold uppercase tracking-wider",
+              "inline-block rounded-sm px-2 py-1 font-sans text-[10px] font-bold uppercase tracking-wider",
               row.original.status === "DELIVERED" ||
                 row.original.status === "SENT"
-                ? "bg-[var(--color-prode-near-black)] text-white"
+                ? "bg-[var(--color-landing-green)] text-[var(--color-landing-text)]"
                 : row.original.status === "FAILED"
-                  ? "bg-[var(--color-prode-accent)] text-white"
-                  : "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-secondary)]",
+                  ? "bg-[var(--color-landing-red)] text-[var(--color-landing-text)]"
+                  : "bg-[var(--color-landing-surface)] text-[var(--color-landing-text-muted)]",
             )}
           >
             {row.original.status}
@@ -450,18 +458,18 @@ function HistoryTable() {
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded-md border border-[var(--color-prode-border)] bg-white px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-[var(--color-prode-surface)]"
+            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-[var(--color-landing-surface)]"
           >
             Anterior
           </button>
-          <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+          <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-landing-text-muted)]">
             Pagina {page} de {totalPages}
           </span>
           <button
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="rounded-md border border-[var(--color-prode-border)] bg-white px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-[var(--color-prode-surface)]"
+            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-[var(--color-landing-surface)]"
           >
             Siguiente
           </button>

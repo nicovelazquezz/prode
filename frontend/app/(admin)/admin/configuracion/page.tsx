@@ -99,10 +99,18 @@ export default function AdminConfiguracionPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
-          Configuracion
+        <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">Reglas del torneo</div>
+
+        <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)]">
+
+          <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+
+            Configuracion
+
+          </span>
+
         </h1>
-        <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+        <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
           Reglas de scoring, multipliers por fase, premios especiales y
           parametros generales. Cada cambio queda registrado en auditoria.
         </p>
@@ -463,7 +471,7 @@ function AppConfigCard({
       endpoint="/admin/config"
     >
       {entries.length === 0 ? (
-        <p className="font-sans text-sm italic text-[var(--color-prode-text-secondary)]">
+        <p className="font-sans text-sm italic text-[var(--color-landing-text-muted)]">
           Sin parametros cargados todavia.
         </p>
       ) : (
@@ -479,7 +487,7 @@ function AppConfigCard({
               </Label>
               <Input id={`cfg-${e.key}`} type="text" {...form.register(e.key)} />
               {e.description ? (
-                <p className="mt-1 font-sans text-xs text-[var(--color-prode-text-secondary)]">
+                <p className="mt-1 font-sans text-xs text-[var(--color-landing-text-muted)]">
                   {e.description}
                 </p>
               ) : null}
@@ -518,17 +526,17 @@ function ConfigCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-[var(--color-prode-border)] bg-white p-5 md:p-6">
+    <section className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5 md:p-6">
       <header>
-        <h2 className="font-display text-2xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+        <h2 className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
           {title}
         </h2>
-        <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+        <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
           {description}
         </p>
       </header>
       {!loading && !hasData ? (
-        <p className="mt-4 rounded-md border border-dashed border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-3 font-sans text-xs text-[var(--color-prode-text-secondary)]">
+        <p className="mt-4 rounded-sm border border-dashed border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-3 font-sans text-xs text-[var(--color-landing-text-muted)]">
           Endpoint <code className="font-mono">{endpoint}</code> no disponible —
           mostrando valores por defecto. Las ediciones quedan en el form pero
           no se persisten hasta que el backend tenga el endpoint.
@@ -548,7 +556,7 @@ function UpdatedFootnote({
 }) {
   if (!updatedAt && !updatedBy) return null;
   return (
-    <p className="mt-1 font-sans text-[10px] uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+    <p className="mt-1 font-sans text-[10px] uppercase tracking-wider text-[var(--color-landing-text-muted)]">
       Editado{updatedAt ? ` ${formatDateTime(updatedAt)}` : ""}
       {updatedBy ? ` por ${updatedBy}` : ""}
     </p>

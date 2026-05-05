@@ -15,7 +15,7 @@ export const Label = forwardRef<
     ref={ref}
     className={cn(
       "font-sans text-xs font-bold uppercase tracking-wider",
-      "text-[var(--color-prode-text-secondary)]",
+      "text-[var(--color-landing-text-muted)]",
       className,
     )}
     {...props}

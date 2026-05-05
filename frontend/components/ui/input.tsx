@@ -19,13 +19,13 @@ export const Input = forwardRef<
     type={type}
     ref={ref}
     className={cn(
-      "h-12 w-full bg-transparent text-[var(--color-prode-near-black)]",
-      "border-b border-[var(--color-prode-border)]",
+      "h-12 w-full bg-transparent text-[var(--color-landing-text)]",
+      "border-b border-[var(--color-landing-line-strong)]",
       "py-3 px-0 font-sans text-base",
       "transition-colors duration-300 outline-none",
-      "focus:border-b-2 focus:border-[var(--color-prode-near-black)]",
+      "focus:border-b-2 focus:border-[var(--color-landing-text)]",
       "disabled:opacity-50",
-      "placeholder:text-[var(--color-prode-text-muted)]",
+      "placeholder:text-[var(--color-landing-text-muted)]",
       className,
     )}
     {...props}

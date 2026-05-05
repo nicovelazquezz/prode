@@ -22,19 +22,19 @@ const VARIANT_STYLES: Record<
 > = {
   cyan: {
     // Cyan vibrante (similar al token #4bd7e6 del DESIGN.md), dark text
-    container: "bg-[#4bd7e6] text-[var(--color-prode-near-black)]",
-    step: "text-[var(--color-prode-near-black)]/15",
-    title: "text-[var(--color-prode-near-black)]",
-    description: "text-[var(--color-prode-near-black)]/80",
+    container: "bg-[#4bd7e6] text-[var(--color-landing-text)]",
+    step: "text-[var(--color-landing-text)]/15",
+    title: "text-[var(--color-landing-text)]",
+    description: "text-[var(--color-landing-text)]/80",
   },
   accent: {
-    container: "bg-[var(--color-prode-accent)] text-white",
+    container: "bg-[var(--color-landing-red)] text-white",
     step: "text-white/20",
     title: "text-white",
     description: "text-white/85",
   },
   dark: {
-    container: "bg-[var(--color-prode-near-black)] text-white",
+    container: "bg-[var(--color-landing-text)] text-white",
     step: "text-white/15",
     title: "text-white",
     description: "text-white/75",

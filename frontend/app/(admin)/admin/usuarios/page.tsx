@@ -83,10 +83,10 @@ export default function AdminUsuariosPage() {
         header: "Nombre",
         cell: ({ row }) => (
           <div className="flex flex-col">
-            <span className="font-medium text-[var(--color-prode-near-black)]">
+            <span className="font-medium text-[var(--color-landing-text)]">
               {row.original.firstName} {row.original.lastName}
             </span>
-            <span className="text-xs text-[var(--color-prode-text-secondary)]">
+            <span className="text-xs text-[var(--color-landing-text-muted)]">
               {row.original.whatsapp || "—"}
             </span>
           </div>
@@ -98,10 +98,10 @@ export default function AdminUsuariosPage() {
         cell: ({ row }) => (
           <span
             className={cn(
-              "inline-block rounded-pill px-2 py-1 font-sans text-xs font-bold uppercase tracking-wider",
+              "inline-block rounded-sm px-2 py-1 font-sans text-xs font-bold uppercase tracking-wider",
               row.original.role === "ADMIN"
-                ? "bg-[var(--color-prode-near-black)] text-white"
-                : "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-secondary)]",
+                ? "bg-[var(--color-landing-green)] text-[var(--color-landing-text)]"
+                : "bg-[var(--color-landing-surface)] text-[var(--color-landing-text-muted)]",
             )}
           >
             {row.original.role}
@@ -118,7 +118,7 @@ export default function AdminUsuariosPage() {
       {
         header: "Pago",
         cell: ({ row }) => (
-          <span className="font-sans text-xs text-[var(--color-prode-text-secondary)]">
+          <span className="font-sans text-xs text-[var(--color-landing-text-muted)]">
             {formatDate(row.original.paidAt ?? null)}
           </span>
         ),
@@ -160,16 +160,24 @@ export default function AdminUsuariosPage() {
     <div className="space-y-6">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
-            Usuarios
+          <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">Padron</div>
+
+          <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)]">
+
+            <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+
+              Usuarios
+
+            </span>
+
           </h1>
-          <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+          <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
             {formatNumber(total)} registrados
           </p>
         </div>
         <Link
           href="/admin/usuarios/nuevo"
-          className="inline-flex items-center justify-center gap-2 h-12 px-8 bg-[var(--color-prode-near-black)] text-white font-sans text-sm font-medium rounded-md transition-colors duration-300 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)] focus-visible:ring-offset-2"
+          className="inline-flex items-center justify-center gap-2 h-12 px-6 bg-[var(--color-landing-red)] text-[var(--color-landing-text)] font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] rounded-sm transition-colors hover:bg-[var(--color-landing-red-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
         >
           <Plus className="h-4 w-4" aria-hidden />
           Nuevo usuario
@@ -209,18 +217,18 @@ export default function AdminUsuariosPage() {
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded-md border border-[var(--color-prode-border)] bg-white px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-near-black)] disabled:opacity-50 hover:bg-[var(--color-prode-surface)] transition-colors"
+            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text)] disabled:opacity-50 hover:bg-[var(--color-landing-surface)] transition-colors"
           >
             Anterior
           </button>
-          <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+          <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-landing-text-muted)]">
             Pagina {page} de {totalPages}
           </span>
           <button
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="rounded-md border border-[var(--color-prode-border)] bg-white px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-near-black)] disabled:opacity-50 hover:bg-[var(--color-prode-surface)] transition-colors"
+            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text)] disabled:opacity-50 hover:bg-[var(--color-landing-surface)] transition-colors"
           >
             Siguiente
           </button>
@@ -250,7 +258,7 @@ function Toolbar({
       <div className="relative">
         <Search
           aria-hidden
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-prode-text-secondary)]"
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-landing-text-muted)]"
         />
         <Input
           value={search}
@@ -292,7 +300,7 @@ function SelectFilter<T extends string>({
       aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange(e.target.value as T)}
-      className="h-12 w-full rounded-md border border-[var(--color-prode-border)] bg-white px-3 font-sans text-sm text-[var(--color-prode-near-black)] focus:outline-none focus:ring-2 focus:ring-[var(--color-prode-near-black)] focus:ring-offset-2"
+      className="h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 font-sans text-sm text-[var(--color-landing-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-gold)] focus:ring-offset-2"
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>
@@ -306,16 +314,16 @@ function SelectFilter<T extends string>({
 function StatusBadge({ status }: { status: AdminUser["status"] }) {
   const styles =
     status === "ACTIVE"
-      ? "bg-[var(--color-prode-near-black)] text-white"
+      ? "bg-[var(--color-landing-green)] text-[var(--color-landing-text)]"
       : status === "BANNED"
-        ? "bg-[var(--color-prode-accent)] text-white"
-        : "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-secondary)]";
+        ? "bg-[var(--color-landing-red)] text-[var(--color-landing-text)]"
+        : "bg-[var(--color-landing-surface)] text-[var(--color-landing-text-muted)]";
   const label =
     status === "ACTIVE" ? "Activo" : status === "BANNED" ? "Baneado" : "Inactivo";
   return (
     <span
       className={cn(
-        "inline-block rounded-pill px-2 py-1 font-sans text-xs font-bold uppercase tracking-wider",
+        "inline-block rounded-sm px-2 py-1 font-sans text-xs font-bold uppercase tracking-wider",
         styles,
       )}
     >
@@ -334,7 +342,7 @@ function UserActionsMenu({ user }: { user: AdminUser }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={`Acciones para ${user.firstName} ${user.lastName}`}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-[var(--color-prode-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)]"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-sm hover:bg-[var(--color-landing-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-landing-gold)]"
       >
         <MoreHorizontal className="h-4 w-4" aria-hidden />
       </DropdownMenuTrigger>
@@ -348,7 +356,7 @@ function UserActionsMenu({ user }: { user: AdminUser }) {
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => handle("Banear")}
-          className="text-[var(--color-prode-accent)]"
+          className="text-[var(--color-landing-red)]"
         >
           Banear
         </DropdownMenuItem>

@@ -79,7 +79,7 @@ export function PublicHeader({ className }: PublicHeaderProps) {
           className={cn(
             "font-display text-xl md:text-2xl font-black uppercase tracking-wide text-white",
             "transition-opacity duration-200 hover:opacity-80",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-prode-deep-navy)]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-landing-red)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-landing-bg)]",
           )}
         >
           Prode 2026
@@ -107,10 +107,10 @@ function HeaderGhostLink({
         "relative inline-flex h-10 items-center px-3 md:px-4",
         "font-sans text-sm font-medium text-white/85",
         "transition-colors duration-200 hover:text-white",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-prode-deep-navy)]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-landing-red)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-landing-bg)]",
         // Underline accent en hover (decoracion CSS, sin layout shift)
         "after:absolute after:left-3 after:right-3 after:bottom-2 after:h-px",
-        "after:bg-[var(--color-prode-accent)] after:origin-left",
+        "after:bg-[var(--color-landing-red)] after:origin-left",
         "after:scale-x-0 hover:after:scale-x-100",
         "after:transition-transform after:duration-300 after:ease-out",
         "motion-reduce:after:transition-none",
@@ -136,8 +136,8 @@ function HeaderOutlinedLink({
         "font-sans text-sm font-medium",
         "rounded-pill border border-white/40 text-white",
         "transition-colors duration-200",
-        "hover:bg-white hover:text-[var(--color-prode-deep-navy)] hover:border-white",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-prode-deep-navy)]",
+        "hover:bg-[var(--color-landing-surface)] hover:text-[var(--color-landing-bg)] hover:border-white",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-landing-red)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-landing-bg)]",
       )}
     >
       {children}

@@ -43,19 +43,19 @@ export function HowItWorks({ className }: HowItWorksProps) {
   return (
     <section
       className={cn(
-        "py-16 md:py-24 bg-[var(--color-prode-bg)]",
+        "py-16 md:py-24 bg-[var(--color-landing-bg)]",
         className,
       )}
       aria-labelledby="how-it-works-heading"
     >
       <div className="mx-auto max-w-[1440px] px-4 md:px-8">
         <div className="mb-10 md:mb-14">
-          <span className="font-sans text-[10px] md:text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-prode-accent)] block mb-3">
+          <span className="font-sans text-[10px] md:text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-landing-red)] block mb-3">
             Tres pasos
           </span>
           <h2
             id="how-it-works-heading"
-            className="font-display font-black uppercase tracking-tight text-[var(--color-prode-near-black)] leading-[0.9]"
+            className="font-display font-black uppercase tracking-tight text-[var(--color-landing-text)] leading-[0.9]"
             style={{
               fontSize: "clamp(40px, 7vw, 80px)",
             }}

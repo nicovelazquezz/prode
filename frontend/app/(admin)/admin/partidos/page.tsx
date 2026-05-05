@@ -46,7 +46,7 @@ export default function AdminPartidosPage() {
       {
         header: "#",
         cell: ({ row }) => (
-          <span className="font-mono tabular-nums text-xs text-[var(--color-prode-text-secondary)]">
+          <span className="font-mono tabular-nums text-xs text-[var(--color-landing-text-muted)]">
             {formatNumber(row.original.matchNumber)}
           </span>
         ),
@@ -70,7 +70,7 @@ export default function AdminPartidosPage() {
       {
         header: "Sede",
         cell: ({ row }) => (
-          <span className="font-sans text-xs text-[var(--color-prode-text-secondary)]">
+          <span className="font-sans text-xs text-[var(--color-landing-text-muted)]">
             {row.original.venue ?? "—"}
           </span>
         ),
@@ -99,7 +99,7 @@ export default function AdminPartidosPage() {
             <Link
               href={`/admin/partidos/${row.original.id}`}
               aria-label={`Editar partido ${row.original.matchNumber}`}
-              className="inline-flex items-center gap-1 rounded-md border border-[var(--color-prode-border)] bg-white px-3 py-1 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-near-black)] hover:bg-[var(--color-prode-surface)]"
+              className="inline-flex items-center gap-1 rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 py-1 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text)] hover:bg-[var(--color-landing-surface)]"
             >
               Detalle
               <ArrowRight className="h-3 w-3" aria-hidden />
@@ -114,10 +114,18 @@ export default function AdminPartidosPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
-          Partidos
+        <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">Fixture</div>
+
+        <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)]">
+
+          <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+
+            Partidos
+
+          </span>
+
         </h1>
-        <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+        <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
           Cargar resultados, asignar equipos, recalcular puntos.
         </p>
       </header>
@@ -150,7 +158,7 @@ function TeamCell({ match, side }: { match: Match; side: "home" | "away" }) {
     );
   }
   return (
-    <span className="font-sans text-xs italic text-[var(--color-prode-text-secondary)]">
+    <span className="font-sans text-xs italic text-[var(--color-landing-text-muted)]">
       {label ?? "TBD"}
     </span>
   );
@@ -159,19 +167,19 @@ function TeamCell({ match, side }: { match: Match; side: "home" | "away" }) {
 function StatusBadge({ status }: { status: MatchStatus }) {
   const styles: Record<MatchStatus, string> = {
     SCHEDULED:
-      "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-secondary)]",
+      "bg-[var(--color-landing-surface)] text-[var(--color-landing-text-muted)]",
     LOCKED:
-      "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-secondary)]",
-    IN_PROGRESS: "bg-[var(--color-prode-accent)] text-white",
-    FINISHED: "bg-[var(--color-prode-near-black)] text-white",
+      "bg-[var(--color-landing-surface)] text-[var(--color-landing-text-muted)]",
+    IN_PROGRESS: "bg-[var(--color-landing-red)] text-[var(--color-landing-text)]",
+    FINISHED: "bg-[var(--color-landing-green)] text-[var(--color-landing-text)]",
     POSTPONED:
-      "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-secondary)]",
-    CANCELLED: "bg-[var(--color-prode-accent)] text-white",
+      "bg-[var(--color-landing-surface)] text-[var(--color-landing-text-muted)]",
+    CANCELLED: "bg-[var(--color-landing-red)] text-[var(--color-landing-text)]",
   };
   return (
     <span
       className={cn(
-        "inline-block rounded-pill px-2 py-1 font-sans text-[10px] font-bold uppercase tracking-wider",
+        "inline-block rounded-sm px-2 py-1 font-sans text-[10px] font-bold uppercase tracking-wider",
         styles[status],
       )}
     >

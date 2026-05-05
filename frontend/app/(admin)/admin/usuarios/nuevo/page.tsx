@@ -127,16 +127,29 @@ export default function NuevoUsuarioPage() {
     <div className="mx-auto max-w-2xl">
       <Link
         href="/admin/usuarios"
-        className="inline-flex items-center gap-2 mb-3 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)] hover:text-[var(--color-prode-near-black)]"
+        className="inline-flex items-center gap-2 mb-3 font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)] hover:text-[var(--color-landing-text)]"
       >
         <ArrowLeft className="h-3 w-3" aria-hidden />
         Volver
       </Link>
 
-      <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
-        Nuevo usuario
+      <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">Alta manual</div>
+
+
+      <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)]">
+
+
+        <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+
+
+          Nuevo usuario
+
+
+        </span>
+
+
       </h1>
-      <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+      <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
         Carga manual de un participante (cobro en efectivo o transferencia).
       </p>
 
@@ -197,7 +210,7 @@ export default function NuevoUsuarioPage() {
           >
             <select
               {...form.register("paymentMethod")}
-              className="h-12 w-full rounded-md border border-[var(--color-prode-border)] bg-white px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-prode-near-black)] focus:ring-offset-2"
+              className="h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-gold)] focus:ring-offset-2"
             >
               <option value="CASH">Efectivo</option>
               <option value="TRANSFER">Transferencia</option>
@@ -222,16 +235,16 @@ export default function NuevoUsuarioPage() {
           <textarea
             rows={3}
             placeholder="Aclaraciones internas..."
-            className="w-full rounded-md border border-[var(--color-prode-border)] bg-white px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-prode-near-black)] focus:ring-offset-2"
+            className="w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-gold)] focus:ring-offset-2"
             {...form.register("notes")}
           />
         </Field>
 
-        <div className="rounded-md border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-4">
+        <div className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-4">
           <Label htmlFor="password" className="block">
             Password
           </Label>
-          <p className="mt-1 font-sans text-xs text-[var(--color-prode-text-secondary)]">
+          <p className="mt-1 font-sans text-xs text-[var(--color-landing-text-muted)]">
             Tipea una password o genera una automatica de 8 caracteres
             (4 letras + 4 numeros). Es la unica vez que se va a poder ver
             en plain.
@@ -249,7 +262,7 @@ export default function NuevoUsuarioPage() {
                 type="button"
                 aria-label={showPassword ? "Ocultar" : "Mostrar"}
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-0 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center text-[var(--color-prode-text-secondary)] hover:text-[var(--color-prode-near-black)]"
+                className="absolute right-0 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center text-[var(--color-landing-text-muted)] hover:text-[var(--color-landing-text)]"
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" aria-hidden />
@@ -269,7 +282,7 @@ export default function NuevoUsuarioPage() {
             </Button>
           </div>
           {form.formState.errors.password ? (
-            <p className="mt-2 font-sans text-xs text-[var(--color-prode-accent)]">
+            <p className="mt-2 font-sans text-xs text-[var(--color-landing-red)]">
               {form.formState.errors.password.message}
             </p>
           ) : null}
@@ -315,7 +328,7 @@ function Field({
       <Label className="block">{label}</Label>
       {children}
       {error ? (
-        <p className="font-sans text-xs text-[var(--color-prode-accent)]">
+        <p className="font-sans text-xs text-[var(--color-landing-red)]">
           {error}
         </p>
       ) : null}
@@ -358,9 +371,9 @@ function PasswordSuccessDialog({
             mostrar de nuevo.
           </DialogDescription>
         </DialogHeader>
-        <div className="mt-4 rounded-md border-2 border-[var(--color-prode-near-black)] bg-[var(--color-prode-surface)] p-6 text-center">
+        <div className="mt-4 rounded-sm border-2 border-[var(--color-landing-text)] bg-[var(--color-landing-surface)] p-6 text-center">
           <p
-            className="font-display font-black tracking-tight text-[var(--color-prode-near-black)]"
+            className="font-[family-name:var(--font-landing-display)] tracking-tight text-[var(--color-landing-text)]"
             style={{ fontSize: "32px", letterSpacing: "0.1em" }}
           >
             {password}
@@ -370,7 +383,7 @@ function PasswordSuccessDialog({
           type="button"
           variant="outlined"
           onClick={handleCopy}
-          className={cn(copied && "border-[var(--color-prode-near-black)]")}
+          className={cn(copied && "border-[var(--color-landing-text)]")}
         >
           <Copy className="mr-2 h-4 w-4" aria-hidden />
           {copied ? "Copiada" : "Copiar al portapapeles"}
