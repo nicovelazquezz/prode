@@ -62,7 +62,11 @@ export function CtaCard({
       className={cn(
         "relative flex flex-col justify-between overflow-hidden",
         "rounded-md p-6 md:p-8",
-        "min-h-[280px] md:min-h-[340px]",
+        "min-h-[280px] md:min-h-[340px] h-full",
+        // Hover lift + transicion suave (desktop). Mobile: sin hover,
+        // las cards estan en scroll-snap horizontal y no necesitan lift.
+        "transition-transform duration-300 ease-out",
+        "md:hover:-translate-y-1 motion-reduce:hover:translate-y-0",
         styles.container,
         className,
       )}

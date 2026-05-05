@@ -10,21 +10,21 @@ const STEPS = [
     step: "01",
     title: "Registrate",
     description:
-      "Pagas la inscripcion por MercadoPago o transferencia, completas tus datos y listo. Te llega el acceso por WhatsApp.",
+      "Te inscribís en 2 minutos. Pago seguro por MercadoPago o coordinás por WhatsApp con la comisión. Acceso al toque.",
     variant: "cyan" as const,
   },
   {
     step: "02",
     title: "Predeci los 104 partidos",
     description:
-      "Cargas tus pronosticos antes de cada kickoff. Sumas puntos por acertar el resultado, la diferencia o el ganador.",
+      "Cargás tus pronósticos antes de cada kickoff y vas viendo tu posición en la tabla en vivo. Acertar el resultado paga más que acertar solo el ganador.",
     variant: "accent" as const,
   },
   {
     step: "03",
     title: "Gana",
     description:
-      "Los mejores rankings de cada fase y de la tabla general se llevan los premios del pozo. La final paga el podio entero.",
+      "Premiamos al podio general, al mejor de cada fase y a los especiales: campeón del Mundial, goleador y total de goles. Los detalles del pozo se publican antes del kickoff.",
     variant: "dark" as const,
   },
 ];
@@ -33,7 +33,8 @@ const STEPS = [
  * Seccion "Como funciona" del landing.
  *
  * Mobile: scroll horizontal con snap (`snap-x snap-mandatory`).
- * Desktop: grid 3 columnas.
+ * Desktop: grid 3 columnas con la card del medio levemente mas alta
+ * (-12px translate) para romper la simetria sin afectar el flujo.
  *
  * Decision intencional: en mobile, el scroll horizontal es mas claro
  * que un stack vertical (que rompe el ritmo del landing).
@@ -42,22 +43,31 @@ export function HowItWorks({ className }: HowItWorksProps) {
   return (
     <section
       className={cn(
-        "py-12 md:py-20 bg-[var(--color-prode-bg)]",
+        "py-16 md:py-24 bg-[var(--color-prode-bg)]",
         className,
       )}
       aria-labelledby="how-it-works-heading"
     >
       <div className="mx-auto max-w-[1440px] px-4 md:px-8">
-        <h2
-          id="how-it-works-heading"
-          className="font-display text-4xl md:text-6xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)] mb-8 md:mb-12"
-        >
-          Como funciona
-        </h2>
-        {/* Mobile scroll-snap, desktop grid */}
+        <div className="mb-10 md:mb-14">
+          <span className="font-sans text-[10px] md:text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-prode-accent)] block mb-3">
+            Tres pasos
+          </span>
+          <h2
+            id="how-it-works-heading"
+            className="font-display font-black uppercase tracking-tight text-[var(--color-prode-near-black)] leading-[0.9]"
+            style={{
+              fontSize: "clamp(40px, 7vw, 80px)",
+            }}
+          >
+            Como funciona
+          </h2>
+        </div>
+
+        {/* Mobile scroll-snap, desktop grid con stagger vertical */}
         <div
           className={cn(
-            "flex md:grid md:grid-cols-3 md:gap-6",
+            "flex md:grid md:grid-cols-3 md:gap-6 md:items-stretch",
             "-mx-4 px-4 md:mx-0 md:px-0",
             "gap-4 overflow-x-auto md:overflow-visible",
             "snap-x snap-mandatory md:snap-none",
@@ -65,10 +75,14 @@ export function HowItWorks({ className }: HowItWorksProps) {
             "scrollbar-thin",
           )}
         >
-          {STEPS.map((s) => (
+          {STEPS.map((s, idx) => (
             <div
               key={s.step}
-              className="flex-none w-[85%] sm:w-[70%] md:w-auto snap-start"
+              className={cn(
+                "flex-none w-[85%] sm:w-[70%] md:w-auto snap-start",
+                // Card del medio sube 12px en desktop (stagger sutil)
+                idx === 1 && "md:-translate-y-3",
+              )}
             >
               <CtaCard
                 step={s.step}
