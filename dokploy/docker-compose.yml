@@ -64,6 +64,43 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  prode-frontend:
+    image: prode-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      # NEXT_PUBLIC_* are inlined into the client bundle at build time, so they
+      # must travel via build args (not just environment). Dokploy resolves
+      # ${VAR} from the panel's environment for both build args and runtime
+      # environment.
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL}
+        NEXT_PUBLIC_FRONTEND_URL: ${FRONTEND_URL}
+        NEXT_PUBLIC_WORLD_CUP_START: '2026-06-11T18:00:00-03:00'
+        NEXT_PUBLIC_INSCRIPCION_PRECIO: ${INSCRIPCION_PRECIO}
+        NEXT_PUBLIC_ADMIN_WHATSAPP: ${ADMIN_WHATSAPP_NUMBER}
+        NEXT_PUBLIC_ENABLE_MOCK_CHECKOUT: 'false'
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY}
+        NEXT_PUBLIC_SENTRY_DSN: ${SENTRY_DSN_FRONTEND}
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      TZ: America/Argentina/Buenos_Aires
+      # Mirrored at runtime so the Next.js server (route handlers like
+      # /api/health) can still reach the backend via SSR fetch.
+      NEXT_PUBLIC_API_URL: ${API_URL}
+      NEXT_PUBLIC_FRONTEND_URL: ${FRONTEND_URL}
+      NEXT_PUBLIC_WORLD_CUP_START: '2026-06-11T18:00:00-03:00'
+      NEXT_PUBLIC_INSCRIPCION_PRECIO: ${INSCRIPCION_PRECIO}
+      NEXT_PUBLIC_ADMIN_WHATSAPP: ${ADMIN_WHATSAPP_NUMBER}
+      NEXT_PUBLIC_ENABLE_MOCK_CHECKOUT: 'false'
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY}
+      NEXT_PUBLIC_SENTRY_DSN: ${SENTRY_DSN_FRONTEND}
+    depends_on:
+      - prode-backend
+    restart: unless-stopped
+
 volumes:
   prode-pg-data:
   prode-redis-data:
