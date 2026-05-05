@@ -43,7 +43,10 @@ export function LandingCta() {
   const [submitting, setSubmitting] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: () => initPayment({ amount: PRECIO }),
+    // El backend resuelve el monto desde AppConfig — `PRECIO` solo se
+    // usa para el display arriba. Mandar `amount` haria que la
+    // validacion `forbidNonWhitelisted` del DTO rechace el request.
+    mutationFn: () => initPayment(),
     onSuccess: (data) => {
       // Reemplazar el current entry para que back no vuelva al landing
       // mientras el backend crea el preference con MP. Si el user vuelve,

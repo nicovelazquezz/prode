@@ -1,10 +1,17 @@
 import { api } from "./client";
 import type { Payment } from "./types";
 
-export async function initPayment(dto: {
-  amount?: number;
-  payerEmail?: string;
-}): Promise<{ initPoint: string; paymentId: string }> {
+/**
+ * Inicia el flujo de pago — `POST /payments/init`. El backend determina
+ * el monto desde AppConfig (`inscripcion_precio`), asi que el cliente
+ * solo manda el `turnstileToken` (opcional, todavia no usado en dev).
+ *
+ * Mandar campos extra (`amount`, `payerEmail`) hace que la validacion
+ * con `forbidNonWhitelisted` rechace el body con 400.
+ */
+export async function initPayment(
+  dto: { turnstileToken?: string } = {},
+): Promise<{ initPoint: string; paymentId: string }> {
   return api
     .post("payments/init", { json: dto })
     .json<{ initPoint: string; paymentId: string }>();
