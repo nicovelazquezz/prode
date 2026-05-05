@@ -21,8 +21,11 @@ export const LANDING = {
       "Pronosticá los partidos del Mundial fase por fase. Sumás puntos, escalás el ranking, **ganás premios en efectivo**. Y cada inscripción banca al equipo de handball del Tiro Federal que viaja al Nacional C en Comodoro Rivadavia.",
     primaryCta: "Inscribirme · $10.000",
     primaryHref: "/inscripcion",
-    secondaryCta: "Cómo funciona",
-    secondaryHref: "#como-funciona",
+    secondaryCta: "Inscribirme por WhatsApp",
+    secondaryHref:
+      "https://wa.me/5492914231087?text=hola%20quiero%20inscribirme%20al%20prode",
+    secondaryExternal: true,
+    secondaryIcon: "whatsapp",
     miniMeta: "CIERRA 11/JUN/26 · MERCADOPAGO · TRANSFERENCIA · EFECTIVO EN EL CLUB",
   },
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Info, MessageCircle } from "lucide-react";
 import { LANDING } from "@/lib/landing/content";
 import { inlineBold } from "@/lib/landing/inline-bold";
 
@@ -47,12 +48,25 @@ export function Hero({ daysToKickoff }: HeroProps) {
         >
           {hero.primaryCta}
         </Link>
-        <Link
+        <a
           href={hero.secondaryHref}
-          className="rounded-sm border border-[var(--color-landing-line-strong)] px-7 py-[18px] text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-landing-gold)]"
+          target={"secondaryExternal" in hero && hero.secondaryExternal ? "_blank" : undefined}
+          rel={"secondaryExternal" in hero && hero.secondaryExternal ? "noopener noreferrer" : undefined}
+          className="inline-flex items-center gap-2 rounded-sm border border-[var(--color-landing-line-strong)] px-7 py-[18px] text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-landing-gold)]"
         >
+          {"secondaryIcon" in hero && hero.secondaryIcon === "whatsapp" ? (
+            <MessageCircle aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2} />
+          ) : null}
           {hero.secondaryCta}
-        </Link>
+        </a>
+        <a
+          href="#como-funciona"
+          aria-label="Cómo funciona"
+          title="Cómo funciona"
+          className="inline-flex items-center justify-center rounded-sm border border-[var(--color-landing-line-strong)] p-[18px] text-[var(--color-landing-text-muted)] transition-colors hover:border-[var(--color-landing-text)] hover:text-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-landing-gold)]"
+        >
+          <Info aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
+        </a>
       </div>
       <div className="mt-4 font-[family-name:var(--font-landing-mono)] text-[11px] tracking-[0.1em] text-[var(--color-landing-text-muted)]">
         {hero.miniMeta.split(" · ").map((part, i, arr) => (
