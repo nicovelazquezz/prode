@@ -65,6 +65,40 @@ describe('POST /auth/login (integration)', () => {
     expect(refresh).toMatch(/HttpOnly/i);
   });
 
+  /**
+   * Regression: Phase 0 of the frontend plan flipped SameSite from
+   * Strict → Lax (so the cookie rides cross-subdomain top-level
+   * navigations) and added a non-httpOnly `has_session=1` hint the
+   * frontend reads with `document.cookie` to skip /auth/refresh on
+   * anonymous landings. Both cookies share `path=/` and matching
+   * scope so they live and die together.
+   */
+  it('emits both refresh_token (HttpOnly + SameSite=Lax) and has_session=1 cookies on login', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ dni: ADMIN_DNI, password: ADMIN_PASSWORD });
+
+    expect(res.status).toBe(200);
+    const setCookie = res.headers['set-cookie'];
+    const cookies = Array.isArray(setCookie)
+      ? setCookie
+      : ([setCookie] as string[]);
+
+    const refresh = cookies.find((c) => c.startsWith('refresh_token='));
+    expect(refresh).toBeDefined();
+    expect(refresh).toMatch(/HttpOnly/i);
+    expect(refresh).toMatch(/SameSite=Lax/i);
+    expect(refresh).toMatch(/Path=\//i);
+
+    const hint = cookies.find((c) => c.startsWith('has_session='));
+    expect(hint).toBeDefined();
+    // has_session must NOT be HttpOnly — frontend reads it from JS.
+    expect(hint).not.toMatch(/HttpOnly/i);
+    expect(hint).toMatch(/SameSite=Lax/i);
+    expect(hint).toMatch(/Path=\//i);
+    expect(hint!.split(';')[0]).toBe('has_session=1');
+  });
+
   it('returns 401 for wrong password', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/login')
@@ -246,7 +280,7 @@ describe('POST /auth/logout (integration)', () => {
     expect(res.status).toBe(401);
   });
 
-  it('clears the refresh cookie and revokes the row', async () => {
+  it('clears both refresh_token and has_session cookies and revokes the row', async () => {
     const { accessToken, refreshCookie } = await loginAndGrabPair();
 
     const res = await request(app.getHttpServer())
@@ -259,10 +293,16 @@ describe('POST /auth/logout (integration)', () => {
     const cookies = Array.isArray(setCookie)
       ? setCookie
       : ([setCookie] as string[]);
-    const cleared = cookies.find((c) => c.startsWith('refresh_token='));
-    expect(cleared).toBeDefined();
+    const clearedRefresh = cookies.find((c) => c.startsWith('refresh_token='));
+    expect(clearedRefresh).toBeDefined();
     // express clearCookie sets Expires in the past
-    expect(cleared).toMatch(/Expires=Thu, 01 Jan 1970/i);
+    expect(clearedRefresh).toMatch(/Expires=Thu, 01 Jan 1970/i);
+
+    // Hint cookie must also be cleared — otherwise the frontend would keep
+    // attempting refresh on landing despite the session being gone.
+    const clearedHint = cookies.find((c) => c.startsWith('has_session='));
+    expect(clearedHint).toBeDefined();
+    expect(clearedHint).toMatch(/Expires=Thu, 01 Jan 1970/i);
 
     // Same refresh cookie cannot be used afterwards.
     const refreshAttempt = await request(app.getHttpServer())

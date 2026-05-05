@@ -37,7 +37,87 @@ import {
 } from '../../common/exceptions/domain.exceptions.js';
 
 const REFRESH_COOKIE = 'refresh_token';
+const SESSION_HINT_COOKIE = 'has_session';
 const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+/**
+ * Production cookie domain. Frontend (`prode.tirofederal.com`) and backend
+ * (`api.prode.tirofederal.com`) sit on different subdomains, so the cookie
+ * must be scoped to the parent domain or the browser won't send it back to
+ * the API on cross-subdomain requests. Locally we omit `domain` entirely
+ * (cookies stay host-only on `localhost`), which is the right default for
+ * `npm run start:dev`.
+ */
+const PROD_COOKIE_DOMAIN = '.tirofederal.com';
+
+/**
+ * Builds the cookie options shared by `refresh_token` and `has_session`.
+ * Centralised so emit/clear/rotate stay in lockstep — a mismatch on
+ * `domain`/`sameSite`/`secure` between calls leaves stale cookies behind
+ * that the browser can't replace.
+ *
+ * `sameSite: 'lax'` (was 'strict' previously) so the cookie still rides
+ * top-level navigations from the frontend host to the API host. 'strict'
+ * was incompatible with the cross-subdomain split required for the prod
+ * deploy (see `PROD_COOKIE_DOMAIN`).
+ */
+function buildCookieOptions(
+  isProd: boolean,
+  options: { httpOnly: boolean; maxAge: number },
+): {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: 'lax';
+  path: string;
+  maxAge: number;
+  domain?: string;
+} {
+  return {
+    httpOnly: options.httpOnly,
+    secure: isProd,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: options.maxAge,
+    ...(isProd ? { domain: PROD_COOKIE_DOMAIN } : {}),
+  };
+}
+
+/**
+ * Emits both auth cookies (the httpOnly refresh + the readable session
+ * hint) using identical scope so they expire together. The hint exists so
+ * the frontend can decide whether to attempt a /auth/refresh on landing
+ * without burning a network round-trip when the user is anonymous —
+ * `document.cookie.includes('has_session=1')` is enough to gate.
+ */
+function setAuthCookies(
+  res: Response,
+  refreshPlain: string,
+  isProd: boolean,
+): void {
+  res.cookie(
+    REFRESH_COOKIE,
+    refreshPlain,
+    buildCookieOptions(isProd, { httpOnly: true, maxAge: REFRESH_TTL_MS }),
+  );
+  res.cookie(
+    SESSION_HINT_COOKIE,
+    '1',
+    buildCookieOptions(isProd, { httpOnly: false, maxAge: REFRESH_TTL_MS }),
+  );
+}
+
+/**
+ * Clears both auth cookies. Express's `clearCookie` requires the same
+ * `path`/`domain` the cookie was set with; otherwise the browser keeps
+ * the original. We mirror `setAuthCookies`'s scope here on purpose.
+ */
+function clearAuthCookies(res: Response, isProd: boolean): void {
+  const baseOpts = {
+    path: '/',
+    ...(isProd ? { domain: PROD_COOKIE_DOMAIN } : {}),
+  };
+  res.clearCookie(REFRESH_COOKIE, baseOpts);
+  res.clearCookie(SESSION_HINT_COOKIE, baseOpts);
+}
 
 /** Masks a DNI for audit logs: `12345678` → `12***678`. */
 function maskDni(dni: string): string {
@@ -144,13 +224,7 @@ export class AuthController {
     });
     const { plain } = await this.refreshTokens.create(user.id, ctx);
 
-    res.cookie(REFRESH_COOKIE, plain, {
-      httpOnly: true,
-      secure: this.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: REFRESH_TTL_MS,
-      path: '/',
-    });
+    setAuthCookies(res, plain, this.env.NODE_ENV === 'production');
 
     void this.usersService.touchLastLogin(user.id);
     void this.audit.log({
@@ -180,11 +254,12 @@ export class AuthController {
       throw new UnauthorizedException('Missing refresh cookie');
     }
 
+    const isProd = this.env.NODE_ENV === 'production';
     const existing = await this.refreshTokens.findValidByPlain(plain);
     if (!existing) {
-      // Token revoked, expired, or not found. Clear the cookie defensively
+      // Token revoked, expired, or not found. Clear the cookies defensively
       // so a stale browser doesn't keep retrying.
-      res.clearCookie(REFRESH_COOKIE, { path: '/' });
+      clearAuthCookies(res, isProd);
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
@@ -192,7 +267,7 @@ export class AuthController {
     if (!user || user.status !== 'ACTIVE') {
       // Owner deactivated or banned since this refresh was issued. Revoke.
       await this.refreshTokens.revoke(existing.id);
-      res.clearCookie(REFRESH_COOKIE, { path: '/' });
+      clearAuthCookies(res, isProd);
       throw new UnauthorizedException('Account no longer active');
     }
 
@@ -206,13 +281,7 @@ export class AuthController {
       role: user.role,
     });
 
-    res.cookie(REFRESH_COOKIE, newPlain, {
-      httpOnly: true,
-      secure: this.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: REFRESH_TTL_MS,
-      path: '/',
-    });
+    setAuthCookies(res, newPlain, isProd);
 
     return { accessToken, user: pickPublicUser(user) };
   }
@@ -343,7 +412,7 @@ export class AuthController {
         await this.refreshTokens.revoke(existing.id);
       }
     }
-    res.clearCookie(REFRESH_COOKIE, { path: '/' });
+    clearAuthCookies(res, this.env.NODE_ENV === 'production');
   }
 
   /**
@@ -480,13 +549,7 @@ export class AuthController {
     });
     const { plain } = await this.refreshTokens.create(user.id, ctx);
 
-    res.cookie(REFRESH_COOKIE, plain, {
-      httpOnly: true,
-      secure: this.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: REFRESH_TTL_MS,
-      path: '/',
-    });
+    setAuthCookies(res, plain, this.env.NODE_ENV === 'production');
 
     return { accessToken, user: pickPublicUser(user) };
   }
