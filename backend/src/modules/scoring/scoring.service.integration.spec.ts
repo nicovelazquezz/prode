@@ -1,13 +1,11 @@
 import { jest } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
-import { getQueueToken } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { AppModule } from '../../app.module.js';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { ScoringService } from './scoring.service.js';
 import { PhaseService } from './phase.service.js';
-import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
 import {
   MatchAlreadyFinishedException,
   MatchNotFinishedException,
@@ -67,8 +65,15 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
     scoring = app.get(ScoringService);
 
     // Spy on the BullMQ queue so we can assert post-commit enqueues
-    // without driving the workers.
-    const queue: Queue = app.get(getQueueToken(NOTIFICATIONS_QUEUE));
+    // without driving the workers. We pull the queue *off the service
+    // itself* — `app.get(getQueueToken(...))` returns the global producer
+    // registered by NotificationsModule, but `ScoringService` (and
+    // `PhaseService`) inject the queue from their own
+    // `BullModule.registerQueue` call, which produces a different Queue
+    // instance bound to the same Redis-side queue. Spying on the producer
+    // we actually use is what makes assertions reliable.
+    const queue: Queue = (scoring as unknown as { notificationsQueue: Queue })
+      .notificationsQueue;
     queueAddSpy = jest.spyOn(queue, 'add');
 
     const phaseService = app.get(PhaseService);

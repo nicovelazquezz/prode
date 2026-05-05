@@ -1,13 +1,11 @@
 import { jest } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
-import { getQueueToken } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { AppModule } from '../../app.module.js';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { PhaseService } from './phase.service.js';
 import { MatchProgressionService } from './match-progression.service.js';
-import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
 
 /**
  * Integration test for `PhaseService.maybeClosePhase`. We can't run the
@@ -52,7 +50,15 @@ describe('PhaseService.maybeClosePhase (integration)', () => {
     phaseService = app.get(PhaseService);
     progression = app.get(MatchProgressionService);
 
-    const queue: Queue = app.get(getQueueToken(NOTIFICATIONS_QUEUE));
+    // Spy on the BullMQ queue actually used by the PhaseService — every
+    // module that registers `BullModule.registerQueue` for the same queue
+    // name produces a *different* Queue instance bound to the same Redis
+    // queue, so `app.get(getQueueToken(...))` would return the
+    // NotificationsModule producer (a sibling instance) rather than the
+    // one PhaseService injected. Reach into the service directly instead.
+    const queue: Queue = (
+      phaseService as unknown as { notificationsQueue: Queue }
+    ).notificationsQueue;
     queueAddSpy = jest.spyOn(queue, 'add');
 
     progressionSpies = {
