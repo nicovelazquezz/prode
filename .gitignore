@@ -36,3 +36,7 @@ prisma/generated/
 .turbo/
 .superpowers/
 mockups/
+
+# DB backups
+backups/
+*.dump
