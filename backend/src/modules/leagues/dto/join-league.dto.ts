@@ -1,4 +1,4 @@
-import { IsString, Matches } from 'class-validator';
+import { IsOptional, IsString, Matches } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 /**
@@ -22,4 +22,14 @@ export class JoinLeagueDto {
     message: 'inviteCode must be a 6-character code',
   })
   inviteCode!: string;
+
+  /**
+   * Multi-prode: which of the caller's entries joins the league.
+   * Optional — when omitted, the service picks the caller's primary
+   * ACTIVE entry. The frontend sends it explicitly when the user has
+   * > 1 entry.
+   */
+  @IsOptional()
+  @IsString()
+  entryId?: string;
 }

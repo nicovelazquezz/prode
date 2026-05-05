@@ -103,7 +103,7 @@ export class LeaguesController {
   ) {
     const me = this.requireUser(user);
     const ctx = getRequestContext(req);
-    return this.leagues.joinLeague(me.id, dto.inviteCode, ctx);
+    return this.leagues.joinLeague(me.id, dto.inviteCode, dto.entryId, ctx);
   }
 
   /**
@@ -123,10 +123,13 @@ export class LeaguesController {
   ) {
     const me = this.requireUser(user);
 
-    const membership = await this.prisma.leagueMembership.findUnique({
+    // Membership check: any of the caller's entries is enough.
+    const membership = await this.prisma.leagueMembership.findFirst({
       where: {
-        leagueId_userId: { leagueId, userId: me.id },
+        leagueId,
+        entry: { userId: me.id },
       },
+      select: { id: true },
     });
     if (!membership) {
       throw new ForbiddenException('Not a member of this league');
