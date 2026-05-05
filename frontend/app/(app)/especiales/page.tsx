@@ -31,10 +31,11 @@ const TeamSelectModal = dynamic(
 import { queryKeys } from "@/lib/api/queryKeys";
 import { getMatchesByPhase } from "@/lib/api/matches";
 import {
-  getMySpecialPrediction,
-  upsertSpecialPrediction,
+  getEntrySpecialPrediction,
+  upsertEntrySpecialPrediction,
 } from "@/lib/api/predictions";
 import type { SpecialPrediction, Team } from "@/lib/api/types";
+import { useActiveEntry } from "@/lib/hooks/use-active-entry";
 import { cn } from "@/lib/utils/cn";
 
 const formSchema = z
@@ -103,9 +104,13 @@ const heroHeader = (
 );
 
 export default function EspecialesPage() {
+  const { activeEntry } = useActiveEntry();
+  const entryId = activeEntry?.id ?? "";
+
   const specialQuery = useQuery({
-    queryKey: queryKeys.predictions.special(),
-    queryFn: () => getMySpecialPrediction(),
+    queryKey: queryKeys.entries.special(entryId),
+    queryFn: () => getEntrySpecialPrediction(entryId),
+    enabled: !!entryId,
     staleTime: 30_000,
   });
 
@@ -123,7 +128,7 @@ export default function EspecialesPage() {
     return [...map.values()];
   }, [matchesQuery.data]);
 
-  if (specialQuery.isLoading) {
+  if (specialQuery.isLoading || !entryId) {
     return (
       <div className="mx-auto max-w-2xl px-4 pb-20 pt-10 md:px-8 md:pb-24 md:pt-14">
         <div className="space-y-4" aria-busy="true">
@@ -147,7 +152,7 @@ export default function EspecialesPage() {
     );
   }
 
-  return <EditableForm existing={existing} teams={teams} />;
+  return <EditableForm entryId={entryId} existing={existing} teams={teams} />;
 }
 
 // ─── Read-only view ─────────────────────────────────────────────
@@ -265,9 +270,11 @@ function ReadOnlyRow({
 // ─── Editable form ──────────────────────────────────────────────
 
 function EditableForm({
+  entryId,
   existing,
   teams,
 }: {
+  entryId: string;
   existing: SpecialPrediction | null | undefined;
   teams: Team[];
 }) {
@@ -305,7 +312,7 @@ function EditableForm({
 
   const upsertMutation = useMutation({
     mutationFn: (vals: FormValues) =>
-      upsertSpecialPrediction({
+      upsertEntrySpecialPrediction(entryId, {
         championTeamId: vals.championTeamId,
         runnerUpTeamId: vals.runnerUpTeamId,
         thirdPlaceTeamId: vals.thirdPlaceTeamId,
@@ -314,10 +321,12 @@ function EditableForm({
         totalGoals: vals.totalGoals,
       }),
     onSuccess: (data) => {
-      queryClient.setQueryData(queryKeys.predictions.special(), data);
+      queryClient.setQueryData(queryKeys.entries.special(entryId), data);
       queryClient.invalidateQueries({
-        queryKey: queryKeys.predictions.special(),
+        queryKey: queryKeys.entries.special(entryId),
       });
+      // Refrescar también el resumen del entry (totalPoints, etc.)
+      queryClient.invalidateQueries({ queryKey: queryKeys.entries.me() });
       toast.success("Predicciones especiales guardadas");
       setConfirmOpen(false);
     },
