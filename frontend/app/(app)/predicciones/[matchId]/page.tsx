@@ -129,9 +129,9 @@ export default function MatchDetailPage({ params }: PageProps) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-6 md:px-8">
         <div className="space-y-4" aria-busy="true">
-          <div className="h-8 w-32 bg-[var(--color-prode-surface)] rounded-md animate-pulse" />
-          <div className="h-40 bg-[var(--color-prode-surface)] rounded-md animate-pulse" />
-          <div className="h-24 bg-[var(--color-prode-surface)] rounded-md animate-pulse" />
+          <div className="h-8 w-32 bg-[var(--color-landing-surface)] rounded-sm animate-pulse" />
+          <div className="h-40 bg-[var(--color-landing-surface)] rounded-sm animate-pulse" />
+          <div className="h-24 bg-[var(--color-landing-surface)] rounded-sm animate-pulse" />
         </div>
       </div>
     );
@@ -141,11 +141,11 @@ export default function MatchDetailPage({ params }: PageProps) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-6 md:px-8">
         <BackLink />
-        <div className="mt-6 rounded-md border border-[var(--color-prode-border)] bg-white p-6 text-center">
-          <p className="font-display text-2xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+        <div className="mt-6 rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-6 text-center">
+          <p className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
             Partido no encontrado
           </p>
-          <p className="mt-2 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+          <p className="mt-2 font-sans text-sm text-[var(--color-landing-text-muted)]">
             Verifica que el link sea correcto o volve a la lista de partidos.
           </p>
         </div>
@@ -197,15 +197,15 @@ export default function MatchDetailPage({ params }: PageProps) {
         <BackLink />
 
         {/* Hero compacto */}
-        <header className="rounded-md border border-[var(--color-prode-border)] bg-white p-6">
+        <header className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-6">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+            <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
               {match.groupCode
                 ? `Grupo ${match.groupCode}`
                 : PHASE_LABELS[match.phase] ?? match.phase}
             </span>
             {match.venue ? (
-              <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+              <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
                 · {match.venue}
               </span>
             ) : null}
@@ -223,7 +223,7 @@ export default function MatchDetailPage({ params }: PageProps) {
                   size="lg"
                 />
               ) : (
-                <span className="font-display text-3xl font-black uppercase tracking-wide text-[var(--color-prode-text-secondary)]">
+                <span className="font-[family-name:var(--font-landing-display)] text-3xl uppercase tracking-tight text-[var(--color-landing-text-muted)]">
                   vs
                 </span>
               )}
@@ -235,9 +235,9 @@ export default function MatchDetailPage({ params }: PageProps) {
 
         {/* Estado de cierre / countdown */}
         {!isFinished ? (
-          <section className="rounded-md border border-[var(--color-prode-border)] bg-white p-4">
+          <section className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-4">
             {isLocked ? (
-              <div className="flex items-center gap-2 text-[var(--color-prode-text-muted)]">
+              <div className="flex items-center gap-2 text-[var(--color-landing-text-muted)]">
                 <Lock className="h-4 w-4" aria-hidden />
                 <span className="font-sans text-sm font-bold uppercase tracking-wider">
                   Predicciones cerradas
@@ -245,7 +245,7 @@ export default function MatchDetailPage({ params }: PageProps) {
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+                <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
                   Cierra en
                 </span>
                 <CountdownTimer
@@ -259,12 +259,12 @@ export default function MatchDetailPage({ params }: PageProps) {
         ) : null}
 
         {/* Tu prediccion */}
-        <section className="rounded-md border border-[var(--color-prode-border)] bg-white p-6">
-          <h2 className="font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)] mb-4">
+        <section className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-6">
+          <h2 className="font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight text-[var(--color-landing-text)] mb-4">
             Tu prediccion
           </h2>
           <div className="flex items-center justify-between gap-4">
-            <span className="font-sans text-sm text-[var(--color-prode-text-secondary)] truncate">
+            <span className="font-sans text-sm text-[var(--color-landing-text-muted)] truncate">
               {homeName}
             </span>
             <PredictionInput
@@ -276,7 +276,7 @@ export default function MatchDetailPage({ params }: PageProps) {
             />
           </div>
           <div className="mt-3 flex items-center justify-between gap-4">
-            <span className="font-sans text-sm text-[var(--color-prode-text-secondary)] truncate">
+            <span className="font-sans text-sm text-[var(--color-landing-text-muted)] truncate">
               {awayName}
             </span>
             <PredictionInput
@@ -305,7 +305,7 @@ export default function MatchDetailPage({ params }: PageProps) {
 
         {/* Stats: cuantos predijeron */}
         {countQuery.data ? (
-          <p className="font-sans text-sm text-[var(--color-prode-text-secondary)] text-center">
+          <p className="font-sans text-sm text-[var(--color-landing-text-muted)] text-center">
             {countQuery.data.count} {countQuery.data.count === 1 ? "usuario predijo" : "usuarios predijeron"} este partido
           </p>
         ) : null}
@@ -334,7 +334,7 @@ function BackLink() {
   return (
     <Link
       href="/predicciones"
-      className="inline-flex items-center gap-2 font-sans text-sm font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)] hover:text-[var(--color-prode-near-black)]"
+      className="inline-flex items-center gap-2 font-sans text-sm font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)] hover:text-[var(--color-landing-text)]"
     >
       <ArrowLeft className="h-4 w-4" aria-hidden />
       Volver
@@ -346,7 +346,7 @@ function TeamPanel({ name, fifaCode }: { name: string; fifaCode?: string }) {
   return (
     <div className="flex flex-col items-center gap-2 text-center">
       {fifaCode ? <TeamFlag fifaCode={fifaCode} size={64} /> : null}
-      <span className="font-display text-base md:text-lg font-black uppercase tracking-wide text-[var(--color-prode-near-black)] line-clamp-2">
+      <span className="font-[family-name:var(--font-landing-display)] text-base md:text-lg uppercase tracking-tight text-[var(--color-landing-text)] line-clamp-2">
         {name}
       </span>
     </div>
@@ -369,7 +369,7 @@ function KickoffMeta({ iso }: { iso: string }) {
     formatted = fmt.format(d);
   } catch {}
   return (
-    <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+    <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
       {formatted} ART
     </span>
   );
@@ -387,15 +387,15 @@ function FinishedBreakdown({
     ? OUTCOME_LABELS[prediction.outcomeType] ?? prediction.outcomeType
     : "Sin evaluar";
   return (
-    <section className="rounded-md border-2 border-[var(--color-prode-near-black)] bg-white p-6">
-      <h2 className="font-display text-xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)] mb-4">
+    <section className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-6 border-l-[3px] [border-left-color:var(--color-landing-green)]">
+      <h2 className="font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight text-[var(--color-landing-text)] mb-4">
         Resultado y puntos
       </h2>
 
       {match.scoreHome !== null && match.scoreAway !== null ? (
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex flex-col gap-1">
-            <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+            <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
               Real
             </span>
             <ScoreDisplay
@@ -405,7 +405,7 @@ function FinishedBreakdown({
             />
           </div>
           <div className="flex flex-col gap-1 text-right">
-            <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+            <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
               Tu prediccion
             </span>
             <ScoreDisplay
@@ -419,38 +419,38 @@ function FinishedBreakdown({
       ) : null}
 
       <dl className="grid grid-cols-2 gap-3 text-sm">
-        <dt className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+        <dt className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
           Tipo de acierto
         </dt>
-        <dd className="font-sans font-medium text-[var(--color-prode-near-black)] text-right">
+        <dd className="font-sans font-medium text-[var(--color-landing-text)] text-right">
           {outcome}
         </dd>
 
-        <dt className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+        <dt className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
           Puntos base
         </dt>
-        <dd className="font-sans font-medium text-[var(--color-prode-near-black)] text-right tabular-nums">
+        <dd className="font-sans font-medium text-[var(--color-landing-text)] text-right tabular-nums">
           {prediction.basePoints}
         </dd>
 
-        <dt className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+        <dt className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
           Multiplicador {phase}
         </dt>
-        <dd className="font-sans font-medium text-[var(--color-prode-near-black)] text-right tabular-nums">
+        <dd className="font-sans font-medium text-[var(--color-landing-text)] text-right tabular-nums">
           x{prediction.multiplier}
         </dd>
       </dl>
 
-      <div className="mt-4 pt-4 border-t border-[var(--color-prode-border)] flex items-center justify-between">
-        <span className="font-sans text-sm font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+      <div className="mt-4 pt-4 border-t border-[var(--color-landing-line-strong)] flex items-center justify-between">
+        <span className="font-sans text-sm font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
           Total
         </span>
         <span
           className={
-            "font-display text-3xl font-black tabular-nums " +
+            "font-[family-name:var(--font-landing-display)] text-3xl tabular-nums leading-none " +
             (prediction.pointsEarned > 0
-              ? "text-[var(--color-prode-accent)]"
-              : "text-[var(--color-prode-near-black)]")
+              ? "text-[var(--color-landing-gold)]"
+              : "text-[var(--color-landing-text-muted)]")
           }
         >
           {prediction.pointsEarned > 0
