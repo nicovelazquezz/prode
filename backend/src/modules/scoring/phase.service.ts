@@ -13,12 +13,15 @@ import type { Phase } from '../../../generated/prisma/enums.js';
 export const PHASE_WINNER_JOB = 'phase-winner';
 
 /**
- * Result of `computePhaseWinner` — the user that scored the most points
+ * Result of `computePhaseWinner` — the entry that scored the most points
  * across the matches of the closing phase, with the tie-break columns
  * exposed so the audit log can show "won by exact_count" if relevant.
+ *
+ * Multi-prode (post v1.1): rankings are by entry, not user. The owning
+ * user is resolved downstream from `Entry.userId` for notifications.
  */
 export interface PhaseWinnerCandidate {
-  userId: string;
+  entryId: string;
   points: number;
   exactCount: number;
   hitsCount: number;
@@ -75,7 +78,9 @@ export class PhaseService {
       where: { phase },
     });
     if (existing) {
-      this.logger.debug(`Phase ${phase} already closed (winner=${existing.userId})`);
+      this.logger.debug(
+        `Phase ${phase} already closed (winnerEntry=${existing.entryId})`,
+      );
       return;
     }
 
@@ -95,7 +100,7 @@ export class PhaseService {
       await tx.phaseWinner.create({
         data: {
           phase,
-          userId: winner.userId,
+          entryId: winner.entryId,
           pointsEarned: winner.points,
         },
       });
@@ -106,7 +111,7 @@ export class PhaseService {
           entityId: phase,
           changes: {
             winner: {
-              userId: winner.userId,
+              entryId: winner.entryId,
               points: winner.points,
               exactCount: winner.exactCount,
               hitsCount: winner.hitsCount,
@@ -117,7 +122,7 @@ export class PhaseService {
     });
 
     this.logger.log(
-      `Closed phase ${phase}: winner=${winner.userId} points=${winner.points}`,
+      `Closed phase ${phase}: winnerEntry=${winner.entryId} points=${winner.points}`,
     );
 
     // ── Populate the next phase. The frontend reveals matches once
@@ -131,9 +136,11 @@ export class PhaseService {
     // THIRD_PLACE / FINAL have no follow-up to populate.
 
     // ── Notify the winner (Phase 11 worker handles the actual WhatsApp).
+    // Payload carries entryId; the processor resolves the human user via
+    // Entry.userId.
     await this.notificationsQueue.add(PHASE_WINNER_JOB, {
       phase,
-      userId: winner.userId,
+      entryId: winner.entryId,
     });
   }
 
@@ -154,22 +161,23 @@ export class PhaseService {
   async computePhaseWinner(phase: Phase): Promise<PhaseWinnerCandidate | null> {
     const rows = await this.prisma.$queryRaw<
       Array<{
-        userId: string;
+        entryId: string;
         points: bigint;
         exact_count: bigint;
         hits_count: bigint;
       }>
     >`
       SELECT
-        p."userId" AS "userId",
+        p."entryId" AS "entryId",
         SUM(p."pointsEarned")::bigint AS points,
         COUNT(*) FILTER (WHERE p."outcomeType" = 'EXACT')::bigint AS exact_count,
         COUNT(*) FILTER (WHERE p."outcomeType" IN ('EXACT','WINNER_AND_DIFF','WINNER_ONLY','DRAW_DIFFERENT'))::bigint AS hits_count
       FROM predictions p
       INNER JOIN matches m ON m.id = p."matchId"
+      INNER JOIN entries e ON e.id = p."entryId" AND e.status = 'ACTIVE'
       WHERE m.phase = ${phase}::"Phase"
         AND p."evaluatedAt" IS NOT NULL
-      GROUP BY p."userId"
+      GROUP BY p."entryId"
       ORDER BY points DESC, exact_count DESC, hits_count DESC
       LIMIT 1;
     `;
@@ -177,7 +185,7 @@ export class PhaseService {
     if (rows.length === 0) return null;
     const r = rows[0];
     return {
-      userId: r.userId,
+      entryId: r.entryId,
       points: Number(r.points),
       exactCount: Number(r.exact_count),
       hitsCount: Number(r.hits_count),
