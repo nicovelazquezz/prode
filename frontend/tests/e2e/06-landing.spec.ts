@@ -16,7 +16,7 @@ test.describe("Landing Mundial 2026", () => {
       page.getByRole("heading", { name: /JUGÁ EL PRODE\./i }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: /BANCÁ EL VIAJE\./i }),
+      page.getByRole("heading", { name: /GANÁ EN EFECTIVO\./i }),
     ).toBeVisible();
   });
 

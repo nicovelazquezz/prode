@@ -6,11 +6,6 @@
  * el helper `inlineBold()` (lib/landing/inline-bold.tsx).
  */
 export const LANDING = {
-  strip: {
-    parts: ["MUNDIAL FIFA 2026", "11 JUN — 19 JUL", "USA / MEXICO / CANADÁ"],
-    countdownLabel: "DÍAS PARA KICKOFF",
-  },
-
   topbar: {
     brand: "PRODE MUNDIAL 2026 · BAHÍA BLANCA",
     loginCta: "Iniciar sesión",
@@ -20,10 +15,10 @@ export const LANDING = {
   hero: {
     eyebrowPrefix: "INSCRIPCIÓN ABIERTA · MUNDIAL 2026 · ARRANCA EN",
     eyebrowSuffix: "DÍAS",
-    h1Lines: ["JUGÁ EL PRODE.", "BANCÁ EL VIAJE."] as const,
+    h1Lines: ["JUGÁ EL PRODE.", "GANÁ EN EFECTIVO."] as const,
     underlineSecondLine: true,
     lede:
-      "Pronosticá los partidos del Mundial fase por fase. Sumás puntos, escalás el ranking, ganás premios. Cada inscripción banca al equipo de **handball del Tiro Federal** que viaja al **Nacional C en Comodoro Rivadavia**.",
+      "Pronosticá los partidos del Mundial fase por fase. Sumás puntos, escalás el ranking, **ganás premios en efectivo**. Y cada inscripción banca al equipo de handball del Tiro Federal que viaja al Nacional C en Comodoro Rivadavia.",
     primaryCta: "Inscribirme · $10.000",
     primaryHref: "/inscripcion",
     secondaryCta: "Cómo funciona",

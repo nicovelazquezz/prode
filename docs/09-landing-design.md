@@ -20,10 +20,9 @@ Long-form scrolleable que explica el prode, los premios y el ángulo solidario, 
 
 Para que **otros clubes y simpatizantes ajenos a Tiro Federal puedan participar y colaborar sin sentir que es ajeno**, el branding visible es neutro:
 
-- **Strip top (mono, fino):** `MUNDIAL FIFA 2026 · 11 JUN — 19 JUL · USA / MEXICO / CANADÁ · N DÍAS PARA KICKOFF` — info temporal del evento.
 - **Topbar:** `● PRODE MUNDIAL 2026 · BAHÍA BLANCA` (sin escudo, sin nombre de club como marca dominante) + link `Iniciar sesión`.
-- **Hero:** copy enfocado en el deporte y el viaje, no en la pertenencia al club.
-- **Costado solidario:** ahí sí se nombra a Tiro Federal como organizador y dueño del equipo de handball que viaja.
+- **Hero:** hook primario es self-interest (`GANÁ EN EFECTIVO`); la causa solidaria aparece como bonus en el lede ("Y cada inscripción..."). Importante: hay tráfico fuera del club al que la causa no le mueve la aguja — el headline tiene que convertir igual.
+- **Costado solidario:** ahí sí se nombra a Tiro Federal como organizador y dueño del equipo de handball que viaja, en su propia sección dedicada.
 - **Footer rico de 4 columnas:** `Organiza` · `Contacto` · `Prode` · `Cuenta`.
 
 Esto permite que una persona de otro club juegue sin fricción identitaria, y el costado solidario es transversal ("ayudás a un equipo de pibes que se ganaron ir al Nacional").
@@ -86,17 +85,11 @@ Cuando el cliente provea `FWC2026-CondensedBlack.woff2` (variable `--font-fwc` y
 
 ## Copy (textos finales)
 
-### Strip top (sobre el topbar)
-
-`MUNDIAL FIFA 2026 · 11 JUN — 19 JUL · USA / MEXICO / CANADÁ · N DÍAS PARA KICKOFF`
-
-(N se calcula en runtime — countdown a `2026-06-11T12:00:00-03:00`.)
-
 ### Hero
 
 - **Eyebrow (con dot rojo pulsante):** `INSCRIPCIÓN ABIERTA · MUNDIAL 2026 · ARRANCA EN N DÍAS`
-- **H1:** `JUGÁ EL PRODE.` / `BANCÁ EL VIAJE.` (la segunda línea con underline verde)
-- **Lede:** `Pronosticá los partidos del Mundial fase por fase. Sumás puntos, escalás el ranking, ganás premios. Cada inscripción banca al equipo de handball del Tiro Federal que viaja al Nacional C en Comodoro Rivadavia.`
+- **H1:** `JUGÁ EL PRODE.` / `GANÁ EN EFECTIVO.` (la segunda línea con underline verde)
+- **Lede:** `Pronosticá los partidos del Mundial fase por fase. Sumás puntos, escalás el ranking, **ganás premios en efectivo**. Y cada inscripción banca al equipo de handball del Tiro Federal que viaja al Nacional C en Comodoro Rivadavia.`
 - **CTA primario:** `Inscribirme · $10.000`
 - **CTA ghost:** `Cómo funciona`
 - **Mini-meta debajo:** `CIERRA 11/JUN/26 · MERCADOPAGO · TRANSFERENCIA · EFECTIVO EN EL CLUB`
@@ -193,19 +186,18 @@ Bar inferior: `© 2026 · Club Tiro Federal · Bahía Blanca` · `Hecho con cari
 
 ## Estructura de página (orden vertical)
 
-1. Strip top — `MUNDIAL FIFA 2026 · 11 JUN — 19 JUL · USA / MEXICO / CANADÁ · N DÍAS PARA KICKOFF`
-2. Topbar — `● PRODE MUNDIAL 2026 · BAHÍA BLANCA` + link `Iniciar sesión`
-3. Hero (eyebrow live + H1 + lede + CTAs + mini-meta)
-4. Stats lower-third
-5. Countdown
-6. Cómo funciona (3 pasos)
-7. Sistema de puntos (4 reglas + nota multiplicadores)
-8. Predicciones especiales (3 tarjetas)
-9. Premios (3 categorías, sin %)
-10. Costado solidario (handball / Comodoro / Nacional C)
-11. FAQ
-12. Final CTA
-13. Footer rico (4 columnas + bar)
+1. Topbar — `● PRODE MUNDIAL 2026 · BAHÍA BLANCA` + link `Iniciar sesión`
+2. Hero (eyebrow live + H1 + lede + CTAs + mini-meta)
+3. Stats lower-third
+4. Countdown
+5. Cómo funciona (3 pasos)
+6. Sistema de puntos (4 reglas + nota multiplicadores)
+7. Predicciones especiales (3 tarjetas)
+8. Premios (3 categorías, sin %)
+9. Costado solidario (handball / Comodoro / Nacional C)
+10. FAQ
+11. Final CTA
+12. Footer rico (4 columnas + bar)
 
 ## Implementación técnica
 

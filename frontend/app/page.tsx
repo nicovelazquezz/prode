@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { StripTop } from "@/components/landing/strip-top";
 import { LandingTopbar } from "@/components/landing/landing-topbar";
 import { Hero } from "@/components/landing/hero";
 import { StatsBar } from "@/components/landing/stats-bar";
@@ -51,7 +50,6 @@ export default function LandingPage() {
   const daysToKickoff = daysUntilKickoff();
   return (
     <main className="landing-root min-h-screen bg-[var(--color-landing-bg)] text-[var(--color-landing-text)]">
-      <StripTop daysToKickoff={daysToKickoff} />
       <LandingTopbar />
       <Hero daysToKickoff={daysToKickoff} />
       <StatsBar />
