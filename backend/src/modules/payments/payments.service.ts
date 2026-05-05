@@ -299,13 +299,17 @@ export class PaymentsService {
           // with admin lowering it between init and webhook), then
           // either create Entry or force the payment to OVER_CAP.
           const cap = await this.getMaxEntriesPerUser(tx);
-          const lockedRows = await tx.$queryRaw<Array<{ count: bigint }>>`
-            SELECT COUNT(*)::bigint AS count
+          // Lock every entry of this user. PostgreSQL forbids
+          // `SELECT COUNT(*) ... FOR UPDATE` ("FOR UPDATE is not allowed
+          // with aggregate functions"), so we materialise the rows and
+          // count in JS. The row-level locks are held until commit.
+          const lockedRows = await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT id
             FROM entries
             WHERE "userId" = ${local.userId}
             FOR UPDATE
           `;
-          const current = Number(lockedRows[0]?.count ?? 0);
+          const current = lockedRows.length;
           if (current >= cap) {
             await tx.payment.update({
               where: { id: local.id },

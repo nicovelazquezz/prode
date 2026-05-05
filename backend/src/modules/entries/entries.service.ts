@@ -155,14 +155,18 @@ export class EntriesService {
     const payment = await this.prisma.$transaction(async (tx) => {
       // SELECT FOR UPDATE on the caller's entries — the only rows we
       // need to lock to make the cap check serialisable. A concurrent
-      // call of the same user blocks here until our TX commits.
-      const lockedRows = await tx.$queryRaw<Array<{ count: bigint }>>`
-        SELECT COUNT(*)::bigint AS count
+      // call of the same user blocks here until our TX commits. Note:
+      // PostgreSQL forbids `SELECT COUNT(*) ... FOR UPDATE` ("FOR UPDATE
+      // is not allowed with aggregate functions"), so we materialise
+      // the lockable rows first and count them in JS. The result is the
+      // same — the row-level locks are still held until commit.
+      const lockedRows = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id
         FROM entries
         WHERE "userId" = ${userId}
         FOR UPDATE
       `;
-      const current = Number(lockedRows[0]?.count ?? 0);
+      const current = lockedRows.length;
       if (current >= cap) {
         throw new EntryCapReachedException(current, cap);
       }
