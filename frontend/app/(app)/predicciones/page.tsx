@@ -19,6 +19,7 @@ const NumberPadSheet = dynamic(
 );
 import { queryKeys } from "@/lib/api/queryKeys";
 import {
+  getMatches,
   getMatchesByPhase,
   getUpcomingMatches,
 } from "@/lib/api/matches";
@@ -27,12 +28,22 @@ import {
   upsertMatchPrediction,
 } from "@/lib/api/predictions";
 import type { Match, Paginated, Prediction } from "@/lib/api/types";
+import { deriveAvailablePhases } from "@/lib/landing/available-phases";
 
 type MatchListData = Match[];
 
 export default function PrediccionesPage() {
   const [tab, setTab] = useState<PhaseTabValue>("UPCOMING");
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
+
+  // All matches (cache lago) → derivar fases visibles para los tabs.
+  const allMatchesQuery = useQuery<MatchListData>({
+    queryKey: queryKeys.matches.list(),
+    queryFn: () => getMatches({ pageSize: 200 }),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const availablePhases = deriveAvailablePhases(allMatchesQuery.data);
 
   const matchesQuery = useQuery<MatchListData>({
     queryKey:
@@ -144,7 +155,11 @@ export default function PrediccionesPage() {
 
   return (
     <>
-      <PhaseTabs value={tab} onChange={setTab} />
+      <PhaseTabs
+        value={tab}
+        onChange={setTab}
+        availablePhases={availablePhases}
+      />
 
       <section className="mx-auto max-w-2xl px-4 py-8 md:px-8 md:py-10">
         <h1 className="sr-only">Mis predicciones</h1>

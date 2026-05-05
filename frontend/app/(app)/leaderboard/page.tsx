@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
@@ -14,29 +14,24 @@ import {
   getMyAround,
 } from "@/lib/api/leaderboard";
 import { getMyLeagues } from "@/lib/api/leagues";
+import { getMatches } from "@/lib/api/matches";
 import type { Phase } from "@/lib/api/types";
 import { useAuth } from "@/lib/hooks/use-auth";
+import {
+  PHASE_LABEL,
+  deriveAvailablePhases,
+} from "@/lib/landing/available-phases";
 import { cn } from "@/lib/utils/cn";
 
 type TabValue = "global" | "phase" | "leagues";
 
-const PHASE_OPTIONS: Array<{ value: Phase; label: string }> = [
-  { value: "GROUPS", label: "Fase de grupos" },
-  { value: "ROUND_32", label: "16avos" },
-  { value: "ROUND_16", label: "Octavos" },
-  { value: "QUARTERS", label: "Cuartos" },
-  { value: "SEMIS", label: "Semifinales" },
-  { value: "THIRD_PLACE", label: "Tercer puesto" },
-  { value: "FINAL", label: "Final" },
-];
-
 /**
- * /leaderboard — tabla de posiciones con 3 tabs (Global, Por fase,
- * Mis ligas). Hero arriba con la posicion del current user.
+ * /leaderboard — tabla de posiciones, estética stadium (landing
+ * mantra). Hero con eyebrow + Anton number gigante, 3 tabs (Global,
+ * Por fase, Mis ligas). Polling 30s, sin refetch on focus, botón
+ * manual "Refrescar" + dot pulse cuando está fetcheando.
  *
- * Polling: 30s, pausado en background, sin refetch on focus
- * (spec §6.8). Boton manual "Refrescar" en header. Pulse dot
- * indicator cuando esta refrescando.
+ * Phase select solo muestra las fases que ya tienen matches cargados.
  */
 export default function LeaderboardPage() {
   const { user } = useAuth();
@@ -55,7 +50,15 @@ export default function LeaderboardPage() {
     refetchOnWindowFocus: false,
   });
 
-  // Tab GLOBAL.
+  // All matches → derive available phases.
+  const matchesQuery = useQuery({
+    queryKey: queryKeys.matches.list(),
+    queryFn: () => getMatches({ pageSize: 200 }),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const availablePhases = deriveAvailablePhases(matchesQuery.data);
+
   const globalQuery = useQuery({
     queryKey: queryKeys.leaderboard.global(page),
     queryFn: () => getGlobal({ page, pageSize: 50 }),
@@ -66,18 +69,16 @@ export default function LeaderboardPage() {
     refetchOnWindowFocus: false,
   });
 
-  // Tab PHASE.
   const phaseQuery = useQuery({
     queryKey: queryKeys.leaderboard.phase(phase, page),
     queryFn: () => getByPhase(phase, { page, pageSize: 50 }),
-    enabled: tab === "phase",
+    enabled: tab === "phase" && availablePhases.includes(phase),
     staleTime: 30_000,
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
   });
 
-  // Tab LEAGUES.
   const leaguesQuery = useQuery({
     queryKey: queryKeys.leagues.me(),
     queryFn: () => getMyLeagues(),
@@ -104,39 +105,48 @@ export default function LeaderboardPage() {
     else void leaguesQuery.refetch();
   };
 
+  // Asegurar que el phase seleccionado esté disponible. Si la fase actual
+  // ya no está habilitada, fallback a la primera disponible.
+  const effectivePhase = availablePhases.includes(phase)
+    ? phase
+    : (availablePhases[0] ?? "GROUPS");
+
   return (
     <>
-      <section className="mx-auto max-w-3xl px-4 py-6 md:px-8">
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide leading-none text-[var(--color-prode-near-black)]">
-            Tabla
-          </h1>
-          <div className="flex items-center gap-2">
+      <section className="mx-auto max-w-3xl px-4 pb-20 pt-10 md:px-8 md:pb-24 md:pt-14">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+              Tu ranking
+            </div>
+            <h1 className="font-[family-name:var(--font-landing-display)] text-5xl uppercase leading-[0.85] tracking-tight md:text-6xl">
+              <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+                Tabla.
+              </span>
+            </h1>
+          </div>
+          <button
+            type="button"
+            onClick={refresh}
+            aria-label="Refrescar tabla"
+            className="inline-flex shrink-0 items-center gap-2 rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-3 py-2 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text)] transition-colors duration-200 hover:border-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
+          >
             <span
               role="status"
               aria-label={isFetching ? "Refrescando" : "Actualizado"}
               className={cn(
-                "inline-block h-2 w-2 rounded-full",
+                "inline-block h-1.5 w-1.5 rounded-full",
                 isFetching
-                  ? "bg-[var(--color-prode-accent)] animate-pulse"
-                  : "bg-[var(--color-prode-border)]",
+                  ? "bg-[var(--color-landing-red)] landing-pulse"
+                  : "bg-[var(--color-landing-text-muted)]",
               )}
             />
-            <button
-              type="button"
-              onClick={refresh}
-              aria-label="Refrescar tabla"
-              className={cn(
-                "inline-flex items-center gap-2 rounded-md border border-[var(--color-prode-border)] bg-white px-3 py-2",
-                "font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-near-black)]",
-                "transition-colors duration-200 hover:bg-[var(--color-prode-surface)]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)] focus-visible:ring-offset-2",
-              )}
-            >
-              <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} aria-hidden />
-              Refrescar
-            </button>
-          </div>
+            <RefreshCw
+              className={cn("h-3.5 w-3.5", isFetching && "animate-spin")}
+              aria-hidden
+            />
+            Refrescar
+          </button>
         </div>
 
         <Hero
@@ -146,7 +156,7 @@ export default function LeaderboardPage() {
           totalPoints={meAroundQuery.data?.totalPoints}
         />
 
-        <div className="mt-6">
+        <div className="mt-10">
           <Tabs
             value={tab}
             onValueChange={(v) => {
@@ -155,9 +165,9 @@ export default function LeaderboardPage() {
             }}
           >
             <TabsList className="w-full">
-              <TabsTrigger value="global" className="flex-1">GLOBAL</TabsTrigger>
-              <TabsTrigger value="phase" className="flex-1">POR FASE</TabsTrigger>
-              <TabsTrigger value="leagues" className="flex-1">MIS LIGAS</TabsTrigger>
+              <TabsTrigger value="global" className="flex-1">Global</TabsTrigger>
+              <TabsTrigger value="phase" className="flex-1">Por fase</TabsTrigger>
+              <TabsTrigger value="leagues" className="flex-1">Mis ligas</TabsTrigger>
             </TabsList>
 
             <TabsContent value="global">
@@ -166,7 +176,7 @@ export default function LeaderboardPage() {
                 currentUserId={user?.id ?? null}
                 loading={globalQuery.isLoading}
                 onRowClick={setProfileUserId}
-                emptyMessage="Aun no hay posiciones cargadas."
+                emptyMessage="Aún no hay posiciones cargadas"
               />
               <Pagination
                 page={page}
@@ -177,39 +187,20 @@ export default function LeaderboardPage() {
             </TabsContent>
 
             <TabsContent value="phase">
-              <div className="mb-4">
-                <label
-                  htmlFor="phase-select"
-                  className="block font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)] mb-1"
-                >
-                  Elegi una fase
-                </label>
-                <select
-                  id="phase-select"
-                  value={phase}
-                  onChange={(e) => {
-                    setPhase(e.target.value as Phase);
-                    setPage(1);
-                  }}
-                  className={cn(
-                    "h-12 w-full rounded-md border border-[var(--color-prode-border)] bg-white px-3",
-                    "font-sans text-sm text-[var(--color-prode-near-black)]",
-                    "focus:outline-none focus:ring-2 focus:ring-[var(--color-prode-near-black)] focus:ring-offset-2",
-                  )}
-                >
-                  {PHASE_OPTIONS.map((p) => (
-                    <option key={p.value} value={p.value}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <PhaseSelect
+                value={effectivePhase}
+                phases={availablePhases}
+                onChange={(p) => {
+                  setPhase(p);
+                  setPage(1);
+                }}
+              />
               <LeaderboardTable
                 entries={phaseQuery.data?.entries ?? []}
                 currentUserId={user?.id ?? null}
                 loading={phaseQuery.isLoading}
                 onRowClick={setProfileUserId}
-                emptyMessage="Sin puntos en esta fase aun."
+                emptyMessage="Sin puntos en esta fase aún"
               />
               <Pagination
                 page={page}
@@ -253,45 +244,84 @@ function Hero({
       <div
         role="status"
         aria-busy="true"
-        className="rounded-md border border-[var(--color-prode-border)] bg-white p-6"
+        className="mt-8 border-y border-[var(--color-landing-line-strong)] py-10"
       >
-        <div className="h-20 w-2/3 bg-[var(--color-prode-surface)] rounded animate-pulse" />
-        <div className="mt-3 h-8 w-1/3 bg-[var(--color-prode-surface)] rounded animate-pulse" />
+        <div className="h-4 w-24 bg-[var(--color-landing-surface)] rounded-sm animate-pulse" />
+        <div className="mt-4 h-16 w-48 bg-[var(--color-landing-surface)] rounded-sm animate-pulse" />
+        <div className="mt-3 h-8 w-32 bg-[var(--color-landing-surface)] rounded-sm animate-pulse" />
       </div>
     );
   }
   if (position === undefined || totalUsers === undefined) {
     return (
-      <div className="rounded-md border border-dashed border-[var(--color-prode-border)] bg-white p-6 text-center">
-        <p className="font-sans text-sm text-[var(--color-prode-text-secondary)]">
-          Cargas mas predicciones para entrar al ranking.
+      <div className="mt-8 border-y border-dashed border-[var(--color-landing-line-strong)] py-10 text-center">
+        <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+          Sin ranking aún
+        </p>
+        <p className="mt-3 font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
+          Cargá más predicciones para entrar.
         </p>
       </div>
     );
   }
   return (
-    <div className="rounded-md border border-[var(--color-prode-border)] bg-white p-6">
-      <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-        Tu posicion
-      </p>
+    <div className="mt-8 border-y border-[var(--color-landing-line-strong)] py-10">
+      <div className="font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+        Tu posición
+      </div>
       <p
-        className="mt-1 font-display font-black uppercase tracking-tight leading-none text-[var(--color-prode-near-black)]"
-        style={{ fontSize: "clamp(48px, 12vw, 80px)" }}
+        className="mt-3 font-[family-name:var(--font-landing-display)] uppercase leading-[0.85] tracking-tight"
+        style={{ fontSize: "clamp(64px, 14vw, 112px)" }}
       >
-        #<span className="text-[var(--color-prode-accent)]">{position}</span>
-        <span className="font-sans text-base font-bold ml-3 align-middle text-[var(--color-prode-text-secondary)]">
+        <span className="text-[var(--color-landing-text-muted)]">#</span>
+        <span className="text-[var(--color-landing-red)]">{position}</span>
+        <span className="ml-3 align-middle font-[family-name:var(--font-landing-mono)] text-sm uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)]">
           de {totalUsers}
         </span>
       </p>
-      <p
-        className="mt-2 font-display font-black tracking-tight text-[var(--color-prode-near-black)]"
-        style={{ fontSize: "32px" }}
-      >
+      <p className="mt-2 font-[family-name:var(--font-landing-display)] text-4xl tabular-nums leading-none text-[var(--color-landing-text)]">
         {totalPoints ?? 0}{" "}
-        <span className="font-sans text-base font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+        <span className="ml-1 font-[family-name:var(--font-landing-mono)] text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
           PTS
         </span>
       </p>
+    </div>
+  );
+}
+
+function PhaseSelect({
+  value,
+  phases,
+  onChange,
+}: {
+  value: Phase;
+  phases: Phase[];
+  onChange: (next: Phase) => void;
+}) {
+  return (
+    <div className="mb-6">
+      <label
+        htmlFor="phase-select"
+        className="mb-2 block font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]"
+      >
+        Elegí una fase
+      </label>
+      <select
+        id="phase-select"
+        value={value}
+        onChange={(e) => onChange(e.target.value as Phase)}
+        className="h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 text-base text-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
+      >
+        {phases.map((p) => (
+          <option
+            key={p}
+            value={p}
+            className="bg-[var(--color-landing-surface)] text-[var(--color-landing-text)]"
+          >
+            {PHASE_LABEL[p]}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
@@ -313,7 +343,7 @@ function LeaguesList({
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
-            className="h-20 rounded-md bg-[var(--color-prode-surface)] animate-pulse"
+            className="h-20 rounded-sm bg-[var(--color-landing-surface)] animate-pulse"
           />
         ))}
       </div>
@@ -321,18 +351,18 @@ function LeaguesList({
   }
   if (!leagues.length) {
     return (
-      <div className="rounded-md border border-dashed border-[var(--color-prode-border)] bg-white p-8 text-center">
-        <p className="font-display text-2xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+      <div className="border border-dashed border-[var(--color-landing-line-strong)] rounded-sm p-10 text-center">
+        <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
           Sin ligas
         </p>
-        <p className="mt-2 font-sans text-sm text-[var(--color-prode-text-secondary)]">
-          Todavia no perteneces a ninguna mini-liga.
+        <p className="mt-3 font-[family-name:var(--font-landing-display)] text-3xl uppercase tracking-tight text-[var(--color-landing-text)]">
+          Todavía no estás en una mini-liga.
         </p>
         <Link
           href="/ligas"
-          className="mt-4 inline-flex items-center justify-center font-sans text-sm font-bold uppercase tracking-wider text-[var(--color-prode-near-black)] underline underline-offset-4"
+          className="mt-5 inline-block rounded-sm bg-[var(--color-landing-red)] px-6 py-3 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
         >
-          Ir a Ligas
+          Ir a Ligas →
         </Link>
       </div>
     );
@@ -342,24 +372,20 @@ function LeaguesList({
       {leagues.map((l) => (
         <li
           key={l.id}
-          className="rounded-md border border-[var(--color-prode-border)] bg-white p-4"
+          className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5"
         >
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="font-display text-xl font-black uppercase tracking-wide truncate text-[var(--color-prode-near-black)]">
+              <p className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight truncate text-[var(--color-landing-text)]">
                 {l.name}
               </p>
-              <p className="font-sans text-xs uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+              <p className="mt-1 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
                 {l.memberCount ?? 0} miembros
               </p>
             </div>
             <Link
               href={`/leaderboard/liga/${l.id}`}
-              className={cn(
-                "inline-flex items-center justify-center rounded-md bg-[var(--color-prode-near-black)] px-4 py-2",
-                "font-sans text-xs font-bold uppercase tracking-wider text-white",
-                "transition-opacity duration-200 hover:opacity-90",
-              )}
+              className="shrink-0 rounded-sm bg-[var(--color-landing-red)] px-4 py-2 font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
             >
               Ver tabla
             </Link>
@@ -383,36 +409,30 @@ function Pagination({
 }) {
   const totalPages = Math.max(1, Math.ceil(total / Math.max(1, pageSize)));
   if (totalPages <= 1) return null;
+
+  const navBtn =
+    "rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-4 py-2 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] disabled:opacity-40 disabled:pointer-events-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]";
+
   return (
-    <div className="mt-4 flex items-center justify-between gap-3">
+    <div className="mt-5 flex items-center justify-between gap-3">
       <button
         type="button"
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
-        className={cn(
-          "rounded-md border border-[var(--color-prode-border)] bg-white px-4 py-2",
-          "font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-near-black)]",
-          "disabled:opacity-50 disabled:pointer-events-none",
-          "transition-colors duration-200 hover:bg-[var(--color-prode-surface)]",
-        )}
+        className={navBtn}
       >
-        Anterior
+        ← Anterior
       </button>
-      <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-        Pagina {page} de {totalPages}
+      <span className="font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
+        Página {page} / {totalPages}
       </span>
       <button
         type="button"
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
-        className={cn(
-          "rounded-md border border-[var(--color-prode-border)] bg-white px-4 py-2",
-          "font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-near-black)]",
-          "disabled:opacity-50 disabled:pointer-events-none",
-          "transition-colors duration-200 hover:bg-[var(--color-prode-surface)]",
-        )}
+        className={navBtn}
       >
-        Siguiente
+        Siguiente →
       </button>
     </div>
   );

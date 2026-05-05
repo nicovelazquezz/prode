@@ -143,7 +143,7 @@ function ReadOnlyView({
       <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
         Predicciones especiales
       </h1>
-      <div className="rounded-md border-2 border-[var(--color-prode-near-black)] bg-white p-4 flex items-start gap-3">
+      <div className="rounded-sm border-2 border-[var(--color-landing-green)] bg-[var(--color-prode-surface)] p-4 flex items-start gap-3">
         <Lock className="h-5 w-5 mt-0.5 shrink-0 text-[var(--color-prode-near-black)]" aria-hidden />
         <div>
           <p className="font-display text-base font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
@@ -184,7 +184,7 @@ function ReadOnlyView({
         }
         loading={teamsLoading}
       />
-      <div className="rounded-md border border-[var(--color-prode-border)] bg-white p-4">
+      <div className="rounded-sm border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-4">
         <p className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
           Goleador
         </p>
@@ -192,7 +192,7 @@ function ReadOnlyView({
           {special.topScorer?.fullName ?? special.topScorerName ?? "—"}
         </p>
       </div>
-      <div className="rounded-md border border-[var(--color-prode-border)] bg-white p-4">
+      <div className="rounded-sm border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-4">
         <p className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
           Total de goles del torneo
         </p>
@@ -214,7 +214,7 @@ function ReadOnlyRow({
   loading: boolean;
 }) {
   return (
-    <div className="rounded-md border border-[var(--color-prode-border)] bg-white p-4 flex items-center gap-4">
+    <div className="rounded-sm border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-4 flex items-center gap-4">
       <div className="flex-1">
         <p className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
           {label}
@@ -314,7 +314,7 @@ function EditableForm({
       {/* Banner permanente accent */}
       <div
         role="alert"
-        className="rounded-md bg-[var(--color-prode-accent)] text-white p-4 flex items-start gap-3"
+        className="rounded-sm bg-[var(--color-landing-red)] text-[var(--color-landing-text)] p-4 flex items-start gap-3"
       >
         <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0" aria-hidden />
         <p className="font-sans text-sm">
@@ -338,7 +338,7 @@ function EditableForm({
               <button
                 type="button"
                 onClick={() => setOpenSlot(slot)}
-                className="rounded-md border border-[var(--color-prode-border)] bg-white p-4 flex items-center gap-3 text-left hover:border-[var(--color-prode-near-black)] transition-colors"
+                className="rounded-sm border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-4 flex items-center gap-3 text-left hover:border-[var(--color-prode-near-black)] transition-colors"
               >
                 {team ? (
                   <TeamFlag fifaCode={team.fifaCode} size={32} />

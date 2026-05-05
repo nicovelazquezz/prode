@@ -22,9 +22,9 @@ describe("LeaderboardTable", () => {
 
   it("renders table headers", () => {
     render(<LeaderboardTable entries={entries} />);
-    expect(screen.getByText("POS")).toBeInTheDocument();
-    expect(screen.getByText("JUGADOR")).toBeInTheDocument();
-    expect(screen.getByText("PUNTOS")).toBeInTheDocument();
+    expect(screen.getByText("Pos")).toBeInTheDocument();
+    expect(screen.getByText("Jugador")).toBeInTheDocument();
+    expect(screen.getByText("Puntos")).toBeInTheDocument();
   });
 
   it("renders skeleton when loading", () => {

@@ -41,32 +41,30 @@ describe("LeaderboardRow", () => {
     expect(onClick).toHaveBeenCalledWith("u-5");
   });
 
-  it("applies podium border class for position 1", () => {
+  it("applies gold left border for position 1", () => {
     const e: LeaderboardEntry = { ...baseEntry, position: 1 };
     render(<LeaderboardRow entry={e} />);
     const button = screen.getByRole("button");
-    expect(button.className).toContain("border-b-[#d4af37]");
+    expect(button.style.borderLeftColor).toBe("var(--color-landing-gold)");
   });
 
-  it("applies podium border class for position 2", () => {
+  it("applies muted left border for position 2", () => {
     const e: LeaderboardEntry = { ...baseEntry, position: 2 };
     render(<LeaderboardRow entry={e} />);
     const button = screen.getByRole("button");
-    expect(button.className).toContain("border-b-[#c0c0c0]");
+    expect(button.style.borderLeftColor).toBe("var(--color-landing-text-muted)");
   });
 
-  it("applies podium border class for position 3", () => {
+  it("applies green left border for position 3", () => {
     const e: LeaderboardEntry = { ...baseEntry, position: 3 };
     render(<LeaderboardRow entry={e} />);
     const button = screen.getByRole("button");
-    expect(button.className).toContain("border-b-[#cd7f32]");
+    expect(button.style.borderLeftColor).toBe("var(--color-landing-green)");
   });
 
-  it("does not apply podium border for position 4+", () => {
+  it("applies transparent left border for position 4+", () => {
     render(<LeaderboardRow entry={baseEntry} />);
     const button = screen.getByRole("button");
-    expect(button.className).not.toContain("border-b-[#d4af37]");
-    expect(button.className).not.toContain("border-b-[#c0c0c0]");
-    expect(button.className).not.toContain("border-b-[#cd7f32]");
+    expect(button.style.borderLeftColor).toBe("transparent");
   });
 });

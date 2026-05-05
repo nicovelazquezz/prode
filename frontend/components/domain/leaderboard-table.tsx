@@ -12,12 +12,12 @@ interface LeaderboardTableProps {
    */
   currentUserId?: string | null;
   /**
-   * Si esta en true, muestra skeleton de filas. El padre lo deriva
+   * Si está en true, muestra skeleton de filas. El padre lo deriva
    * de `useQuery.isLoading`.
    */
   loading?: boolean;
   /**
-   * Click en row → padre abre drawer/sheet con perfil publico.
+   * Click en row → padre abre drawer/sheet con perfil público.
    */
   onRowClick?: (userId: string) => void;
   /**
@@ -29,9 +29,9 @@ interface LeaderboardTableProps {
 }
 
 /**
- * Container de la tabla de leaderboard. Renderiza header + rows.
- * Maneja estados loading (skeleton de 8 filas), empty (mensaje),
- * y populated (rows reales).
+ * Container de la tabla de leaderboard, estética stadium (landing
+ * mantra). Renderiza header sticky + rows. Maneja estados loading
+ * (skeleton de 8 filas), empty (mensaje editorial), y populated.
  *
  * El sticky del row "VOS" se aplica solo al row actual del current
  * user (LeaderboardRow internal logic).
@@ -51,7 +51,7 @@ export function LeaderboardTable({
         aria-busy="true"
         aria-label="Cargando tabla"
         className={cn(
-          "rounded-md border border-[var(--color-prode-border)] bg-white overflow-hidden",
+          "border-y border-[var(--color-landing-line-strong)] overflow-hidden",
           className,
         )}
       >
@@ -60,7 +60,7 @@ export function LeaderboardTable({
           {[...Array(8)].map((_, i) => (
             <div
               key={i}
-              className="h-14 border-b border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] animate-pulse"
+              className="h-[58px] border-b border-[var(--color-landing-line)] bg-[var(--color-landing-surface)]/40 animate-pulse"
             />
           ))}
         </div>
@@ -72,14 +72,14 @@ export function LeaderboardTable({
     return (
       <div
         className={cn(
-          "rounded-md border border-dashed border-[var(--color-prode-border)] bg-white p-8 text-center",
+          "border border-dashed border-[var(--color-landing-line-strong)] rounded-sm bg-transparent p-8 text-center",
           className,
         )}
       >
-        <p className="font-display text-2xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
+        <p className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
           Sin datos
         </p>
-        <p className="mt-2 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+        <p className="mt-3 font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
           {emptyMessage}
         </p>
       </div>
@@ -89,7 +89,7 @@ export function LeaderboardTable({
   return (
     <div
       className={cn(
-        "rounded-md border border-[var(--color-prode-border)] bg-white overflow-hidden",
+        "border-y border-[var(--color-landing-line-strong)] overflow-hidden",
         className,
       )}
       role="table"
@@ -117,16 +117,15 @@ function TableHeader() {
       role="row"
       className={cn(
         "grid grid-cols-[3rem_1fr_auto] items-center gap-3",
-        "px-4 py-2 md:px-6",
-        "bg-[var(--color-prode-surface)]",
-        "border-b border-[var(--color-prode-border)]",
-        "font-sans text-[11px] font-bold uppercase tracking-wider",
-        "text-[var(--color-prode-text-secondary)]",
+        "px-4 py-2.5 md:px-6",
+        "border-b border-[var(--color-landing-line-strong)]",
+        "font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em]",
+        "text-[var(--color-landing-text-muted)]",
       )}
     >
-      <span>POS</span>
-      <span>JUGADOR</span>
-      <span className="text-right">PUNTOS</span>
+      <span>Pos</span>
+      <span>Jugador</span>
+      <span className="text-right">Puntos</span>
     </div>
   );
 }

@@ -125,7 +125,7 @@ function PersonalDataSection({
       >
         Datos personales
       </h2>
-      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-md border border-[var(--color-prode-border)] bg-white p-4">
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-sm border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-5">
         <Field label="DNI" value={dni} />
         <Field label="Nombre" value={firstName} />
         <Field label="Apellido" value={lastName} />
@@ -136,10 +136,10 @@ function PersonalDataSection({
           <dd>
             <span
               className={cn(
-                "inline-flex items-center gap-1 rounded-pill px-2 py-0.5 font-sans text-xs font-bold uppercase tracking-wider",
+                "inline-flex items-center gap-1 rounded-sm px-2 py-0.5 font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.16em]",
                 role === "ADMIN"
-                  ? "bg-[var(--color-prode-accent)] text-white"
-                  : "bg-[var(--color-prode-near-black)] text-white",
+                  ? "bg-[var(--color-landing-red)] text-[var(--color-landing-text)]"
+                  : "bg-[var(--color-landing-green)] text-[var(--color-landing-text)]",
               )}
             >
               <ShieldCheck className="h-3 w-3" aria-hidden />
@@ -225,7 +225,7 @@ function ContactSection({
       </h2>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-4 rounded-md border border-[var(--color-prode-border)] bg-white p-4"
+        className="space-y-4 rounded-sm border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-5"
       >
         <div className="flex flex-col gap-2">
           <Label htmlFor="whatsapp">WhatsApp</Label>
@@ -383,7 +383,7 @@ function ChangePasswordSection() {
       </h2>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-4 rounded-md border border-[var(--color-prode-border)] bg-white p-4"
+        className="space-y-4 rounded-sm border border-[var(--color-prode-border)] bg-[var(--color-prode-surface)] p-5"
       >
         <div className="flex flex-col gap-2">
           <Label htmlFor="currentPassword">Contrasena actual</Label>
