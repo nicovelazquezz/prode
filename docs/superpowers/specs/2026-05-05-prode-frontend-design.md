@@ -20,6 +20,22 @@ Frontend mobile-first del Prode Mundial 2026 para el Club Tiro Federal. Conecta 
 
 **Lanzamiento:** completo desde el día 1, sin recortes de features. Test local sin MercadoPago primero, después producción.
 
+## 1.5 Prerequisitos backend (BLOQUEANTE — Phase 0 del plan)
+
+El frontend asume cambios en el backend que NO están en el spec backend actual ni en el código construido. **Estos deben implementarse ANTES de empezar el frontend** y forman parte de la Phase 0 del plan de implementación.
+
+| # | Cambio | Justificación |
+|---|--------|---------------|
+| 1 | **Cookie del refresh token: cambiar `SameSite=Strict` → `SameSite=Lax` + agregar `Domain=.tirofederal.com`** | Frontend en `prode.tirofederal.com` y backend en `api.prode.tirofederal.com` son subdominios distintos. Strict no envía la cookie cross-subdomain. Update en `auth.controller.ts` del backend (~3 líneas). |
+| 2 | **`POST /dev/simulate-webhook`** (gated por `NODE_ENV !== 'production'`) | Body: `{ paymentId: string, status: 'approved' \| 'rejected' \| 'pending', payerEmail?: string }`. Bypassa firma MP, construye payload fake estilo MP y dispatch al handler real de webhook. Fundamental para el mock checkout local. |
+| 3 | **`GET /stats/public`** | Retorna `{ enrolledUsers: number, pozoEstimate: number }`. Para el live counter de la landing. Cache backend 60s. Si el backend no quiere agregarlo, eliminar la stats bar de la landing. |
+| 4 | **`GET /auth/me`** | Retorna info del user del access token. Usado por `AuthProvider` en mount (después de refresh exitoso). Si el backend no lo expone, derivamos del JWT decoded del lado cliente. |
+| 5 | **`POST /auth/change-password`** | Body: `{ currentPassword, newPassword }`. Auth required. Para la página de perfil. |
+| 6 | **`GET /users/:id/public-profile`** | Retorna `{ firstName, lastName, predictionsFinished: [...] }` solo de partidos finalizados. Para el drawer al click en row del leaderboard. Public, no auth necesaria. |
+| 7 | **CORS update** | Permitir origin `https://prode.tirofederal.com` con `credentials: true`. Backend ya tiene `FRONTEND_URL` env, solo verificar que esté seteado. |
+
+**`POST /auth/logout`** y `GET /predictions/special/me` ya existen en el backend (Tasks 3.6 y 7.3 del plan backend).
+
 ## 2. Stack técnico
 
 | Capa | Tecnología | Versión |
@@ -336,10 +352,12 @@ const buttonVariants = cva(
 | Display H1 | Fwc Condensed | 64px | 80px | 900 | white sobre dark / near-black sobre light |
 | H2 | Fwc Condensed | 48px | 72px | 900 | near-black |
 | H3 | Fwc Condensed | 28px | 32px | 900 | near-black |
-| H4 / Label | Noto Sans | 14px | 14px | 700 | text-muted-foreground |
+| H4 / Label | Noto Sans | 14px | 14px | 700 | `--color-prode-text-secondary` (#4b5667) |
 | Body | Noto Sans | 16px | 16px | 400 | foreground |
-| Body small | Noto Sans | 14px | 14px | 400 | text-secondary |
+| Body small | Noto Sans | 14px | 14px | 400 | `--color-prode-text-secondary` (#4b5667) |
 | UI Label | Noto Sans | 12-14px | 14px | 500 | varies |
+
+`--color-prode-text-muted` (`#bc8fd1`) NO se usa en H4/Label. Se reserva para placeholders y estados disabled de inputs.
 
 Headings con positive letter-spacing (1.5px en 80px, 0.5-1px en 32px) para abrir las formas ultra-condensed.
 
@@ -347,7 +365,7 @@ Headings con positive letter-spacing (1.5px en 80px, 0.5-1px en 32px) para abrir
 
 Reglas críticas (de ui-ux-pro-max):
 
-- **Touch targets ≥44x44px**: botones default `h-12 px-8` (48px), inputs `h-12`. PredictionInput buttons en number pad `56x56px`.
+- **Touch targets ≥44x44px**: botones default `h-12 px-8` (48px), inputs `h-12`. PredictionInput buttons en number pad `56x56px`. **Size `sm` (`h-10 = 40px`) viola el mínimo touch — solo se usa en zonas no-touch (admin desktop tablas, controles secundarios).**
 - **Color contrast ≥4.5:1**: todas las combinaciones de la paleta cumplen WCAG AA. Único cuidado: `#bc8fd1` (text-muted) sobre blanco solo se usa para estados disabled/placeholder.
 - **Focus states visibles**: ring `outline-2 outline-offset-2 outline-primary` en todos los interactivos.
 - **`prefers-reduced-motion`**: media query que reduce duraciones a 0.01s y desactiva Framer Motion.
@@ -361,44 +379,83 @@ Reglas críticas (de ui-ux-pro-max):
 - **Access token**: JWT firmado por backend, 15 min de vida. Vive **solo en memoria de JS** (variable de módulo en `lib/auth/token-store.ts`). NUNCA persistido a localStorage/sessionStorage.
 - **Refresh token**: JWT 7 días, en cookie `httpOnly` + `Secure` + `SameSite=Lax` + `Domain=.tirofederal.com`. Backend lo emite en `/auth/login` y lo rota en `/auth/refresh`.
 
-**Por qué SameSite=Lax (no Strict):** frontend en `prode.tirofederal.com` y backend en `api.prode.tirofederal.com` son subdominios distintos. `SameSite=Strict` no enviaría la cookie en navegaciones cross-subdomain. `Lax` cubre el caso (POST same-site, GET cross-site OK).
+**Por qué SameSite=Lax (no Strict):** frontend en `prode.tirofederal.com` y backend en `api.prode.tirofederal.com` son subdominios distintos. `SameSite=Strict` no enviaría la cookie en navegaciones cross-subdomain. `Lax` cubre el caso (POST same-site, GET cross-site OK). Ver Prerequisito Backend #1.
 
-### 5.2 Flow
-
-```
-1. Mount app (Root layout)
-   ↓
-2. AuthProvider en root layout intenta POST /auth/refresh (cookie viaja automática)
-   ├─ 200: tokenStore.set(accessToken), useAuth().user populated
-   └─ 401: user is null
-   ↓
-3. Cualquier request via ky:
-   - beforeRequest: agrega Authorization: Bearer ${tokenStore.get()}
-   - afterResponse 401 (excepto /auth/refresh):
-     - intenta refresh
-     - si éxito: reintenta el request original con nuevo token
-     - si refresh falla: clear token + redirect a /login
-   ↓
-4. Layouts (app)/(admin) tienen guards client-side:
-   - (app): si !user → redirect /login
-   - (admin): si !user || user.role !== 'ADMIN' → redirect /
-```
-
-### 5.3 Implementación
+**`tokenStore` es client-only**, no debe importarse desde RSC:
 
 ```typescript
 // lib/auth/token-store.ts
+import "client-only";  // package que tira error si lo importa un RSC
+
 let accessToken: string | null = null;
 export const tokenStore = {
   get: () => accessToken,
   set: (t: string | null) => { accessToken = t; },
   clear: () => { accessToken = null; },
 };
+```
 
+**Por qué `client-only`:** las variables de módulo en Next.js Server Components son **compartidas entre requests del servidor** — eso sería un cross-user leak crítico. `import "client-only"` (package oficial Vercel) hace que el bundler tire error de build si un RSC importa el archivo. El `AuthProvider` también va marcado `"use client"`.
+
+### 5.2 Flow
+
+```
+1. Mount app (Root layout)
+   ↓
+2. AuthProvider (client component) checa cookie hint `has_session`
+   ├─ presente: intenta POST /auth/refresh (cookie viaja automática)
+   │   ├─ 200: tokenStore.set(accessToken), GET /auth/me → user populated
+   │   └─ 401: clear has_session, user is null
+   └─ ausente: no hace request (caso visitante público anónimo, optimización)
+   ↓
+3. Cualquier request via ky:
+   - beforeRequest: agrega Authorization: Bearer ${tokenStore.get()}
+   - afterResponse 401 (excepto /auth/refresh y request con flag _retried):
+     - intenta refresh (singleton — única promesa concurrente)
+     - si éxito: reintenta UNA vez el request original con nuevo token y _retried=true
+     - si refresh falla: clear token + redirect a /login
+   ↓
+4. Layouts (app)/(admin):
+   - Mientras AuthProvider está en estado `isLoading`: skeleton de la layout (no flash)
+   - (app): si !user → redirect /login
+   - (admin): si !user || user.role !== 'ADMIN' → redirect /
+   - Logout: POST /auth/logout (revoca refresh server-side) → tokenStore.clear() → has_session deleted → redirect /
+```
+
+**`has_session` cookie hint:** cookie no-httpOnly (legible por JS), valor `1`, set por el backend cuando emite refresh, borrada en logout. Permite saltar el `/auth/refresh` para visitantes anónimos en landing pública (evita 5 reqs/min spam de 401s en logs). Esto requiere el cambio adicional en backend al emitir/borrar la cookie.
+
+**Singleton refresh dedupe:** evita race condition cuando N requests fallan con 401 simultáneamente (caso típico al volver de background tab). El `refresh-interceptor.ts` guarda una `Promise<string>` pendiente y todos los 401 esperan la misma. Implementación:
+
+```typescript
+// lib/auth/refresh-interceptor.ts
+import "client-only";
+let refreshPromise: Promise<string | null> | null = null;
+
+export async function refreshAccessToken(): Promise<string | null> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = ky.post('auth/refresh', { credentials: 'include' })
+    .json<{ accessToken: string }>()
+    .then(({ accessToken }) => {
+      tokenStore.set(accessToken);
+      return accessToken;
+    })
+    .catch(() => {
+      tokenStore.clear();
+      return null;
+    })
+    .finally(() => { refreshPromise = null; });
+  return refreshPromise;
+}
+```
+
+### 5.3 Implementación
+
+```typescript
 // lib/api/client.ts
+import "client-only";
 import ky from 'ky';
 import { tokenStore } from '../auth/token-store';
-import { refreshAccessToken } from './auth';
+import { refreshAccessToken } from '../auth/refresh-interceptor';
 
 export const api = ky.create({
   prefixUrl: process.env.NEXT_PUBLIC_API_URL,
@@ -410,11 +467,15 @@ export const api = ky.create({
     }],
     afterResponse: [
       async (request, options, response) => {
-        if (response.status === 401 && !request.url.includes('/auth/refresh')) {
-          const refreshed = await refreshAccessToken();
+        const isRefresh = request.url.includes('/auth/refresh');
+        const alreadyRetried = request.headers.get('X-Retried') === '1';
+        if (response.status === 401 && !isRefresh && !alreadyRetried) {
+          const refreshed = await refreshAccessToken();  // singleton dedupe
           if (refreshed) {
-            request.headers.set('Authorization', `Bearer ${refreshed}`);
-            return ky(request);
+            const retryRequest = request.clone();
+            retryRequest.headers.set('Authorization', `Bearer ${refreshed}`);
+            retryRequest.headers.set('X-Retried', '1');
+            return ky(retryRequest);
           }
           if (typeof window !== 'undefined') {
             window.location.href = '/login';
@@ -426,6 +487,8 @@ export const api = ky.create({
   },
 });
 ```
+
+`X-Retried` flag previene loop infinito si el reintento también devuelve 401.
 
 ## 6. Páginas y UX patterns
 
@@ -503,7 +566,7 @@ Llega vía `?token=plainToken` después del pago (real o mock). Flujo:
    - Si OK → muestra form.
 2. Form con DNI, nombre, apellido, WhatsApp, password.
    - Mobile: 3 steps (DNI+nombre / WhatsApp / password). Desktop: single page con secciones.
-   - WhatsApp con prefijo visual fijo `+54 9` y normalización a `5492914xxxxxxx` antes de enviar.
+   - WhatsApp con prefijo visual fijo `+54 9` y normalización a `549<area><number>` antes de enviar (regex backend: `^\d{10,15}$`). El usuario tipea código de área + número (ej: 2914xxxxxx para Bahía Blanca, 11xxxxxxxx para CABA). No hardcodeamos área específica.
 3. Submit → `POST /auth/complete-registration` → backend devuelve accessToken + user.
 4. tokenStore.set(accessToken), redirect a `/predicciones`.
 
@@ -534,20 +597,26 @@ MatchCard (rounded-md, border)
 [Bottom nav mobile: Predic | Tabla | Ligas | Perfil]
 ```
 
-**Estados visuales del MatchCard:**
-- Sin cargar: `border 1px solid border-color`, badge "PENDIENTE" gris
-- Cargado abierto: `border 2px solid foreground`, badge "✓ GUARDADO"
-- Locked sin resultado: `opacity-60`, badge "CERRADO" + lock icon, inputs disabled
-- Finalizado: muestra resultado real + tu predicción + puntos. Si `pointsEarned > 0` → border accent + animación `<PointsCelebration>` (Framer Motion: scale 0.95 → 1.05 → 1 con stagger en los puntos)
+**Estados visuales del MatchCard (5):**
+- **Sin cargar**: `border 1px solid border-color`, badge "PENDIENTE" gris
+- **Cargado abierto**: `border 2px solid foreground`, badge "✓ GUARDADO"
+- **Sin conexión / reintentando**: `border 2px solid accent`, badge "REINTENTANDO..." + ícono spinner. Tras N retries fallidos, badge "TOCÁ PARA REINTENTAR" tappable.
+- **Locked sin resultado**: `bg-muted/40` + `text-muted-foreground` (sin opacity para preservar contraste WCAG), badge "CERRADO" + lock icon, inputs disabled
+- **Finalizado**: muestra resultado real + tu predicción + puntos. Si `pointsEarned > 0` → border accent + animación `<PointsCelebration>` (Framer Motion: scale 0.95 → 1.05 → 1 con stagger en los puntos)
 
 ### 6.5 PredictionInput component
 
 No es un `<input type="number">`. Es:
 
-- **Mobile**: botón touch-friendly que abre **bottom sheet** con number pad grande (3x4 grid de buttons 56x56px, 0-9 + clear/confirm). Haptic feedback (`navigator.vibrate(10)`) en cada tap.
+- **Mobile**: botón touch-friendly que abre **bottom sheet** con number pad grande (3x4 grid de buttons 56x56px, 0-9 + clear). Haptic feedback (`navigator.vibrate(10)`) en cada tap.
 - **Desktop**: input nativo con `inputmode="numeric"` y validación 0-99.
 
-Auto-save con `useMutation` + debounce 1s. Optimistic update.
+**UX exacta del save:**
+- En el bottom sheet, el usuario tipea ambos scores (home y away) en una sola apertura. Botón **"GUARDAR"** en el footer del sheet → cierra el sheet + dispara la mutación + mostra optimistic state inmediatamente en la card.
+- En desktop con input nativo, debounce 1s entre keystrokes antes de mutar (para no spamear la API mientras escribe).
+- Si la mutación falla, badge cambia a "REINTENTANDO..." y reintenta automático 1 vez. Si falla 2 veces, muestra "SIN CONEXIÓN — TOCÁ PARA REINTENTAR".
+
+**Optimistic update con ediciones rápidas:** el `onMutate` guarda `ctx.prev` solo si todavía no hay un `_optimistic` flag activo. Múltiples ediciones rápidas mantienen el último ground-truth, no el penúltimo optimistic. Test E2E cubrirá este caso.
 
 ### 6.6 Vista por partido (`/predicciones/[matchId]`)
 
@@ -586,9 +655,10 @@ POSICIÓN #12 DE 187    (display 80px, accent color en el "12")
 - Click en row → drawer/sheet con perfil público (predicciones de partidos finalizados)
 
 **Refresh:**
-- TanStack Query `refetchInterval: 30_000`
+- TanStack Query `refetchInterval: 30_000` con `refetchIntervalInBackground: false` (pausa cuando tab inactiva)
+- `refetchOnWindowFocus: false` específicamente para leaderboard (ya tiene polling activo, evita ráfagas)
 - Indicador sutil pulse dot top-right cuando refresca
-- Pull-to-refresh en mobile (con `framer-motion` drag)
+- Botón explícito "Refrescar" en el header de la tabla (en vez de pull-to-refresh custom — overscroll iOS es complejo)
 
 **Por fase:** dropdown selector arriba (GROUPS, ROUND_32, etc.).
 
@@ -598,7 +668,7 @@ POSICIÓN #12 DE 187    (display 80px, accent color en el "12")
 
 - **`/ligas`**: lista de ligas del user. Card por liga con name, member count, "Ver tabla" CTA.
 - **`/ligas/crear`**: form (name, description opcional, isPublic, maxMembers). Submit → modal con código en display 80px + CTA "Compartir por WhatsApp" (link `wa.me/?text=...`).
-- **`/ligas/unirme`**: input de 6 chars estilo OTP (cada char en su propio cuadro), uppercase auto, validate regex `[A-Z0-9]{6}`. Submit → `POST /leagues/join`.
+- **`/ligas/unirme`**: input de 6 chars estilo OTP (cada char en su propio cuadro), uppercase auto, validate regex `[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}` (alfabeto exacto del backend `generateInviteCode`, sin 0/O/1/I/L). Submit → `POST /leagues/join`.
 
 ### 6.10 Perfil (`/perfil`)
 
@@ -620,6 +690,15 @@ Layout: sidebar collapsable izquierda con 9 items, header con admin info + logou
 - **Carga de resultado**: modal con dos PredictionInputs gigantes idénticos a los del usuario, botón "CONFIRMAR Y CALCULAR PUNTOS" rojo accent. Confirmación doble.
 - **Cierre de fase**: botón habilitado solo si todos los matches FINISHED. Modal mostrando ganador propuesto + monto del premio + nota.
 - **Auditoría**: tabla con filtros (entity, action, userId, date range), expandable row mostrando `changes: { before, after }` JSON formateado.
+
+**Crear usuario manual (UX específica):**
+
+Como el admin tipea la password él mismo (decisión del cliente del backend §13.8), el form `/admin/usuarios/nuevo` incluye:
+- Campo password con toggle visibility
+- Botón "Generar password aleatoria" (genera 8 chars con algorithm: 4 letras + 4 números, fácil de pasar por WhatsApp)
+- Después de submit exitoso: modal con la password en display 32px + CTA "Copiar al portapapeles" + texto "Pasale esta password al usuario por WhatsApp. No se la podemos mostrar de nuevo." → click "Listo" cierra y refresca la lista.
+
+La password queda hasheada en BD por bcrypt; el modal es la única vez que el admin la ve en plain.
 
 ## 7. Inventario de componentes clave
 
@@ -787,7 +866,19 @@ NEXT_PUBLIC_SENTRY_DSN=https://...
 8. Usuario completa el form normal
 ```
 
-**Nuevo endpoint backend requerido:** `POST /dev/simulate-webhook`. Solo activo en `NODE_ENV !== 'production'`. Bypass de firma MP, construye un body fake, despacha al handler real. Esto es trabajo del **Plan de implementación frontend Phase 0** (pre-frontend), agregar al backend.
+**Endpoint backend `/dev/simulate-webhook` ya documentado en §1.5 prerequisito #2.**
+
+**Gating del page `/dev/mock-checkout`:** la página vive en `app/dev/mock-checkout/page.tsx`. Para que NO aparezca en producción, el `page.tsx` hace early return con `notFound()` si `process.env.NEXT_PUBLIC_ENABLE_MOCK_CHECKOUT !== 'true'`:
+
+```typescript
+import { notFound } from 'next/navigation';
+export default function MockCheckoutPage() {
+  if (process.env.NEXT_PUBLIC_ENABLE_MOCK_CHECKOUT !== 'true') notFound();
+  // ...
+}
+```
+
+En producción `NEXT_PUBLIC_ENABLE_MOCK_CHECKOUT=false` → 404. Como Next.js inlinea `NEXT_PUBLIC_*` en build, la condición se resuelve estática.
 
 ### 9.3 Seed de usuarios para dev
 
@@ -859,7 +950,43 @@ const nextConfig: NextConfig = {
 };
 ```
 
-### 11.2 PWA
+### 11.2 PWA con Serwist
+
+Library elegida: **Serwist** (sucesora moderna de `next-pwa`, mantenida y compatible con Next.js 15 App Router). `next-pwa` está unmaintained.
+
+```bash
+npm install @serwist/next serwist
+```
+
+`app/sw.ts` (entry point del service worker):
+```typescript
+import { defaultCache } from "@serwist/next/worker";
+import { type SerwistGlobalConfig, Serwist } from "serwist";
+
+declare const self: ServiceWorkerGlobalScope & SerwistGlobalConfig;
+
+const serwist = new Serwist({
+  precacheEntries: self.__SW_MANIFEST,
+  skipWaiting: true,
+  clientsClaim: true,
+  navigationPreload: true,
+  runtimeCaching: defaultCache,
+});
+
+serwist.addEventListeners();
+```
+
+`next.config.ts`:
+```typescript
+import withSerwistInit from "@serwist/next";
+const withSerwist = withSerwistInit({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+});
+export default withSerwist({ /* nextConfig */ });
+```
+
+### 11.3 Manifest y assets PWA
 
 - `public/manifest.json`:
   ```json
@@ -880,16 +1007,23 @@ const nextConfig: NextConfig = {
   }
   ```
 - iOS meta tags: `apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-touch-icon`.
-- Service worker minimalista (registra cache de assets estáticos, no offline avanzado).
 - `<IosInstallHint>` que detecta `isIOS && !isStandalone` y muestra tooltip "Agregar a pantalla de inicio".
 
-### 11.3 Optimizaciones específicas
+### 11.4 Optimizaciones específicas
 
 - **Code splitting** automático por route group de App Router.
-- **Lazy load** de componentes pesados: `<TeamSelectModal>`, `<NumberPadSheet>` con `dynamic()`.
+- **Lazy load** de componentes pesados desde un client component wrapper: `<TeamSelectModal>`, `<NumberPadSheet>` con `next/dynamic` (solo invocable desde client components en Next.js 15; `ssr: false` no funciona en RSC).
 - **Imágenes**: banderas como SVG inline cuando posible (livianas), `next/image` con `priority` solo en hero.
 - **Fonts**: `font-display: swap`, preload del .woff2 display.
 - **TanStack Query devtools**: solo en development, lazy loaded.
+
+### 11.5 Sin middleware
+
+Los guards de auth se hacen client-side en los layouts de `(app)` y `(admin)`. **No usamos `middleware.ts`** de Next.js para auth. Razones:
+- El refresh cookie es httpOnly, el middleware (que corre en edge runtime) no puede validar el JWT sin agregar dependencias y complejidad.
+- El access token está en memoria del cliente, no llega al middleware.
+- El backend ya valida cada request, no hay agujero de seguridad — solo flash visual al redirect.
+- Para evitar el flash de contenido protegido, los layouts muestran skeleton hasta que `useAuth().isLoading === false`.
 
 ## 12. Deployment con Dokploy
 
@@ -951,6 +1085,19 @@ prode-frontend:
 
 - Dominio: `prode.tirofederal.com` con Let's Encrypt automático en Dokploy.
 - Backend update menor: cookies refresh con `SameSite=Lax` y `Domain=.tirofederal.com` para que viajen entre `prode.*` y `api.prode.*`.
+
+## 12.4 Logout flow
+
+`POST /auth/logout` (auth required, ya existe en backend):
+- Backend: marca el `refresh_token` actual con `revokedAt = now()`, borra cookie via `Set-Cookie: refresh_token=; Max-Age=0`, borra cookie `has_session`.
+- Frontend:
+  ```typescript
+  await api.post('auth/logout');
+  tokenStore.clear();
+  queryClient.clear();
+  window.location.href = '/';
+  ```
+- Si el POST falla (ej: backend down), igual hacemos el cleanup del lado cliente y redirect — no atrapamos al usuario en estado inconsistente.
 
 ## 13. Decisiones explícitas tomadas durante el brainstorming
 
