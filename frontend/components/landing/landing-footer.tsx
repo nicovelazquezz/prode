@@ -39,15 +39,21 @@ export function LandingFooter() {
               </p>
             )}
             {hasLinks(col) &&
-              col.links.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="block text-sm leading-loose text-[var(--color-landing-text)] transition-colors hover:text-[var(--color-landing-gold)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              col.links.map((link) => {
+                const isExternal = link.href.startsWith("http");
+                return (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    {...(isExternal
+                      ? { target: "_blank", rel: "noopener noreferrer" }
+                      : {})}
+                    className="block text-sm leading-loose text-[var(--color-landing-text)] transition-colors hover:text-[var(--color-landing-gold)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
           </div>
         ))}
       </div>

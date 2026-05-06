@@ -198,18 +198,16 @@ export const LANDING = {
       {
         title: "Contacto",
         links: [
-          { label: "WhatsApp +54 9 ...", href: "#" },
-          { label: "Instagram @clubtirofederal", href: "#" },
-          { label: "contacto@...", href: "#" },
+          {
+            label: "WhatsApp +54 9 2914 23 1087",
+            href:
+              "https://wa.me/5492914231087?text=hola%20quiero%20inscribirme%20al%20prode",
+          },
         ],
       },
       {
         title: "Prode",
-        links: [
-          { label: "Reglamento", href: "/reglamento" },
-          { label: "Términos", href: "#" },
-          { label: "Política de privacidad", href: "#" },
-        ],
+        links: [{ label: "Reglamento", href: "/reglamento" }],
       },
       {
         title: "Cuenta",
