@@ -198,6 +198,67 @@ describe('AdminUsers PATCH + reset-password (integration)', () => {
     });
   });
 
+  describe('max_users cap (T5)', () => {
+    let originalCap: string | null;
+
+    beforeAll(async () => {
+      const row = await prisma.appConfig.findUnique({
+        where: { key: 'max_users' },
+      });
+      originalCap = row?.value ?? null;
+    });
+
+    afterEach(async () => {
+      // Restaurar cap original entre cada test del bloque para no
+      // interferir con otros tests del archivo.
+      if (originalCap !== null) {
+        await prisma.appConfig.update({
+          where: { key: 'max_users' },
+          data: { value: originalCap },
+        });
+      }
+    });
+
+    it('rejects manual user creation with 409 when cap is reached', async () => {
+      // Bajar cap a la cantidad actual de USERs — el siguiente create
+      // debería rebotar con MAX_USERS_REACHED.
+      const currentCount = await prisma.user.count({ where: { role: 'USER' } });
+      await prisma.appConfig.upsert({
+        where: { key: 'max_users' },
+        create: {
+          key: 'max_users',
+          value: String(Math.max(currentCount, 1)),
+          description: 'test',
+        },
+        update: { value: String(Math.max(currentCount, 1)) },
+      });
+
+      const dni = String(89_000_000 + stamp).slice(-8);
+      const res = await request(app.getHttpServer())
+        .post('/admin/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          dni,
+          firstName: 'Over',
+          lastName: 'Cap',
+          whatsapp: `549${String(8_900_000_000 + stamp).slice(-9)}`.slice(0, 13),
+          password: 'OverCap!1',
+          paymentMethod: 'CASH',
+          amount: 10000,
+        })
+        .expect(409);
+
+      expect(res.body).toMatchObject({
+        code: 'MAX_USERS_REACHED',
+        cap: expect.any(Number),
+      });
+
+      // Verificar que NO se creó el user (DB no quedó sucia).
+      const created = await prisma.user.findUnique({ where: { dni } });
+      expect(created).toBeNull();
+    });
+  });
+
   describe('POST /admin/users/:id/reset-password', () => {
     it('rejects unauthenticated with 401', async () => {
       await request(app.getHttpServer())

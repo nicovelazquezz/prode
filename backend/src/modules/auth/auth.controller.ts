@@ -39,6 +39,7 @@ import {
   PaymentNotApprovedException,
   WhatsappAlreadyExistsException,
 } from '../../common/exceptions/domain.exceptions.js';
+import { assertUnderUserCap } from '../../common/limits/user-cap.js';
 
 const REFRESH_COOKIE = 'refresh_token';
 const SESSION_HINT_COOKIE = 'has_session';
@@ -667,6 +668,9 @@ export class AuthController {
       });
       if (!fresh) throw new InvalidCompletionTokenException();
       if (fresh.completedAt) throw new CompletionAlreadyUsedException();
+
+      // Cap global de users: tira 409 si ya estamos en max_users.
+      await assertUnderUserCap(tx);
 
       const created = await tx.user.create({
         data: {

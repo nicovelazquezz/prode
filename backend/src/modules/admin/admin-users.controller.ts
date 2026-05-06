@@ -28,6 +28,7 @@ import {
   DniAlreadyExistsException,
   WhatsappAlreadyExistsException,
 } from '../../common/exceptions/domain.exceptions.js';
+import { assertUnderUserCap } from '../../common/limits/user-cap.js';
 
 function getRequestContext(req: Request): {
   ipAddress?: string;
@@ -105,6 +106,9 @@ export class AdminUsersController {
     const passwordHash = await this.authService.hashPassword(dto.password);
 
     const result = await this.prisma.$transaction(async (tx) => {
+      // Cap global: el admin manual también gasta slots del max_users.
+      await assertUnderUserCap(tx);
+
       const user = await tx.user.create({
         data: {
           dni: dto.dni,

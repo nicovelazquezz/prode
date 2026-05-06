@@ -152,3 +152,20 @@ export class EntryCapReachedException extends ConflictException {
     });
   }
 }
+
+/**
+ * El sistema llegó al cap global de usuarios (`AppConfig.max_users`).
+ * 409 Conflict — la request es válida pero no hay slots libres.
+ * Aplica tanto al `/auth/complete-registration` (flow público MP)
+ * como al `POST /admin/users` (flow manual).
+ */
+export class MaxUsersReachedException extends ConflictException {
+  constructor(cap: number) {
+    super({
+      statusCode: 409,
+      code: 'MAX_USERS_REACHED',
+      message: `El cupo de inscripciones se llenó (${cap}). Contactá al admin del club.`,
+      cap,
+    });
+  }
+}

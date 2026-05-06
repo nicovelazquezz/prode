@@ -75,6 +75,11 @@ const APP_CONFIG = [
   // Multi-prode (v1.1): cap on how many entries a user can hold. Editable
   // from /admin/configuracion. Default 5 per spec §1 alcance.
   { key: 'max_entries_per_user', value: '5', description: 'Máximo de entradas (prodes) por usuario' },
+  // Hard cap on total `User` rows with role='USER'. Editable desde
+  // /admin/configuracion. Default 500 — el cliente confirmó "no creo
+  // que crezca más de 500". Aplica al complete-registration y al admin
+  // manual signup; el cap por entries (5) sigue independiente.
+  { key: 'max_users', value: '500', description: 'Máximo total de usuarios (role=USER) en el sistema' },
 ];
 
 async function seedScoringRules() {
