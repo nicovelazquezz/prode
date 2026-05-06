@@ -9,7 +9,11 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/src/main.js",
-    "test": "node --experimental-vm-modules --require dotenv/config node_modules/jest/bin/jest.js"
+    "test": "node --experimental-vm-modules --require dotenv/config node_modules/jest/bin/jest.js",
+    "db:seed:teams": "tsx prisma/seed-teams.ts",
+    "db:seed:matches": "tsx prisma/seed-matches.ts",
+    "db:seed:players": "tsx prisma/seed-players.ts",
+    "db:seed:all": "npm run db:seed:teams && npm run db:seed:matches && npm run db:seed:players"
   },
   "keywords": [],
   "author": "",

@@ -15,8 +15,8 @@ import { cn } from "@/lib/utils/cn";
 interface NumberPadSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  homeTeam: { name: string; fifaCode?: string };
-  awayTeam: { name: string; fifaCode?: string };
+  homeTeam: { name: string; fifaCode?: string; flagUrl?: string };
+  awayTeam: { name: string; fifaCode?: string; flagUrl?: string };
   initialScoreHome: number | null;
   initialScoreAway: number | null;
   onSave: (dto: { scoreHome: number; scoreAway: number }) => void;
@@ -118,6 +118,7 @@ export function NumberPadSheet({
           <TeamScoreRow
             label={homeTeam.name}
             fifaCode={homeTeam.fifaCode}
+            flagUrl={homeTeam.flagUrl}
             score={scoreHome}
             active={activeSide === "home"}
             onSelect={() => setActiveSide("home")}
@@ -125,6 +126,7 @@ export function NumberPadSheet({
           <TeamScoreRow
             label={awayTeam.name}
             fifaCode={awayTeam.fifaCode}
+            flagUrl={awayTeam.flagUrl}
             score={scoreAway}
             active={activeSide === "away"}
             onSelect={() => setActiveSide("away")}
@@ -177,6 +179,7 @@ export function NumberPadSheet({
 interface TeamScoreRowProps {
   label: string;
   fifaCode?: string;
+  flagUrl?: string;
   score: number | null;
   active: boolean;
   onSelect: () => void;
@@ -185,6 +188,7 @@ interface TeamScoreRowProps {
 function TeamScoreRow({
   label,
   fifaCode,
+  flagUrl,
   score,
   active,
   onSelect,
@@ -204,7 +208,7 @@ function TeamScoreRow({
       aria-pressed={active}
     >
       <div className="flex items-center gap-3 min-w-0">
-        {fifaCode ? <TeamFlag fifaCode={fifaCode} size={28} /> : null}
+        {fifaCode ? <TeamFlag fifaCode={fifaCode} src={flagUrl} size={28} /> : null}
         <span className="font-[family-name:var(--font-landing-display)] text-[20px] uppercase tracking-[0.02em] truncate text-[var(--color-landing-text)]">
           {label}
         </span>

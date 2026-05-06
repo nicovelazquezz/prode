@@ -152,7 +152,7 @@ function TeamCell({ match, side }: { match: Match; side: "home" | "away" }) {
   if (team) {
     return (
       <span className="inline-flex items-center gap-2">
-        <TeamFlag fifaCode={team.fifaCode} size={20} />
+        <TeamFlag fifaCode={team.fifaCode} src={team.flagUrl} size={20} />
         <span className="font-medium">{team.shortName}</span>
       </span>
     );

@@ -133,7 +133,7 @@ export function TeamSelectModal({
                           : "border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)] hover:border-[var(--color-landing-text)]",
                     )}
                   >
-                    <TeamFlag fifaCode={t.fifaCode} size={40} />
+                    <TeamFlag fifaCode={t.fifaCode} src={t.flagUrl} size={40} />
                     <span
                       className={cn(
                         "font-[family-name:var(--font-landing-display)] text-sm uppercase tracking-tight leading-tight text-center line-clamp-2",

@@ -136,6 +136,7 @@ export function MatchCard({
         <TeamRow
           name={homeName}
           fifaCode={home?.fifaCode}
+          flagUrl={home?.flagUrl}
           predictionScore={prediction?.scoreHome ?? null}
           finalScore={state === "finished" ? match.scoreHome : null}
           disabled={inputDisabled}
@@ -151,6 +152,7 @@ export function MatchCard({
         <TeamRow
           name={awayName}
           fifaCode={away?.fifaCode}
+          flagUrl={away?.flagUrl}
           predictionScore={prediction?.scoreAway ?? null}
           finalScore={state === "finished" ? match.scoreAway : null}
           disabled={inputDisabled}
@@ -210,6 +212,7 @@ function computeState({
 interface TeamRowProps {
   name: string;
   fifaCode?: string;
+  flagUrl?: string;
   predictionScore: number | null;
   finalScore: number | null;
   disabled: boolean;
@@ -221,6 +224,7 @@ interface TeamRowProps {
 function TeamRow({
   name,
   fifaCode,
+  flagUrl,
   predictionScore,
   finalScore,
   disabled,
@@ -231,7 +235,7 @@ function TeamRow({
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-3 min-w-0">
-        {fifaCode ? <TeamFlag fifaCode={fifaCode} size={32} /> : null}
+        {fifaCode ? <TeamFlag fifaCode={fifaCode} src={flagUrl} size={32} /> : null}
         <span className="font-[family-name:var(--font-landing-display)] text-[20px] uppercase tracking-[0.02em] leading-none truncate text-[var(--color-landing-text)]">
           {name}
         </span>

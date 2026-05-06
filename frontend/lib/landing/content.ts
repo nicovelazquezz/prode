@@ -153,7 +153,7 @@ export const LANDING = {
     items: [
       {
         q: "¿Cuándo se cargan las predicciones?",
-        a: "Las especiales (campeón, goleador, total de goles) se cargan hasta el 11 de junio a las 12:00. Los partidos se habilitan fase por fase: primero grupos, después 16avos, octavos, y así. Cada partido se cierra 1 hora antes del kickoff.",
+        a: "Las especiales (campeón, goleador, total de goles) se cargan hasta el 11 de junio a las 12:00. Los partidos se habilitan fase por fase: primero grupos, después 16avos, octavos, y así. Cada partido se cierra 10 minutos antes del kickoff.",
       },
       {
         q: "¿Puedo crear una mini-liga con mis amigos?",

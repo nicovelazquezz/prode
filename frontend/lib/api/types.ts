@@ -96,9 +96,18 @@ export interface Team {
 
 export interface Player {
   id: string;
+  /**
+   * Formato flashscore: "Apellido Nombre" (ej "Messi Lionel"). Si el
+   * frontend necesita "Nombre Apellido", reformatear en el cliente.
+   */
   fullName: string;
   teamId: string | null;
-  position: string | null;
+  /**
+   * Número de camiseta (1-99). Puede ser null en jugadores de la
+   * lista extendida cuya camiseta no está confirmada. Útil para
+   * desambiguar (ej. dos "Martinez Emiliano" con números distintos).
+   */
+  shirtNumber: number | null;
 }
 
 export interface Match {

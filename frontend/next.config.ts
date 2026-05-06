@@ -36,7 +36,7 @@ const cspParts: string[] = [
   "font-src 'self' data: https://fonts.gstatic.com",
   // flagcdn for country flags, MP for any icon/image they hand back, blob/data
   // for the SW + dynamic icon usage.
-  "img-src 'self' data: blob: https://flagcdn.com https://*.mlstatic.com https://*.mercadopago.com",
+  "img-src 'self' data: blob: https://flagcdn.com https://static.flashscore.com https://*.mlstatic.com https://*.mercadopago.com",
   // MercadoPago Checkout Pro / Brick iframe.
   "frame-src 'self' https://*.mercadopago.com https://*.mercadolibre.com",
   `connect-src 'self' ${apiConnectSrc} https://*.sentry.io https://*.ingest.sentry.io https://api.mercadopago.com`,
@@ -75,7 +75,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   images: {
-    remotePatterns: [{ protocol: "https", hostname: "flagcdn.com" }],
+    remotePatterns: [
+      { protocol: "https", hostname: "flagcdn.com" },
+      { protocol: "https", hostname: "static.flashscore.com" },
+    ],
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "date-fns"],

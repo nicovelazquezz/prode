@@ -106,8 +106,8 @@ type ItemProps = {
     scoreAway: number;
     pointsEarned: number;
     match: {
-      homeTeam: { fifaCode: string; name: string } | null;
-      awayTeam: { fifaCode: string; name: string } | null;
+      homeTeam: { fifaCode: string; name: string; flagUrl?: string } | null;
+      awayTeam: { fifaCode: string; name: string; flagUrl?: string } | null;
       homeTeamLabel: string | null;
       awayTeamLabel: string | null;
       scoreHome: number | null;
@@ -132,13 +132,13 @@ function PredictionItem({ prediction: p }: ItemProps) {
     >
       <div className="flex items-center gap-2 min-w-0">
         {p.match.homeTeam?.fifaCode ? (
-          <TeamFlag fifaCode={p.match.homeTeam.fifaCode} size={20} />
+          <TeamFlag fifaCode={p.match.homeTeam.fifaCode} src={p.match.homeTeam.flagUrl} size={20} />
         ) : null}
         <span className="font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)] truncate">
           {homeName} vs {awayName}
         </span>
         {p.match.awayTeam?.fifaCode ? (
-          <TeamFlag fifaCode={p.match.awayTeam.fifaCode} size={20} />
+          <TeamFlag fifaCode={p.match.awayTeam.fifaCode} src={p.match.awayTeam.flagUrl} size={20} />
         ) : null}
       </div>
       <div className="flex items-center gap-3 shrink-0">

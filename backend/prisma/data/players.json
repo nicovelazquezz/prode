@@ -1,0 +1,8112 @@
+[
+  {
+    "fullName": "Kovar Matej",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Chaloupek Stepan",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Coufal Vladimir",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Holes Tomas",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Hranac Robin",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Jurasek David",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Krejci Ladislav",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Vitik Martin",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Zeleny Jaroslav",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Cerv Lukas",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Darida Vladimir",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Karabec Adam",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Provod Lukas",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Sadilek Michal",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Soucek Tomas",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Sulc Pavel",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Chory Tomas",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Chytil Mojmir",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Kliment Jan",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Schick Patrik",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Koubek Miroslav",
+    "teamFifaCode": "CZE",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Hornicek Lukas",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Jedlicka Martin",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Ladra Tomas",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Visinsky Denis",
+    "teamFifaCode": "CZE",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Acevedo Carlos",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Malagon Luis",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Ochoa Guillermo",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Rangel Raul",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Aguila Eduardo",
+    "teamFifaCode": "MEX",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Alvarez Kevin",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Angulo Jesus",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Campillo Del Campo Diego",
+    "teamFifaCode": "MEX",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Gallardo Jesus",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Garza Jesus",
+    "teamFifaCode": "MEX",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Guzman Victor",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Juarez Ramon",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Montes Cesar",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Orozco Jesus",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Reyes Israel",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Sánchez Jorge",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Vasquez Johan",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "del Villar Everardo",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Alvarado Roberto",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 25
+  },
+  {
+    "fullName": "Alvarez Efrain",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Ambriz Fidel",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Castaneda Kevin",
+    "teamFifaCode": "MEX",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Chavez Garcia Mateo",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 26
+  },
+  {
+    "fullName": "Fidalgo Alvaro",
+    "teamFifaCode": "MEX",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Fimbres Iker",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Garcia Denzell",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Gonzalez Bryan",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 26
+  },
+  {
+    "fullName": "Gutierrez Brian",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Gutierrez Torres Alexis Hazael",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Ledezma Richard",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Lira Erik",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Mora Gilberto",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Pineda Orbelín",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Rodriguez Carlos",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Romo Luis",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Ruiz Marcel",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Sánchez Erick",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Vargas Obed",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Álvarez Edson Omar",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Berterame German",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Gonzalez Armando",
+    "teamFifaCode": "MEX",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Jiménez Raúl",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Lainez Diego",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Lozano Hirving",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Martinez Ayala Guillermo",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Quiñones Julián",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Ruvalcaba Jorge",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Sepúlveda Ángel Baltazar",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Vega Alexis",
+    "teamFifaCode": "MEX",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Aguirre Javier",
+    "teamFifaCode": "MEX",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Jo Hyeon-Woo",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Kim Seung-Gyu",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Cho Yu-Min",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Kim Ju-Sung",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Kim Min-Jae",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Kim Moon-Hwan",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Lee Han-Beom",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Lee Myung-Jae",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Lee Tae-Seok",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Seol Young-Woo",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Bae Jun-Ho",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Eom Ji-Sung",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Hong Hyun-Seok",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Kim Jin-gyu",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Lee Jae-Sung",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Lee Kang-In",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Paik Seung-Ho",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Park Jin-Seob",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Won Du-Jae",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Yang Hyun-Jun",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Cho Gue-Sung",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Hwang Hee-Chan",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Oh Hyeon-Gyu",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Son Heung-Min",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Yang Min-Hyuk",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Hong Myung-Bo",
+    "teamFifaCode": "KOR",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Song Bum-Keun",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Kim Tae-Hyeon",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 26
+  },
+  {
+    "fullName": "Castrop Jens",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Kwon Hyeok-Kyu",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Seo Min-Woo",
+    "teamFifaCode": "KOR",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Williams Ronwen",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Kabini Samukelo",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Mbokazi Mbekezile",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Modiba Aubrey",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Mudau Khuliso",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Ndamane Khulumani",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Ngezana Siyabonga",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Sibisi Nkosinathi",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Adams Jayden",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Aubaas Bathusi Jurry",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Mbatha Thalente",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Mbule Sipho",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Mokoena Teboho",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Sithole Sphephelo",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Zwane Themba",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Appollis Oswin",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Foster Lyle",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Hlongwane Bongokuhle",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Makgopa Evidence",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Mofokeng Relebohile",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Mokwana Elias",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Moremi Tshepang",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Nkota Mohau",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Broos Hugo",
+    "teamFifaCode": "RSA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Chaine Sipho",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Goss Ricardo",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Leaner Renaldo",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Okon Ime",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Smith Tylon",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Matuludi Tholo",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 25
+  },
+  {
+    "fullName": "Campbell Shandre",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "Maseko Thapelo",
+    "teamFifaCode": "RSA",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Vasilj Nikola",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Burnic Dzenis",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Dedic Amar",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Hadzikadunic Dennis",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Katic Nikola",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Kolasinac Sead",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Muharemovic Tarik",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Mujakic Nihad",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Radeljic Stjepan",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Basic Ivan",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Gigovic Armin",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Hadziahmetovic Amir",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Sunjic Ivan",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Tahirovic Benjamin",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Alajbegovic Kerim",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Bajraktarevic Esmir",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Bazdar Samed",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Demirovic Ermedin",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Dzeko Edin",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Memic Amar",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Tabakovic Haris",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Barbarez Sergej",
+    "teamFifaCode": "BIH",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Hadzikic Osman",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Zlomislic Martin",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Celik Nidal",
+    "teamFifaCode": "BIH",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Crepeau Maxime",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Gavran Luka",
+    "teamFifaCode": "CAN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Goodman Owen",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Pantemis James",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "St.Clair Dayne",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Abatneh Noah Abraham Sewonet",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Bassong Zorhan",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Cornelius Derek",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "De Fougerolles Luc",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Laryea Richie",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Marshall-Rutty Jahkeele",
+    "teamFifaCode": "CAN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Miller Kamal",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Waterman Joel",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Ahmed Ali",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Buchanan Tajon",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Choiniere Mathieu",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Eustaquio Stephen",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Flores Marcelo",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Henry Malik",
+    "teamFifaCode": "CAN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Kone Ismael",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Osorio Jonathan",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Priso Ralph",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Saliba Nathan",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Sigur Niko",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "de Brienne Matteo",
+    "teamFifaCode": "CAN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Aiyenero Marius",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Bair Theo",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Coimbra Tiago",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "David Jonathan",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "David Promise",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "Hoilett Junior",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Jebbison Daniel",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Larin Cyle",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Millar Liam",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Nelson Jayden",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 25
+  },
+  {
+    "fullName": "Oluwaseyi Tanitoluwa",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Pepple Aribim",
+    "teamFifaCode": "CAN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Russell-Rowe Jacen",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Shaffelburg Jacob",
+    "teamFifaCode": "CAN",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Marsch Jesse",
+    "teamFifaCode": "CAN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Brady Chris",
+    "teamFifaCode": "USA",
+    "shirtNumber": 26
+  },
+  {
+    "fullName": "Celentano Roman",
+    "teamFifaCode": "USA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Freese Matt",
+    "teamFifaCode": "USA",
+    "shirtNumber": 25
+  },
+  {
+    "fullName": "Klinsmann Jonathan",
+    "teamFifaCode": "USA",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Schulte Patrick",
+    "teamFifaCode": "USA",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Turner Matt",
+    "teamFifaCode": "USA",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Dest Sergiño",
+    "teamFifaCode": "USA",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Freeman Alexander",
+    "teamFifaCode": "USA",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "McKenzie Mark",
+    "teamFifaCode": "USA",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Ream Tim",
+    "teamFifaCode": "USA",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Richards Chris",
+    "teamFifaCode": "USA",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Robinson Antonee",
+    "teamFifaCode": "USA",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Robinson Miles",
+    "teamFifaCode": "USA",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Scally Joe",
+    "teamFifaCode": "USA",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Tolkin John",
+    "teamFifaCode": "USA",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Trusty Auston",
+    "teamFifaCode": "USA",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Aaronson Brenden",
+    "teamFifaCode": "USA",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Berhalter Sebastian",
+    "teamFifaCode": "USA",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Cardoso Johnny",
+    "teamFifaCode": "USA",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Luna Diego",
+    "teamFifaCode": "USA",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "McKennie Weston",
+    "teamFifaCode": "USA",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Morris Aidan",
+    "teamFifaCode": "USA",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Reyna Giovanni",
+    "teamFifaCode": "USA",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Roldan Cristian",
+    "teamFifaCode": "USA",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Tessmann Tanner",
+    "teamFifaCode": "USA",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Tillman Malik",
+    "teamFifaCode": "USA",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Tillman Timothy",
+    "teamFifaCode": "USA",
+    "shirtNumber": 26
+  },
+  {
+    "fullName": "Weah Timothy",
+    "teamFifaCode": "USA",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Agyemang Patrick",
+    "teamFifaCode": "USA",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "Arfsten Max",
+    "teamFifaCode": "USA",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Balogun Folarin",
+    "teamFifaCode": "USA",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Pepi Ricardo",
+    "teamFifaCode": "USA",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Pulisic Christian",
+    "teamFifaCode": "USA",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Wright Haji",
+    "teamFifaCode": "USA",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Pochettino Mauricio",
+    "teamFifaCode": "USA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Fernandez Roberto",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Gill Orlando",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Alderete Omar",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Alonso Junior",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Caceres Juan",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Fabian Balbuena",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Gómez Gustavo",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Riveros Blas",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Sandez Agustin",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Velazquez Gustavo",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Bobadilla Damian",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Enciso Julio",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Galarza Matias",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Gomez Diego",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Kaku",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Ojeda Braian",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Sosa Ramon",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Almirón Miguel",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Arce Barrios Alex Adrian",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Avalos Gabriel",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Martinez Ronaldo",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Sanabria Antonio",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Achucarro Jorge",
+    "teamFifaCode": "PAR",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Alfaro Gustavo",
+    "teamFifaCode": "PAR",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Olveira Gaston",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Benitez Alan",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Duarte Alexis",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "León Diego",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Maidana Alexandro",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Canale Dominguez Jose",
+    "teamFifaCode": "PAR",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Mauricio",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Romero Lucas",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Caballero Gustavo",
+    "teamFifaCode": "PAR",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Abunada Mahmoud",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Barsham Meshaal",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Ellethy Shehab",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Al Amin Homam",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Al Brake Sultan",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Al Hussain Al Hashmi",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Al Oui Ayoub",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Aymen Yousef",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Gaber Jassem",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Lucas Mendes",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Madibo Assim Omer",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Al Mannai Mohammad",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Ali",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Fathi Ahmed",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Hatem Abdulaziz",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Salman Tarek",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Waad Mohammed",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Afif Akram",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Edmilson Junior",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Gouda Mohamed Khaled",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Muntari Mohammed",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Lopetegui Julen",
+    "teamFifaCode": "QAT",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Laye Gueye",
+    "teamFifaCode": "QAT",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Kobel Gregor",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Akanji Manuel",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Bajrami Adrián",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Elvedi Nico",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Jaquez Luca",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Muheim Miro",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Rodríguez Ricardo",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Widmer Silvan",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Aebischer Michel",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Freuler Remo",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Manzambi Johan",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Sohm Simon",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Sow Djibril",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Vargas Ruben",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Xhaka Granit",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Zakaria Denis",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Embolo Breel",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Fassnacht Christian",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Itten Cedric",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Ndoye Dan",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Rieder Fabian",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Schmidt Isaac",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Zeqiri Andi",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Yakin Murat",
+    "teamFifaCode": "SUI",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Keller Marvin",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Mvogo Yvon",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Amenda Aurele",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Cömert Eray",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Omeragic Becir",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Jashari Ardon",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Monteiro Joel",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Sanches Alvyn",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Sierro Vincent",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Okafor Noah",
+    "teamFifaCode": "SUI",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Bento",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Ederson",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "A. Sandro",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Caio Henrique",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Danilo",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Fabricio Bruno",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Gabriel",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Marquinhos",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Roger Ibañez",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Santos Douglas",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Wesley Franca",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Andrey Santos",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Bruno Guimaraes",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Casemiro",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Lucas Paqueta",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Cunha Matheus",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Endrick",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Estêvão",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Joao Pedro",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Luiz Henrique",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Martinelli Gabriel",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Raphinha",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Richarlison",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Rodrygo",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Vinicius Junior",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Ancelotti Carlo",
+    "teamFifaCode": "BRA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Hugo Souza",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "John Victor",
+    "teamFifaCode": "BRA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Bremer",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 25
+  },
+  {
+    "fullName": "Eder Militao",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Kaiki",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Leo Pereira",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Luciano Juba",
+    "teamFifaCode": "BRA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Paulo Henrique",
+    "teamFifaCode": "BRA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Vitor Reis",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Danilo",
+    "teamFifaCode": "BRA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Fabinho",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Gabriel Sara",
+    "teamFifaCode": "BRA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Rayan",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Thiago Igor",
+    "teamFifaCode": "BRA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Vitor Roque",
+    "teamFifaCode": "BRA",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Bono",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Aguerd Nayef",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Chibi Mohamed",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "El Karouani Souffian",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "El Yamiq Jawad",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Hakimi Achraf",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Mazraoui Noussair",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Riad Chadi",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Adli Amine",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Amrabat Sofyan",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Belammari Youssef",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 28
+  },
+  {
+    "fullName": "Díaz Brahim",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "El Aynaoui Neil",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "El Khannouss Bilal",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Ounahi Azzedine",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Saibari Ismael",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Targhalline Oussama",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Akhomach Ilias",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Ben Seghir Eliesse",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "El Kaabi Ayoub",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "En-Nesyri Youssef",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Ezzalzouli Abde",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Igamane Hamza",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Rahimi Soufiane",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Talbi Chemsdine",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Ouahbi Mohamed",
+    "teamFifaCode": "MAR",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Al Harrar Mehdi",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Benabid El Mehdi",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Munir",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Ait Boudlal Abdelhamid",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 27
+  },
+  {
+    "fullName": "Baouf Ismael",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Diop Issa",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "El Ouahdi Zakaria",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Halhal Redouane",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Salah-Eddine Anass",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 26
+  },
+  {
+    "fullName": "Bounida Rayane",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "El Mourabet Samir",
+    "teamFifaCode": "MAR",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Hrimat Mohamed",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Yassine Gessime",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Zabiri Yassir",
+    "teamFifaCode": "MAR",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Gordon Craig",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Gunn Angus",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Hanley Grant",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Hendry Jack",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Hickey Aaron",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "McKenna Scott",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Ralston Anthony",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Robertson Andrew",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Souttar John",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Tierney Kieran",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Christie Ryan",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Ferguson Lewis",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Gilmour Billy",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "McGinn John",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "McLean Kenny",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "McTominay Scott",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Miller Lennon",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Adams Che",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Doak Ben",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Dykes Lyndon",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Hirst George",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Shankland Lawrence",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Clarke Steve",
+    "teamFifaCode": "SCO",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Bain Scott",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Kelly Liam",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Hyam Dominic",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "McCrorie Ross",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Patterson Nathan",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Barron Connor",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Curtis Findlay",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Irving Andrew",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Conway Tommy",
+    "teamFifaCode": "SCO",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Ryan Mathew",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Behich Aziz",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Bos Jordan",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Burgess Cameron",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Circati Alessandro",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Geria Jason",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Rowles Kye",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Degenek Milos",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Hrustic Ajdin",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "McGree Riley",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "O'Neill Aiden",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Yazbek Patrick",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Boyle Martin",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Irankunda Néstor",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Mabil Awer",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Metcalfe Connor",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Velupillay Nishan",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Popovic Tony",
+    "teamFifaCode": "AUS",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Beach Patrick",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Izzo Paul",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Herrington Lucas",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Italiano Jacob",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Okon-Engstler Paul",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Robertson Alex",
+    "teamFifaCode": "AUS",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Trewin Kai",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Juric Deni",
+    "teamFifaCode": "AUS",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Suto Ante",
+    "teamFifaCode": "AUS",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Duverger Josue",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Pierre Alexandre",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Placide Johnny",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Ade Ricardo",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Arcus Carlens",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Delcroix Hannes",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Duverne Jean-Kevin",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Experience Martin",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Lacroix Duke",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Metusala Garven-Michee",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Paugain Wilguens",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "Thermoncy Keeto",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Attys Christopher",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Bellegarde Jean-Ricner",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Jean Jacques Danley",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Pierre Leverton",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Sainte Carl Fred",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Casimir Josue",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Deedson Louicius",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Etienne Derrick",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Fortune Yassin",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Lambese Stephane",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Nazon Duckens",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Pacius Woobens",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Pierrot Frantzdy",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Providence Ruben",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Migné Sébastien",
+    "teamFifaCode": "HAI",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Pierre Delentz",
+    "teamFifaCode": "HAI",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Pierre Woodensky Olivier",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Isidor Wilson",
+    "teamFifaCode": "HAI",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Bayindir Altay",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Cakir Ugurcan",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Akaydin Samet",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Ayhan Kaan",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Bardakci Abdulkerim",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Demiral Merih",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Elmali Eren",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Kabak Ozan",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Kadioglu Ferdi",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Muldur Mert",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Çelik Zeki",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Aydin Oguz",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Calhanoglu Hakan",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Eskihellac Mustafa",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Güler Arda",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Karazor Atakan",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Kokcu Orkun",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Ozcan Salih",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Yuksek Ismail",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Akgun Yunus",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Akturkoglu Kerem",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Gul Deniz",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Kahveci Irfan Can",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Yildiz Kenan",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Yilmaz Baris Alper",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Montella Vincenzo",
+    "teamFifaCode": "TUR",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Gunok Mert",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Simsir Aral",
+    "teamFifaCode": "TUR",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Baumann Oliver",
+    "teamFifaCode": "GER",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Anton Waldemar",
+    "teamFifaCode": "GER",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Brown Nathaniel",
+    "teamFifaCode": "GER",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Raum David",
+    "teamFifaCode": "GER",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Rüdiger Antonio",
+    "teamFifaCode": "GER",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Schlotterbeck Nico",
+    "teamFifaCode": "GER",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Tah Jonathan",
+    "teamFifaCode": "GER",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Thiaw Malick",
+    "teamFifaCode": "GER",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Baku Ridle",
+    "teamFifaCode": "GER",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Goretzka Leon",
+    "teamFifaCode": "GER",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Gross Pascal",
+    "teamFifaCode": "GER",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Kimmich Joshua",
+    "teamFifaCode": "GER",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Nmecha Felix",
+    "teamFifaCode": "GER",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Ouedraogo Assan",
+    "teamFifaCode": "GER",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Pavlovic Aleksandar",
+    "teamFifaCode": "GER",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Schade Kevin",
+    "teamFifaCode": "GER",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Stiller Angelo",
+    "teamFifaCode": "GER",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Wirtz Florian",
+    "teamFifaCode": "GER",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Adeyemi Karim",
+    "teamFifaCode": "GER",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Burkardt Jonathan",
+    "teamFifaCode": "GER",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Gnabry Serge",
+    "teamFifaCode": "GER",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Leweling Jamie",
+    "teamFifaCode": "GER",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Sané Leroy",
+    "teamFifaCode": "GER",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Woltemade Nick",
+    "teamFifaCode": "GER",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Nagelsmann Julian",
+    "teamFifaCode": "GER",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Dahmen Finn",
+    "teamFifaCode": "GER",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Nubel Alexander",
+    "teamFifaCode": "GER",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Vagnoman Josha",
+    "teamFifaCode": "GER",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "El Mala Said",
+    "teamFifaCode": "GER",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Karl Lennart",
+    "teamFifaCode": "GER",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Stach Anton",
+    "teamFifaCode": "GER",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Fuhrich Chris",
+    "teamFifaCode": "GER",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Havertz Kai",
+    "teamFifaCode": "GER",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Undav Deniz",
+    "teamFifaCode": "GER",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Room Eloy",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Bacuna Leandro",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Bazoer Riechedly",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "Brenet Joshua",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Floranus Sherel",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Gaari Jurien",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Martha Arjany",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Noslin Tyrese",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Obispo Armando",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Sambo Shurandy",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "van Eijma Roshon",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Comenencia Livano",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Felida Kevin",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Kuwas Brandley",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Roemeratoe Godfried",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Antonisse Jeremy",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Bacuna Juninho",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Chong Tahith",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Gorre Kenji",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Hansen Sontje",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Kastaneer Gervane",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Locadia Jurgen",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Margaritha Jearl",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Rutten Fred",
+    "teamFifaCode": "CUW",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Bodak Tyrick",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Doornbusch Trevor",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Fonville Deveron",
+    "teamFifaCode": "CUW",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Flekken Mark",
+    "teamFifaCode": "NED",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Verbruggen Bart",
+    "teamFifaCode": "NED",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Aké Nathan",
+    "teamFifaCode": "NED",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Dumfries Denzel",
+    "teamFifaCode": "NED",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Geertruida Lutsharel",
+    "teamFifaCode": "NED",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Timber Jurrien",
+    "teamFifaCode": "NED",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "de Ligt Matthijs",
+    "teamFifaCode": "NED",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "de Vrij Stefan",
+    "teamFifaCode": "NED",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "van Dijk Virgil",
+    "teamFifaCode": "NED",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "van Hecke Jan Paul",
+    "teamFifaCode": "NED",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "van de Ven Micky",
+    "teamFifaCode": "NED",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Frimpong Jeremie",
+    "teamFifaCode": "NED",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Gravenberch Ryan",
+    "teamFifaCode": "NED",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Reijnders Tijjani",
+    "teamFifaCode": "NED",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Schouten Jerdy",
+    "teamFifaCode": "NED",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Simons Xavi",
+    "teamFifaCode": "NED",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Timber Quinten",
+    "teamFifaCode": "NED",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Valente Luciano",
+    "teamFifaCode": "NED",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "de Jong Frenkie",
+    "teamFifaCode": "NED",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Depay Memphis",
+    "teamFifaCode": "NED",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Emegha Emmanuel",
+    "teamFifaCode": "NED",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Gakpo Cody",
+    "teamFifaCode": "NED",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Kluivert Justin",
+    "teamFifaCode": "NED",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Lang Noa",
+    "teamFifaCode": "NED",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Malen Donyell",
+    "teamFifaCode": "NED",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Weghorst Wout",
+    "teamFifaCode": "NED",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Koeman Ronald",
+    "teamFifaCode": "NED",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Bijlow Justin",
+    "teamFifaCode": "NED",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Roefs Robin",
+    "teamFifaCode": "NED",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Hato Jorrel",
+    "teamFifaCode": "NED",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Koopmeiners Teun",
+    "teamFifaCode": "NED",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Smit Kees",
+    "teamFifaCode": "NED",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Brobbey Brian",
+    "teamFifaCode": "NED",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Osako Keisuke",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Suzuki Zion",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Hashioka Daiki",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Itakura Ko",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Ito Hiroki",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Seko Ayumu",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Sugawara Yukinari",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Suzuki Junnosuke",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Taniguchi Shogo",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Watanabe Tsuyoshi",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Doan Ritsu",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Endo Wataru",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Fujita Joel",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Kamada Daichi",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Sano Kaishu",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Sano Kodai",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Sato Ryunosuke",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Tanaka Ao",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Ito Junya",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Kubo Takefusa",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Machino Shuto",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Maeda Daizen",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Minamino Takumi",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Mitoma Kaoru",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Nakamura Keito",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Ogawa Koki",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Suzuki Yuito",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Ueda Ayase",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Moriyasu Hajime",
+    "teamFifaCode": "JPN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Hayakawa Tomoki",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Kokubo Leo",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Nozawa Taishi",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Ando Tomoya",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Kitano Sota",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Goto Keisuke",
+    "teamFifaCode": "JPN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Shiogai Kento",
+    "teamFifaCode": "JPN",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Fofana Yahia",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Lafont Alban",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Agbadou Emmanuel",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Akpa Clement",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Boly Willy",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Diomandé Ousmane",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Doue Guela",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Gbamin Jean-Philippe",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 25
+  },
+  {
+    "fullName": "Konan Ghislain",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Kossounou Odilon",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Ndicka Evan",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Operi Christopher",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Singo Wilfried",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Zohouri Armel",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Fofana Seko",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Kessie Franck",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Sangaré Ibrahim",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Seri Jean",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Toure Bazoumana",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "Adingra Simon",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Bayo Vakoun Issouf",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Diakite Oumar",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Diallo Amad",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Diomandé Yan",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 26
+  },
+  {
+    "fullName": "Guessand Evann",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Guiagon Parfait",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Haller Sebastien",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Krasso Jean-Philippe",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Pépé Nicolas",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Fae Emerse",
+    "teamFifaCode": "CIV",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Kone Mohamed",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Inao Oulai Christ",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Godo Martial",
+    "teamFifaCode": "CIV",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Traore Benie",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "Wahi Elye",
+    "teamFifaCode": "CIV",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Johansson Viktor",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Nordfeldt Kristoffer",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Widell Zetterstrom Jacob",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Gudmundsson Gabriel",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Hien Isak",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Krafth Emil",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Lagerbielke Gustaf",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Lindelof Victor",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Starfelt Carl",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Ayari Yasin",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Bergvall Lucas",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Holm Emil",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Johansson Herman",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Karlström Jesper",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Larsson Hugo",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Lundgren Gustav",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Svanberg Mattias",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Svensson Daniel",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Zeneli Besfort",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Bardghji Roony",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Bernhardsson Alexander",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Elanga Anthony",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Gyökeres Viktor",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Isak Alexander",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Nygren Benjamin",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Potter Graham",
+    "teamFifaCode": "SWE",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Ellborg Melker",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Tornqvist Noel",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Eriksson Victor",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Smith Eric",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Stroud Elliot",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Ali Taha",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Nilsson Gustaf",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Swedberg Williot",
+    "teamFifaCode": "SWE",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Galindez Hernan",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Ramirez Moises",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Valle Gonzalo",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Estupiñán Pervis",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Hincapie Piero",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Hurtado Andres",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "Medina Yaimar",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Ordóñez Joel",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Pacho Willian",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Preciado Angelo",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Ramírez Cristian",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Realpe Leonardo",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Torres Felix",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Alcivar Macias Jordy Jose",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Caicedo Moisés",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Castillo Denil",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Franco Alan",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Mercado Patrik",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Paez Kendry",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Rodriguez Kevin",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Vite Pedro",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Yeboah John",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Angulo Nilson",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Caicedo Jordy",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Campana Leonardo",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Corozo Alman Janner Hitcler",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Mercado John",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Minda Alan",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Plata Gonzalo",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Valencia Enner",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Beccacece Sebastián",
+    "teamFifaCode": "ECU",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Cabezas David",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Loor Cristhian",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Porozo Vernaza Jackson Gabriel",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Valencia Anthony",
+    "teamFifaCode": "ECU",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Jeremy Arevalo",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Legendre Elias",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Ramirez Leon Bryan Josias",
+    "teamFifaCode": "ECU",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Vozinha",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Borges Diney",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Lopes Cabral Sidny",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Lopes Roberto",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Moreira Steven",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Pina Wagner",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Arcanjo Telmo",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Duarte Deroy",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Duarte Laros",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Joao Paulo",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Lenini Kevin",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Semedo Yannick",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Da Costa Nuno",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Jovane",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Livramento Dailon",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Mendes Ryan",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Rodrigues Garry",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Semedo Willy",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Leitao Brito Pedro",
+    "teamFifaCode": "CPV",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Rosa Marcio",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "dos Santos Carlos Joaquim",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Pires Kelvin",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Soares Jorginho",
+    "teamFifaCode": "CPV",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Mendes Jordan",
+    "teamFifaCode": "CPV",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Santos Ayoni",
+    "teamFifaCode": "CPV",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Domingos Fabio",
+    "teamFifaCode": "CPV",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Ieltsin Camoes",
+    "teamFifaCode": "CPV",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Ben Said Bechir",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Dahmen Aymen",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Abdi Ali",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Bronn Dylan",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Ghandri Nader",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Meriah Yassine",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Neffati Moutaz",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Talbi Montassar",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Valery Yan",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Belhadj Mohamed",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Ben Ouanes Mortadha",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Ben Romdhane Mohamed",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Gharbi Ismael",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Mejbri Hannibal",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Saad Elias",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Sassi Ferjani",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Skhiri Ellyes",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Slimane Anis",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Tka Houssem",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 25
+  },
+  {
+    "fullName": "Achouri Elias",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Chaouat Firas",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Jaziri Seifeddine",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 27
+  },
+  {
+    "fullName": "Ltaief Sayfallah",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Mastouri Hazem",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Sliti Naim",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Tounekti Sebastian",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 26
+  },
+  {
+    "fullName": "Lamouchi Sabri",
+    "teamFifaCode": "TUN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Trabelsi Sami",
+    "teamFifaCode": "TUN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Abdelmouhib Chamakh",
+    "teamFifaCode": "TUN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Ben Hessen Sabri",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Farhati Noureddine",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Arous Adem",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "Ben Ali Mohamed",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Ben Hamida Mohamed",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Chikhaoui Raed",
+    "teamFifaCode": "TUN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Ghram Alaa",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Maaloul Ali",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Rekik Omar",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Zaalouni Ghaith",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Ben Farhat Louey",
+    "teamFifaCode": "TUN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Khedira Rani",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Ayari Khalil",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Ben Ali Omar",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Elloumi Rayan",
+    "teamFifaCode": "TUN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Saidi Anisse",
+    "teamFifaCode": "TUN",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Simón Unai",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Cubarsí Pau",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Cucurella Marc",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Grimaldo Alejandro",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Huijsen Dean",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Laporte Aymeric",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Llorente Marcos",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Porro Pedro",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Vivian Dani",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Barrios Pablo",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Fermín",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Fornals Pablo",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "García Aleix",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Merino Mikel",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Olmo Dani",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Pedri",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Rodri",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Ruiz Fabián",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Zubimendi Martín",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Baena Álex",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Iglesias Borja",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Lamine Yamal",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Oyarzabal Mikel",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Pino Yeremy",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Samu",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Torres Ferran",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "de la Fuente Luis",
+    "teamFifaCode": "ESP",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "García Joan",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Raya David",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Remiro Álex",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Mosquera Cristian",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Soler Carlos",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Barrenetxea Ander",
+    "teamFifaCode": "ESP",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Muñoz Víctor",
+    "teamFifaCode": "ESP",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Lammens Senne",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Sels Matz",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Castagne Timothy",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "De Cuyper Maxim",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "De Winter Koni",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Debast Zeno",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Mechele Brandon",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Meunier Thomas",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Seys Roberto",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Theate Arthur",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "De Bruyne Kevin",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "De Ketelaere Charles",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Moreira Diego",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Onana Amadou",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Raskin Nicolas",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Saelemaekers Alexis",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Tielemans Youri",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Vanaken Hans",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Vanhoutte Charles",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Witsel Axel",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Doku Jeremy",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Lukebakio Dodi",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Openda Lois",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Trossard Leandro",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Vermant Romeo",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Buffel Thomas",
+    "teamFifaCode": "BEL",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Garcia Rudi",
+    "teamFifaCode": "BEL",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Martens Maarten",
+    "teamFifaCode": "BEL",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Penders Mike",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Vandevoordt Maarten",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Ngoy Nathan",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "De Cat Nathan",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Godts Mika",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Stassin Lucas",
+    "teamFifaCode": "BEL",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "El Shenawy Mohamed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Shobeir Oufa",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 26
+  },
+  {
+    "fullName": "Sobhi Mohamed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Abdelmaguid Hossam",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Abdelmonem Mohamed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Eid Ahmed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "Fatouh Ahmed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Hamdi Mohamed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Hany Mohamed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Ibrahim Yasser",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Rabia Rami",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Sobhi Khaled",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Ashour Emam",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Attia Marwan",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Fathy Hamdi",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Kouka Ahmed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Lasheen Mohanad",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Saber Mahmoud",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 27
+  },
+  {
+    "fullName": "Shehata Mohamed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Trezeguet",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Adel Ibrahim",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Faisal Osama",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Fathi Mostafa",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Marmoush Omar",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Mostafa Mohamed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Salah Mohamed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Zizo",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 25
+  },
+  {
+    "fullName": "Hassan Hossam",
+    "teamFifaCode": "EGY",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Alaa Mohamed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "El Shenawy Ahmed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Soliman El Mahdi",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Ismail Mohamed",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 28
+  },
+  {
+    "fullName": "Alaa Tarek",
+    "teamFifaCode": "EGY",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Issa Islam",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Hassan Haissem",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Mansy Nasser",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Mohsen Salah",
+    "teamFifaCode": "EGY",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Al Aqidi Nawaf",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Al Kassar Ahmed Ali",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Al Owais Mohammed",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Abdulhamid Saud",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Abdulrahman Boushal Nawaf Mashari",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Al Amri Abdulelah",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Hamidou Rayan Hamed",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Kadesh Hassan",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Lajami Ali",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Majrashi Ali",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Tambakti Hassan",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Thakri Jehad",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Abu Al Shamat Saleh",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Al Ammar Turki",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Al Dawsari Nasser",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Al Dawsari Salem",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Al Johani Ziyad",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Al Juwayr Musab",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Al Khaibari Abdullah",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Kanno Mohamed",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Al Buraikan Firas",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Al Hamdan Abdullah",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Al Oboud Abdulrahman",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Al Sahafi Marwan",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Al Shehri Saleh",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Yahya Ayman",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Donis Georgios",
+    "teamFifaCode": "KSA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Al Najjar Raghed",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Al Rubaie Mohammed",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Al Sanbi Abdulrahman",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Al Ahmad Waleed",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Al Dawsari Khalifah",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Al Mufarrij Muteb",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Al Yami Mohammed",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Sulaiman Mohammed",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Abu Al Shamat Mohammed",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Al Faraj Salman",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Al Hawsawi Murad",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Al Majhad Mohammed",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Mahzari Mohammed",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Masoud Naif",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Al Aliwa Abdulaziz",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Al Ghannam Khalid",
+    "teamFifaCode": "KSA",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Mandash Sultan",
+    "teamFifaCode": "KSA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Crocombe Max",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Paulsen Alex",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Bindon Tyler",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "De Vries Francis",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Payne Tim",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Surman Finn",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Bell Joe",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "McCowatt Callum",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Rufer Alex",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Stamenic Marko",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Barbarouses Kosta",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Just Elijah Henry",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Old Benjamin",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Rogerson Logan",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Waine Ben",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Woud Michael",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Elliot Callan",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "McGarry James",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Tuiloma Bill",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Bayliss Lachlan",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "De Jong Andre",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Thomas Ryan",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Randall Jesse",
+    "teamFifaCode": "NZL",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Beiranvand Alireza",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Hosseini Hossein",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Niazmand Payam",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Ghorbani Mohammad",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 26
+  },
+  {
+    "fullName": "Hajsafi Ehsan",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Hardani Saleh",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Kanaani Hossein",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Khalilzadeh Shoja",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Mohammadi Milad",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Nemati Ali",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Rezaeian Ramin",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Yousefi Aria",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Ezatolahi Saeid",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Ghoddos Saman",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Gholizadeh Ali",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Mohebi Mohammadmehdi",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 25
+  },
+  {
+    "fullName": "Noorafkan Omid",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Razzaghinia Amirmohammad",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Alipour Ali",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Hashemnejad Mehdi",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Hosseinzadeh Amirhossein",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Jahanbakhsh Alireza",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Moghanlou Shahriyar",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "Mohebi Mohammad",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 27
+  },
+  {
+    "fullName": "Taremi Mehdi",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Ghalenoei Amir",
+    "teamFifaCode": "IRN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Esmaeilifar Danial",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Hosseini Majid",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Habibinezhad Hadi",
+    "teamFifaCode": "IRN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Koushki Alireza",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Mahmoudi Amirhossein",
+    "teamFifaCode": "IRN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Tikdari Mehdi",
+    "teamFifaCode": "IRN",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Mele Santiago",
+    "teamFifaCode": "URU",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Rochet Sergio",
+    "teamFifaCode": "URU",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Araujo Ronald",
+    "teamFifaCode": "URU",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Bueno Santiago",
+    "teamFifaCode": "URU",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Caceres Sebastian",
+    "teamFifaCode": "URU",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Giménez José María",
+    "teamFifaCode": "URU",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Olivera Mathías",
+    "teamFifaCode": "URU",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Piquerez Joaquin",
+    "teamFifaCode": "URU",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Rodriguez Jose",
+    "teamFifaCode": "URU",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Varela Guillermo",
+    "teamFifaCode": "URU",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Viña Matías",
+    "teamFifaCode": "URU",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Bentancur Rodrigo",
+    "teamFifaCode": "URU",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Fonseca Nicolas",
+    "teamFifaCode": "URU",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Martínez Emiliano",
+    "teamFifaCode": "URU",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Nández Nahitan",
+    "teamFifaCode": "URU",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Ugarte Manuel",
+    "teamFifaCode": "URU",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Valverde Federico",
+    "teamFifaCode": "URU",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Zalazar Martinez Rodrigo",
+    "teamFifaCode": "URU",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "de Arrascaeta Giorgian",
+    "teamFifaCode": "URU",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "de la Cruz Nicolas",
+    "teamFifaCode": "URU",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Aguirre Rodrigo",
+    "teamFifaCode": "URU",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Araújo Maximiliano",
+    "teamFifaCode": "URU",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Canobbio Agustin",
+    "teamFifaCode": "URU",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Núñez Darwin",
+    "teamFifaCode": "URU",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Pellistri Facundo",
+    "teamFifaCode": "URU",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Rodriguez Brian",
+    "teamFifaCode": "URU",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Rodriguez Luciano",
+    "teamFifaCode": "URU",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Torres Facundo",
+    "teamFifaCode": "URU",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Viñas Federico",
+    "teamFifaCode": "URU",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Álvarez Agustín",
+    "teamFifaCode": "URU",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Bielsa Marcelo",
+    "teamFifaCode": "URU",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Fiermarin Cristopher",
+    "teamFifaCode": "URU",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Martinez Kevin",
+    "teamFifaCode": "URU",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Muslera Fernando",
+    "teamFifaCode": "URU",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Homenchenko Santiago",
+    "teamFifaCode": "URU",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Sanabria Juan",
+    "teamFifaCode": "URU",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Laquintana Ignacio",
+    "teamFifaCode": "URU",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Chevalier Lucas",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Maignan Mike",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Digne Lucas",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Gusto Malo",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Hernández Lucas",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Hernández Theo",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Konaté Ibrahima",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Koundé Jules",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Saliba William",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Upamecano Dayot",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Camavinga Eduardo",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Cherki Rayan",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Kanté N'Golo",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Koné Manu",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Olise Michael",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Rabiot Adrien",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Tchouaméni Aurélien",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Thuram Khephren",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Zaire-Emery Warren",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Akliouche Maghnes",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Barcola Bradley",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Dembélé Ousmane",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Doue Desire",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Mateta Jean-Philippe",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Mbappé Kylian",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Nkunku Christopher",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Thauvin Florian",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Thuram Marcus",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Deschamps Didier",
+    "teamFifaCode": "FRA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Samba Brice",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Kalulu Pierre",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Lacroix Maxence",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Kolo Muani Randal",
+    "teamFifaCode": "FRA",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Basil Ahmed",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Ali Hussein",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Doski Merchas",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Putros Frans",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Sulaka Rebin",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Tahseen Zaid",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Younis Manaf",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Al Ammari Amir",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Amyn Youssef",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Bayesh Ibrahim",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Hashem Akam",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Iqbal Zidane",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Ismaeel Zaid",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Jasim Ali",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Sher Aimar",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Yakob Kevin",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Abdulkareem Hasan",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Al Hamadi Ali",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Farji Marko",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Hashim Ali Yousif",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Hussein Aymen",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Meme",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Arnold Graham",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Al Rekabe Kumel",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Talib Fahad",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Maknzi Ahmed",
+    "teamFifaCode": "IRQ",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Diaw Mory",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Mendy Edouard",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Diouf El Hadji Malick",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 25
+  },
+  {
+    "fullName": "Jakobs Ismail",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Koulibaly Kalidou",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Mendy Antoine",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 24
+  },
+  {
+    "fullName": "Niakhate Moussa",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Seck Abdoulaye",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Camara Ilay",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Camara Lamine",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Ciss Pathé",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Diarra Habib",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Diatta Krepin",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Gueye Idrissa",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Gueye Pape",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 26
+  },
+  {
+    "fullName": "Sarr Pape Matar",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Dia Boulaye",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Diallo Habib",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Diao Assane",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Jackson Nicolas",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Mané Sadio",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Ndiaye Cherif",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Ndiaye Iliman",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Sabaly Cheikh",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Sarr Ismaïla",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Thiaw Pape Bouna",
+    "teamFifaCode": "SEN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Diouf Yehvann",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Mendy Nobel",
+    "teamFifaCode": "SEN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Sarr Mamadou",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Cámara Mamadou",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 28
+  },
+  {
+    "fullName": "Diakhon Mamadou",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Dieng Bamba",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Mbaye Ibrahim",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 27
+  },
+  {
+    "fullName": "Niang Ousseynou",
+    "teamFifaCode": "SEN",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Nyland Orjan",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Ajer Kristoffer",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Bjorkan Fredrik",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Lysaker Heggem Torbjorn",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Ostigard Leo",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Pedersen Marcus",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Ryerson Julian",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Wolfe David Moller",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Aasgaard Thelo",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Berg Patrick",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Berge Sander",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Bobb Oscar",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Donnum Aron",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Myhre Felix",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Thorsby Morten",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Thorstvedt Kristian",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Haaland Erling",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Hauge Jens",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Larsen Jorgen Strand",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Nusa Antonio",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Schjelderup Andreas",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Sorloth Alexander",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Solbakken Stale",
+    "teamFifaCode": "NOR",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Dyngeland Matias",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Myhra Viljar",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Selvik Egil",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Tangvik Sander",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Bjortuft Odin Luras",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Falchener Henrik",
+    "teamFifaCode": "NOR",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Arnstad Kristian",
+    "teamFifaCode": "NOR",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Lind Tobias",
+    "teamFifaCode": "NOR",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Mandrea Anthony",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Zidane Luca",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Ait-Nouri Rayan",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Belaid Zineddine",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Belghali Rafik",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 25
+  },
+  {
+    "fullName": "Bensebaini Ramy",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Dorval Mehdi",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Mandi Aïssa",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Aouar Houssem",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Boudaoui Hicham",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Maza Ibrahim",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Zerrouki Ramiz",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Amoura Mohamed",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Chaibi Fares",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Chiakha Amin",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Gouiri Amine",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Hadj Moussa Anis",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Mahrez Riyad",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Petkovic Vladimir",
+    "teamFifaCode": "ALG",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Belazzoug Kilian",
+    "teamFifaCode": "ALG",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Mastil Melvin",
+    "teamFifaCode": "ALG",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Abada Achref",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Baouche Houari",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Benchaa Reda",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Halaimia Mohamed",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Nair Sohaib",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Aouchiche Adil",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Mrezigue Houssem",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Titraoui Yacine",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Benbouali Nadir",
+    "teamFifaCode": "ALG",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Boulbina Adil",
+    "teamFifaCode": "ALG",
+    "shirtNumber": 27
+  },
+  {
+    "fullName": "Ghedjemis Fares",
+    "teamFifaCode": "ALG",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Martinez Emiliano",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Rulli Geronimo",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Acuña Marcos",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Foyth Juan",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Martinez Quarta Lucas",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Molina Nahuel",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Otamendi Nicolas",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Romero Cristian Gabriel",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Tagliafico Nicolas",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Fernández Enzo",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Lo Celso Giovani",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Mac Allister Alexis",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Palacios Exequiel",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Paredes Leandro",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Paz Nico",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "de Paul Rodrigo",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Almada Thiago",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Alvarez Julián",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "González Nicolas",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Martínez Lautaro",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Mastantuono Franco",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Messi Lionel",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Simeone Giuliano",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Scaloni Lionel",
+    "teamFifaCode": "ARG",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Benitez Walter",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Musso Juan",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Talavera Demian",
+    "teamFifaCode": "ARG",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Giay Agustin",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Mac Allister Kevin",
+    "teamFifaCode": "ARG",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Rojas Gabriel",
+    "teamFifaCode": "ARG",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Senesi Marcos",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Barco Valentin",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Buendia Emiliano",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Perrone Maximo",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Lopez Jose",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Panichelli Joaquin",
+    "teamFifaCode": "ARG",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Prestianni Gianluca",
+    "teamFifaCode": "ARG",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Lawal Tobias",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Pentz Patrick",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Schlager Alexander",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Alaba David",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Danso Kevin",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Friedl Marco",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Lienhart Philipp",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Mwene Phillipp",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Posch Stefan",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Querfeld Leopold",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Baumgartner Christoph",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Grillitsch Florian",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Laimer Konrad",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Prass Alexander",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Sabitzer Marcel",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Schlager Xaver",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Schmid Romano",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Schopf Alessandro",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Seiwald Nicolas",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Wimmer Patrick",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Arnautovic Marko",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Florucz Raul",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Gregoritsch Michael",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Grull Marco",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Wurmbrand Nikolaus",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Beichler Daniel",
+    "teamFifaCode": "AUT",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Rangnick Ralf",
+    "teamFifaCode": "AUT",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Polster Nikolas",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Wiegele Florian",
+    "teamFifaCode": "AUT",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Affengruber David",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Svoboda Michael",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Chukwuemeka Carney",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Wanner Paul",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Kalajdzic Sasa",
+    "teamFifaCode": "AUT",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Abulaila Yazeed",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Al Fakhouri Abdallah Raed Mahmoud",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Abu Al Dahab Husam",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Abu Al Jazar Yousef",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Abu Hasheesh Mohammad",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Abualnadi Mo",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Al Arab Yazan Abo",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Al Quraishi Adham Mohammad Salem",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Al Rosan Saed",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Assaf Ahmad",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Nasib Abdallah",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Obaid Saleem",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Abu Dahab Mohammed",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Abu Taha Mohannad",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Al Aldahod Mohammad",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Al Mardi Mahmoud",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Al Rashdan Nizar",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Al Rawabdeh Noor",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Ayed Rajaei",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Jamous Amer",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Saadeh Ibrahim",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Shararh",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Al Naimat Yazan",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Ersan Ahmed",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Olwan Ali",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Sabra Ibrahim",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Tamari Mousa",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Sellami Jamal",
+    "teamFifaCode": "JOR",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Al Talalga Abdel",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Bani Attiah Noureddin",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Shalabiya Malek",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Al Hourani Hadi",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Hajabi Ali",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Smeeri Issam",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Al Daoud Mohammad",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Qashi Yousef",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Al Fakhouri Odeh",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Azaizeh Ali",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Faisal Baha",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Taha Mohammad",
+    "teamFifaCode": "JOR",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Costa Diogo",
+    "teamFifaCode": "POR",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Cancelo Joao",
+    "teamFifaCode": "POR",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Dalot Diogo",
+    "teamFifaCode": "POR",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Dias Ruben",
+    "teamFifaCode": "POR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Inacio Goncalo",
+    "teamFifaCode": "POR",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Mendes Nuno",
+    "teamFifaCode": "POR",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Semedo Nelson",
+    "teamFifaCode": "POR",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Silva Antonio",
+    "teamFifaCode": "POR",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Veiga Renato",
+    "teamFifaCode": "POR",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Fernandes Bruno",
+    "teamFifaCode": "POR",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Neves Joao",
+    "teamFifaCode": "POR",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Neves Ruben",
+    "teamFifaCode": "POR",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Nunes Matheus",
+    "teamFifaCode": "POR",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Palhinha Joao",
+    "teamFifaCode": "POR",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Pote",
+    "teamFifaCode": "POR",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Silva Bernardo",
+    "teamFifaCode": "POR",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Vitinha",
+    "teamFifaCode": "POR",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Conceicao Francisco",
+    "teamFifaCode": "POR",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Forbs Carlos",
+    "teamFifaCode": "POR",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Joao Félix",
+    "teamFifaCode": "POR",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Leao Rafael",
+    "teamFifaCode": "POR",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Neto Pedro",
+    "teamFifaCode": "POR",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Ramos Gonçalo",
+    "teamFifaCode": "POR",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Ronaldo Cristiano",
+    "teamFifaCode": "POR",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Trincao",
+    "teamFifaCode": "POR",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Martínez Roberto",
+    "teamFifaCode": "POR",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Carvalho Joao",
+    "teamFifaCode": "POR",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Sa Jose",
+    "teamFifaCode": "POR",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Silva Rui",
+    "teamFifaCode": "POR",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Velho Ricardo",
+    "teamFifaCode": "POR",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Araujo Tomas",
+    "teamFifaCode": "POR",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Fernandes Mateus",
+    "teamFifaCode": "POR",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Samú Costa",
+    "teamFifaCode": "POR",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Guedes Gonçalo",
+    "teamFifaCode": "POR",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Horta Ricardo",
+    "teamFifaCode": "POR",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Paulinho",
+    "teamFifaCode": "POR",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Fayulu Timothy",
+    "teamFifaCode": "COD",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Mpasi-Nzau Lionel",
+    "teamFifaCode": "COD",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Batubinsika Dylan",
+    "teamFifaCode": "COD",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Bushiri Rocky",
+    "teamFifaCode": "COD",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Kayembe Joris",
+    "teamFifaCode": "COD",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Masuaku Arthur",
+    "teamFifaCode": "COD",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Mbemba Chancel",
+    "teamFifaCode": "COD",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Tuanzebe Axel",
+    "teamFifaCode": "COD",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Wan-Bissaka Aaron",
+    "teamFifaCode": "COD",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Kayembe Edo",
+    "teamFifaCode": "COD",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Kibambe Cipenga Brian",
+    "teamFifaCode": "COD",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Moutoussamy Samuel",
+    "teamFifaCode": "COD",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Mukau Ngalayel",
+    "teamFifaCode": "COD",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Pickel Charles",
+    "teamFifaCode": "COD",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Sadiki Noah",
+    "teamFifaCode": "COD",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Bakambu Cedric",
+    "teamFifaCode": "COD",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Banza Simon",
+    "teamFifaCode": "COD",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Bongonda Theo",
+    "teamFifaCode": "COD",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Elia Meschack",
+    "teamFifaCode": "COD",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Mayele Fiston",
+    "teamFifaCode": "COD",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Mbuku Nathanael",
+    "teamFifaCode": "COD",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Wissa Yoane",
+    "teamFifaCode": "COD",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Desabre Sebastien",
+    "teamFifaCode": "COD",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Epolo Matthieu",
+    "teamFifaCode": "COD",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Kapuadi Steve",
+    "teamFifaCode": "COD",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Livakovic Dominik",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Caleta-Car Duje",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Erlic Martin",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Gvardiol Josko",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Pongracic Marin",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Smolcic Ivan",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Stanisic Josip",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Sutalo Josip",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Vuskovic Luka",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Baturina Martin",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Fruk Toni",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Jakic Kristijan",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Majer Lovro",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Modric Luka",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Moro Nikola",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Pasalic Mario",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Sucic Luka",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Sucic Petar",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Vlasic Nikola",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Budimir Ante",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Ivanovic Franjo",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Kramaric Andrej",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Matanovic Igor",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Musa Petar",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Orsic Mislav",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Pasalic Marco",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Perisic Ivan",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Dalic Zlatko",
+    "teamFifaCode": "CRO",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Juric Ivan",
+    "teamFifaCode": "CRO",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Ivusic Ivica",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Letica Karlo",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Pandur Ivor",
+    "teamFifaCode": "CRO",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Henderson Dean",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Pickford Jordan",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Burn Dan",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Guehi Marc",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "James Reece",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Konsa Ezri",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Livramento Valentino",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Quansah Jarell",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Spence Djed",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Stones John",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Anderson Elliot",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Bellingham Jude",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Eze Eberechi",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Foden Phil",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Henderson Jordan",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "O'Reilly Nico",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Palmer Cole",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Rice Declan",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Rogers Morgan",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Wharton Adam",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Bowen Jarrod",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Gordon Anthony",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Kane Harry",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Madueke Noni",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Rashford Marcus",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Saka Bukayo",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Tuchel Thomas",
+    "teamFifaCode": "ENG",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Ramsdale Aaron",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Steele Jason",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Trafford James",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Chalobah Trevoh",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Hall Lewis",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Maguire Harry",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Tomori Fikayo",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "White Ben",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Garner James",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Mainoo Kobbie",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Scott Alex",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Barnes Harvey",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Calvert-Lewin Dominic",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Solanke Dominic",
+    "teamFifaCode": "ENG",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Asare Benjamin",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Ati Zigi Lawrence",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Adjetey Jonas",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Annan Ebenezer",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Djiku Alexander",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Mensah Gideon",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Opoku Jerome",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Peprah Kojo",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Salisu Mohammed",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Seidu Alidu",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Francis Abu",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Owusu Elisha",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Partey Thomas",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Sibo Kwasi",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Sulemana Ibrahim",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Yirenkyi Caleb",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Ayew Jordan",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Bonsu Baah Christopher",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Fatawu Issahaku",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Owusu Prince",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Semenyo Antoine",
+    "teamFifaCode": "GHA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Sulemana Kamaldeen",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Thomas-Asante Brandon",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Anang Joseph",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Kohn Derrick",
+    "teamFifaCode": "GHA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Luckassen Derrick",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Pfeiffer Patric",
+    "teamFifaCode": "GHA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Senaya Marvin",
+    "teamFifaCode": "GHA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Owusu Prince",
+    "teamFifaCode": "GHA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Adu Prince",
+    "teamFifaCode": "GHA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Agyei Daniel",
+    "teamFifaCode": "GHA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Konigsdorffer Ransford",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Nkrumah Kelvin",
+    "teamFifaCode": "GHA",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Owusu Prince-Osei",
+    "teamFifaCode": "GHA",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Montero Alvaro",
+    "teamFifaCode": "COL",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Vargas Camilo",
+    "teamFifaCode": "COL",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Angulo Mosquera Alvaro Anyiver",
+    "teamFifaCode": "COL",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Arias Santiago",
+    "teamFifaCode": "COL",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Cabal Juan",
+    "teamFifaCode": "COL",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Cuesta Carlos",
+    "teamFifaCode": "COL",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Lucumi Jhon",
+    "teamFifaCode": "COL",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Machado Deiver",
+    "teamFifaCode": "COL",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Mina Yerry",
+    "teamFifaCode": "COL",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Mojica Johan",
+    "teamFifaCode": "COL",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Muñoz Daniel",
+    "teamFifaCode": "COL",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Sánchez Davinson",
+    "teamFifaCode": "COL",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Asprilla Yaser",
+    "teamFifaCode": "COL",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Castano Kevin",
+    "teamFifaCode": "COL",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Lerma Jefferson",
+    "teamFifaCode": "COL",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Mosquera Yerson",
+    "teamFifaCode": "COL",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Portilla Juan",
+    "teamFifaCode": "COL",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Quintero Juan",
+    "teamFifaCode": "COL",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Rios Richard",
+    "teamFifaCode": "COL",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Rodríguez James",
+    "teamFifaCode": "COL",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Arias Jhon",
+    "teamFifaCode": "COL",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Borré Rafael",
+    "teamFifaCode": "COL",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Campaz Jaminton",
+    "teamFifaCode": "COL",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Carrascal Jorge",
+    "teamFifaCode": "COL",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Córdoba Jhon",
+    "teamFifaCode": "COL",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Diaz Luis",
+    "teamFifaCode": "COL",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Gomez Carlos Andres",
+    "teamFifaCode": "COL",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Suárez Luis",
+    "teamFifaCode": "COL",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Lorenzo Néstor",
+    "teamFifaCode": "COL",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Ospina David",
+    "teamFifaCode": "COL",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Puerta Gustavo",
+    "teamFifaCode": "COL",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Carbonero Johan",
+    "teamFifaCode": "COL",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Mejia Luis",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Mosquera Orlando",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 22
+  },
+  {
+    "fullName": "Andrade Andres",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Blackman Cesar",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Cordoba Jose",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Davis Eric",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Escobar Fidel",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Farina Edgardo",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Gutierrez Jorge",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Harvey Carlos",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Miller Roderick",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 25
+  },
+  {
+    "fullName": "Murillo Michael",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 23
+  },
+  {
+    "fullName": "Ramos Jiovany",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Carrasquilla Alcazar Adalberto Eliecer",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Cedeño Edward",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Godoy Anibal",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Martinez Christian",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Puma",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Welch Jovani",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Barcenas Yoel",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Browne Omar",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Diaz Ismael",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Fajardo Nelson Jose",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Londoño Azarias",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Quintero Alberto",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 19
+  },
+  {
+    "fullName": "Rodriguez Tomas",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Waterman Cecilio",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Yanis Cesar",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Christiansen Thomas",
+    "teamFifaCode": "PAN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Gunn JD",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Roberts Eddie",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Samudio Cesar",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Anderson Ivan",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Cordoba Omar",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Davis Orman",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 20
+  },
+  {
+    "fullName": "Galvan Kevin",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Hall Juan",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Krug Martin",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Peralta Richard",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Rivera Javier",
+    "teamFifaCode": "PAN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Aparicio Daniel",
+    "teamFifaCode": "PAN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Caicedo Angel",
+    "teamFifaCode": "PAN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Knight Abdul",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Phillips Ricardo",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Sanchez Marcos",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Arroyo Abdiel",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 18
+  },
+  {
+    "fullName": "Barria Kadir",
+    "teamFifaCode": "PAN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Herbert Giovany",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Herrera Gustavo",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Hurtado Hector",
+    "teamFifaCode": "PAN",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Lenis Kahiser",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Murillo Jose",
+    "teamFifaCode": "PAN",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Yusupov Utkir",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 1
+  },
+  {
+    "fullName": "Alizhonov Khozhiakbar",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 3
+  },
+  {
+    "fullName": "Ashurmatov Rustam",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Eshmurodov Umar",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Khusanov Abdukodir",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 2
+  },
+  {
+    "fullName": "Nasrullaev Sherzod",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 13
+  },
+  {
+    "fullName": "Sayfiev Farrukh",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 4
+  },
+  {
+    "fullName": "Ganiev Azizjon",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 10
+  },
+  {
+    "fullName": "Iskanderov Jamshid",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Khamrobekov Odildzhon",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 9
+  },
+  {
+    "fullName": "Mozgovoy Akmal",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Shukurov Otabek",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 7
+  },
+  {
+    "fullName": "Sergeev Igor",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 21
+  },
+  {
+    "fullName": "Shomurodov Eldor",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 14
+  },
+  {
+    "fullName": "Urunov Oston",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Cannavaro Fabio",
+    "teamFifaCode": "UZB",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Ergashev Botirali",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Nematov Abduvakhid",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 12
+  },
+  {
+    "fullName": "Abdumazhidov Mukhammadrasul",
+    "teamFifaCode": "UZB",
+    "shirtNumber": null
+  },
+  {
+    "fullName": "Karimov Bekhruz",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 16
+  },
+  {
+    "fullName": "Khamraliev Mukhammadkodir",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 5
+  },
+  {
+    "fullName": "Urozov Jakhongir",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 6
+  },
+  {
+    "fullName": "Ibrokhimov Ibrokhim",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 8
+  },
+  {
+    "fullName": "Rakhmonaliyev Umarali",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 15
+  },
+  {
+    "fullName": "Temirov Sherzod",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 11
+  },
+  {
+    "fullName": "Khamdamov Dostonbek",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 17
+  },
+  {
+    "fullName": "Odilov Alisher",
+    "teamFifaCode": "UZB",
+    "shirtNumber": 28
+  }
+]

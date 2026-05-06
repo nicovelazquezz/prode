@@ -190,11 +190,11 @@ model Team {
 }
 
 model Player {
-  id       String  @id @default(cuid())
-  fullName String
-  teamId   String?
-  team     Team?   @relation(fields: [teamId], references: [id])
-  position String?
+  id           String  @id @default(cuid())
+  fullName     String
+  teamId       String?
+  team         Team?   @relation(fields: [teamId], references: [id])
+  shirtNumber  Int?
 
   topScorerPicks SpecialPrediction[] @relation("TopScorerPick")
 

@@ -371,7 +371,7 @@ function TeamSummary({
     <div className="flex flex-col items-center text-center">
       {team ? (
         <>
-          <TeamFlag fifaCode={team.fifaCode} size={48} />
+          <TeamFlag fifaCode={team.fifaCode} src={team.flagUrl} size={48} />
           <p className="mt-2 font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight text-[var(--color-landing-text)]">
             {team.name}
           </p>
@@ -454,7 +454,7 @@ function ScoreModal({
         <div className="mt-4 grid grid-cols-3 items-center gap-4">
           <div className="flex flex-col items-center">
             {match.homeTeam ? (
-              <TeamFlag fifaCode={match.homeTeam.fifaCode} size={32} />
+              <TeamFlag fifaCode={match.homeTeam.fifaCode} src={match.homeTeam.flagUrl} size={32} />
             ) : null}
             <p className="mt-2 font-[family-name:var(--font-landing-display)] text-base uppercase tracking-tight">
               {match.homeTeam?.shortName ?? match.homeTeamLabel ?? "TBD"}
@@ -473,7 +473,7 @@ function ScoreModal({
           </p>
           <div className="flex flex-col items-center">
             {match.awayTeam ? (
-              <TeamFlag fifaCode={match.awayTeam.fifaCode} size={32} />
+              <TeamFlag fifaCode={match.awayTeam.fifaCode} src={match.awayTeam.flagUrl} size={32} />
             ) : null}
             <p className="mt-2 font-[family-name:var(--font-landing-display)] text-base uppercase tracking-tight">
               {match.awayTeam?.shortName ?? match.awayTeamLabel ?? "TBD"}

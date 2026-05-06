@@ -209,10 +209,12 @@ export default function PrediccionesPage() {
           homeTeam={{
             name: activeMatch.homeTeam?.name ?? activeMatch.homeTeamLabel ?? "—",
             fifaCode: activeMatch.homeTeam?.fifaCode,
+            flagUrl: activeMatch.homeTeam?.flagUrl,
           }}
           awayTeam={{
             name: activeMatch.awayTeam?.name ?? activeMatch.awayTeamLabel ?? "—",
             fifaCode: activeMatch.awayTeam?.fifaCode,
+            flagUrl: activeMatch.awayTeam?.flagUrl,
           }}
           initialScoreHome={activePrediction?.scoreHome ?? null}
           initialScoreAway={activePrediction?.scoreAway ?? null}

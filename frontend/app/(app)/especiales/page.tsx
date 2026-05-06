@@ -262,7 +262,7 @@ function ReadOnlyRow({
           {team ? team.name : loading ? "Cargando..." : "—"}
         </p>
       </div>
-      {team ? <TeamFlag fifaCode={team.fifaCode} size={48} /> : null}
+      {team ? <TeamFlag fifaCode={team.fifaCode} src={team.flagUrl} size={48} /> : null}
     </div>
   );
 }
@@ -397,7 +397,7 @@ function EditableForm({
                 }
               >
                 {team ? (
-                  <TeamFlag fifaCode={team.fifaCode} size={32} />
+                  <TeamFlag fifaCode={team.fifaCode} src={team.flagUrl} size={32} />
                 ) : (
                   <span
                     className="h-8 w-8 rounded-sm bg-[var(--color-landing-surface-2)]"

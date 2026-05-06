@@ -209,7 +209,7 @@ export default function MatchDetailPage({ params }: PageProps) {
           </div>
 
           <div className="grid grid-cols-3 items-center gap-4">
-            <TeamPanel name={homeName} fifaCode={home?.fifaCode} />
+            <TeamPanel name={homeName} fifaCode={home?.fifaCode} flagUrl={home?.flagUrl} />
             <div className="flex flex-col items-center justify-center gap-1">
               {isFinished &&
               match.scoreHome !== null &&
@@ -226,7 +226,7 @@ export default function MatchDetailPage({ params }: PageProps) {
               )}
               <KickoffMeta iso={match.kickoffAt} />
             </div>
-            <TeamPanel name={awayName} fifaCode={away?.fifaCode} />
+            <TeamPanel name={awayName} fifaCode={away?.fifaCode} flagUrl={away?.flagUrl} />
           </div>
         </header>
 
@@ -317,8 +317,8 @@ export default function MatchDetailPage({ params }: PageProps) {
       <NumberPadSheet
         open={sheetOpen && !inputDisabled}
         onOpenChange={setSheetOpen}
-        homeTeam={{ name: homeName, fifaCode: home?.fifaCode }}
-        awayTeam={{ name: awayName, fifaCode: away?.fifaCode }}
+        homeTeam={{ name: homeName, fifaCode: home?.fifaCode, flagUrl: home?.flagUrl }}
+        awayTeam={{ name: awayName, fifaCode: away?.fifaCode, flagUrl: away?.flagUrl }}
         initialScoreHome={prediction?.scoreHome ?? null}
         initialScoreAway={prediction?.scoreAway ?? null}
         onSave={(dto) => upsertMutation.mutate(dto)}
@@ -339,10 +339,18 @@ function BackLink() {
   );
 }
 
-function TeamPanel({ name, fifaCode }: { name: string; fifaCode?: string }) {
+function TeamPanel({
+  name,
+  fifaCode,
+  flagUrl,
+}: {
+  name: string;
+  fifaCode?: string;
+  flagUrl?: string;
+}) {
   return (
     <div className="flex flex-col items-center gap-2 text-center">
-      {fifaCode ? <TeamFlag fifaCode={fifaCode} size={64} /> : null}
+      {fifaCode ? <TeamFlag fifaCode={fifaCode} src={flagUrl} size={64} /> : null}
       <span className="font-[family-name:var(--font-landing-display)] text-base md:text-lg uppercase tracking-tight text-[var(--color-landing-text)] line-clamp-2">
         {name}
       </span>
