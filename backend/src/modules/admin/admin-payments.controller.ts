@@ -1,4 +1,12 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
@@ -9,8 +17,13 @@ import {
   Min,
 } from 'class-validator';
 import { Roles } from '../../common/decorators/roles.decorator.js';
+import {
+  CurrentUser,
+  type AuthenticatedUser,
+} from '../../common/decorators/current-user.decorator.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
+import { PaymentsService } from '../payments/payments.service.js';
 import {
   PaymentMethod,
   PaymentStatus,
@@ -66,7 +79,10 @@ class ListAdminPaymentsDto {
 @UseGuards(RolesGuard)
 @Roles('ADMIN')
 export class AdminPaymentsController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly paymentsService: PaymentsService,
+  ) {}
 
   @Get()
   async list(@Query() query: ListAdminPaymentsDto) {
@@ -123,5 +139,29 @@ export class AdminPaymentsController {
       page,
       pageSize,
     };
+  }
+
+  /**
+   * Aprobación manual de un Payment PENDING. "Último recurso" cuando MP
+   * no replicó por algún motivo (webhook caído, HMAC inválido, etc.) y
+   * el admin confirmó offline que el cobro existe.
+   *
+   * Sólo opera sobre logged-in flows (Payment con `userId` asignado). Para
+   * pagos públicos anónimos, devuelve 400 con la indicación de usar
+   * `POST /admin/users` (que crea User + Payment APPROVED en una TX).
+   *
+   * Aplica el mismo cap-check + creación de Entry que el webhook MP.
+   * Audita `payment.admin_approved` con el id del admin.
+   */
+  @Post(':id/approve')
+  async approve(
+    @Param('id') id: string,
+    @CurrentUser() admin: AuthenticatedUser | undefined,
+  ) {
+    if (!admin?.id) {
+      // Belt-and-suspenders — JwtAuthGuard ya rechaza anónimos antes.
+      throw new UnauthorizedException('Authenticated admin required');
+    }
+    return this.paymentsService.adminApprove(id, admin.id);
   }
 }

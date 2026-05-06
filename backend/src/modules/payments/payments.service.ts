@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
@@ -16,6 +22,7 @@ import { loadEnv, type Env } from '../../config/env.js';
 import {
   CompletionAlreadyUsedException,
   CompletionTokenExpiredException,
+  EntryCapReachedException,
   InvalidCompletionTokenException,
 } from '../../common/exceptions/domain.exceptions.js';
 
@@ -497,6 +504,155 @@ export class PaymentsService {
         `Failed to enqueue admin-orphan-alert for ${paymentId}: ${(err as Error).message}`,
       );
     }
+  }
+
+  // ── Admin override (manual approve) ──────────────────────────────────
+
+  /**
+   * Admin-override approval: marca un Payment PENDING como APPROVED sin
+   * pasar por MercadoPago. Útil cuando el webhook de MP no llegó (caída,
+   * HMAC inválido, etc.) y el admin confirmó offline que el cobro existe.
+   *
+   * Scope acotado al **logged-in flow** (Payment con `userId` set, viene
+   * del `POST /entries/init-payment`). Para flujos públicos anónimos
+   * (`userId=null`), se rechaza con 400 — el path correcto en ese caso
+   * es `POST /admin/users` (creación manual con Payment APPROVED en una
+   * sola TX).
+   *
+   * Aplica el mismo cap-check + creación de Entry que el webhook
+   * (spec §6.5/§7), con `SELECT FOR UPDATE` para serializar contra
+   * cualquier `init-payment` simultáneo. Si el cap se superó, el Payment
+   * queda en `OVER_CAP` y se tira `EntryCapReachedException` (409).
+   *
+   * Audita `payment.admin_approved` con `adminUserId` para trazabilidad.
+   */
+  async adminApprove(
+    paymentId: string,
+    adminUserId: string,
+  ): Promise<{ paymentId: string; entryId: string; userId: string }> {
+    let createdEntryId: string | null = null;
+    let userId: string | null = null;
+
+    await this.prisma.$transaction(async (tx) => {
+      const local = await tx.payment.findUnique({
+        where: { id: paymentId },
+      });
+      if (!local) {
+        throw new NotFoundException(`Payment ${paymentId} not found`);
+      }
+
+      if (local.status !== 'PENDING') {
+        // 400 (no 409) porque la condición es "no se puede operar sobre
+        // un payment ya transicionado". Mensaje explícito para el admin.
+        throw new BadRequestException(
+          `Payment ${paymentId} no está en estado PENDING (actual: ${local.status}); no se puede aprobar manualmente.`,
+        );
+      }
+
+      if (!local.userId) {
+        throw new BadRequestException(
+          `Payment ${paymentId} no tiene userId asignado (flow público anónimo). ` +
+            'Usá POST /admin/users para crear el usuario manualmente con Payment APPROVED en una sola operación.',
+        );
+      }
+
+      userId = local.userId;
+      const now = new Date();
+
+      // Idempotent transition: solo PENDING → APPROVED.
+      const updated = await tx.payment.updateMany({
+        where: { id: paymentId, status: 'PENDING' },
+        data: {
+          status: 'APPROVED',
+          paidAt: now,
+          // tokenExpiresAt sólo aplica a flow público; en logged-in es no-op.
+          tokenExpiresAt: new Date(now.getTime() + COMPLETION_TOKEN_TTL_MS),
+        },
+      });
+      if (updated.count === 0) {
+        // Race: alguien (otro admin / webhook) lo movió entre el findUnique
+        // y este updateMany. Es seguro tirar — el caller reintenta o lee
+        // estado actual.
+        throw new BadRequestException(
+          `Payment ${paymentId} cambió de estado entre la lectura y la actualización; reintentá.`,
+        );
+      }
+
+      // Cap-check con SELECT FOR UPDATE — bloquea cualquier init-payment
+      // concurrente del mismo user hasta el commit de esta TX.
+      const cap = await this.getMaxEntriesPerUser(tx);
+      const lockedRows = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id
+        FROM entries
+        WHERE "userId" = ${local.userId}
+        FOR UPDATE
+      `;
+      const current = lockedRows.length;
+      if (current >= cap) {
+        await tx.payment.update({
+          where: { id: paymentId },
+          data: { status: 'OVER_CAP' },
+        });
+        await tx.auditLog.create({
+          data: {
+            userId: adminUserId,
+            action: 'entry.over_cap_orphaned',
+            entity: 'payment',
+            entityId: paymentId,
+            changes: { current, cap, source: 'admin_approve' },
+          },
+        });
+        throw new EntryCapReachedException(current, cap);
+      }
+
+      const maxPos = await tx.entry.aggregate({
+        where: { userId: local.userId },
+        _max: { position: true },
+      });
+      const nextPosition = (maxPos._max.position ?? 0) + 1;
+      const entry = await tx.entry.create({
+        data: {
+          userId: local.userId,
+          paymentId,
+          position: nextPosition,
+          alias: local.entryAlias,
+          status: 'ACTIVE',
+        },
+      });
+      createdEntryId = entry.id;
+
+      await tx.auditLog.create({
+        data: {
+          userId: adminUserId,
+          action: 'entry.created',
+          entity: 'entry',
+          entityId: entry.id,
+          changes: {
+            paymentId,
+            position: nextPosition,
+            source: 'admin_approve',
+            alias: local.entryAlias,
+          },
+        },
+      });
+    });
+
+    // Post-commit: audit log a nivel acción de admin.
+    void this.audit.log({
+      action: 'payment.admin_approved',
+      entity: 'payment',
+      entityId: paymentId,
+      changes: { entryId: createdEntryId, targetUserId: userId },
+      userId: adminUserId,
+    });
+
+    // userId y createdEntryId quedan asignados antes del commit; el
+    // throw temprano cubre los caminos donde no.
+    return {
+      paymentId,
+      entryId: createdEntryId!,
+      userId: userId!,
+    };
   }
 
   // ── Public token lookup ──────────────────────────────────────────────

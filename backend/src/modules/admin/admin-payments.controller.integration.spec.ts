@@ -181,4 +181,132 @@ describe('GET /admin/payments (integration)', () => {
       }
     }
   });
+
+  describe('POST /admin/payments/:id/approve', () => {
+    let testUserId: string;
+    const approveTestStamp = `${stamp}-ap`;
+
+    beforeAll(async () => {
+      // User dedicado para los tests de approve (queremos contar entries
+      // antes/después y aislar de otros tests).
+      const dni = String(93_000_000 + stamp).slice(-8);
+      const bcrypt = await import('bcrypt');
+      const hash = await bcrypt.hash('AdmApproveTest!1', 10);
+      const user = await prisma.user.create({
+        data: {
+          dni,
+          firstName: 'Adm',
+          lastName: 'Approve',
+          whatsapp: `549${String(9_300_000_000 + stamp).slice(-9)}`.slice(0, 13),
+          passwordHash: hash,
+        },
+      });
+      testUserId = user.id;
+    });
+
+    afterAll(async () => {
+      // Limpiar entries + payments del user + user mismo (FK orden).
+      await prisma.entry.deleteMany({ where: { userId: testUserId } });
+      await prisma.payment.deleteMany({ where: { userId: testUserId } });
+      await prisma.user.delete({ where: { id: testUserId } });
+    });
+
+    it('approves a PENDING logged-in payment and creates entry', async () => {
+      const payment = await prisma.payment.create({
+        data: {
+          userId: testUserId,
+          amount: 10000,
+          method: 'MERCADOPAGO',
+          status: 'PENDING',
+          notes: `${approveTestStamp}-1`,
+        },
+      });
+
+      const before = await prisma.entry.count({ where: { userId: testUserId } });
+
+      const res = await request(app.getHttpServer())
+        .post(`/admin/payments/${payment.id}/approve`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(201);
+
+      expect(res.body).toMatchObject({
+        paymentId: payment.id,
+        userId: testUserId,
+        entryId: expect.any(String),
+      });
+
+      const updated = await prisma.payment.findUnique({
+        where: { id: payment.id },
+      });
+      expect(updated?.status).toBe('APPROVED');
+      expect(updated?.paidAt).toBeTruthy();
+
+      const after = await prisma.entry.count({ where: { userId: testUserId } });
+      expect(after).toBe(before + 1);
+
+      const audit = await prisma.auditLog.findFirst({
+        where: { entityId: payment.id, action: 'payment.admin_approved' },
+      });
+      expect(audit).toBeTruthy();
+    });
+
+    it('returns 400 when payment is already APPROVED', async () => {
+      const payment = await prisma.payment.create({
+        data: {
+          userId: testUserId,
+          amount: 10000,
+          method: 'CASH',
+          status: 'APPROVED',
+          notes: `${approveTestStamp}-2`,
+        },
+      });
+      await request(app.getHttpServer())
+        .post(`/admin/payments/${payment.id}/approve`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(400);
+    });
+
+    it('returns 404 when payment does not exist', async () => {
+      await request(app.getHttpServer())
+        .post('/admin/payments/does-not-exist/approve')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(404);
+    });
+
+    it('returns 400 when payment has no userId (anonymous flow)', async () => {
+      const payment = await prisma.payment.create({
+        data: {
+          userId: null,
+          amount: 10000,
+          method: 'MERCADOPAGO',
+          status: 'PENDING',
+          notes: `${approveTestStamp}-3`,
+        },
+      });
+      await request(app.getHttpServer())
+        .post(`/admin/payments/${payment.id}/approve`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(400);
+
+      // Limpieza: este payment no tiene userId, no se enmascara con
+      // el `deleteMany({userId})` del afterAll.
+      await prisma.payment.delete({ where: { id: payment.id } });
+    });
+
+    it('rejects non-admin role with 403', async () => {
+      const payment = await prisma.payment.create({
+        data: {
+          userId: testUserId,
+          amount: 10000,
+          method: 'MERCADOPAGO',
+          status: 'PENDING',
+          notes: `${approveTestStamp}-4`,
+        },
+      });
+      await request(app.getHttpServer())
+        .post(`/admin/payments/${payment.id}/approve`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(403);
+    });
+  });
 });
