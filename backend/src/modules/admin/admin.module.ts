@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 import { AdminUsersController } from './admin-users.controller.js';
 import { AdminEntriesController } from './admin-entries.controller.js';
+import { AdminPaymentsController } from './admin-payments.controller.js';
 
 /**
  * Hosts admin-only endpoints that don't fit into a feature module. Today
  * the residents are:
- *   - POST /admin/users  — manual user creation (cash/transfer flow)
- *   - GET  /admin/entries — listing of every entry in the system
+ *   - POST /admin/users      — manual user creation (cash/transfer flow)
+ *   - GET  /admin/entries    — listing of every entry in the system
+ *   - GET  /admin/payments   — paginated payment listing for the panel
  *
  * Kept non-global so future additions can't accidentally widen the
  * surface — every route here goes through `RolesGuard` + `@Roles('ADMIN')`.
@@ -16,6 +18,10 @@ import { AdminEntriesController } from './admin-entries.controller.js';
  */
 @Module({
   imports: [],
-  controllers: [AdminUsersController, AdminEntriesController],
+  controllers: [
+    AdminUsersController,
+    AdminEntriesController,
+    AdminPaymentsController,
+  ],
 })
 export class AdminModule {}
