@@ -109,7 +109,7 @@ export class AdminConfigController {
       where: { key },
       data: { value: dto.value, updatedBy: admin.id },
     });
-    void this.audit.log({
+    await this.audit.log({
       action: 'config.app_updated',
       entity: 'app_config',
       entityId: key,
@@ -149,7 +149,7 @@ export class AdminConfigController {
       where: { outcomeType: params.outcomeType },
       data: { basePoints: dto.basePoints, updatedBy: admin.id },
     });
-    void this.audit.log({
+    await this.audit.log({
       action: 'config.scoring_rule_updated',
       entity: 'scoring_rule',
       entityId: params.outcomeType,
@@ -192,7 +192,7 @@ export class AdminConfigController {
       where: { phase: params.phase },
       data: { multiplier: dto.multiplier, updatedBy: admin.id },
     });
-    void this.audit.log({
+    await this.audit.log({
       action: 'config.phase_multiplier_updated',
       entity: 'phase_multiplier',
       entityId: params.phase,
@@ -230,7 +230,7 @@ export class AdminConfigController {
       where: { key },
       data: { points: dto.points, updatedBy: admin.id },
     });
-    void this.audit.log({
+    await this.audit.log({
       action: 'config.special_prize_rule_updated',
       entity: 'special_prize_rule',
       entityId: key,
