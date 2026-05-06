@@ -60,15 +60,13 @@ export async function updateUser(
 }
 
 /**
- * Reset password de un user. Devuelve la password generada por
- * el backend (mismo flow que crear manual). Si el endpoint no
- * existe todavia, asumir TODO.
+ * Reset password de un user. Devuelve una password de 12 hex chars
+ * generada por el backend (rota refresh tokens activos del user en
+ * la misma TX). El admin la comunica offline.
  */
 export async function resetUserPassword(
   id: string,
 ): Promise<{ password: string }> {
-  // TODO(backend): POST /admin/users/:id/reset-password — devuelve
-  // password en plain (idem flow de creacion manual del spec §6.11).
   return api
     .post(`admin/users/${id}/reset-password`)
     .json<{ password: string }>();
@@ -105,14 +103,17 @@ export async function listPayments(query?: {
 }
 
 /**
- * Marca un payment manualmente como APPROVED. "Ultimo recurso" — uso
- * cuando MP no replicó por algun motivo. Audit log queda registrado.
- *
- * TODO(backend): si el endpoint todavia no existe, este metodo va
- * a fallar con 404 — el panel muestra toast de error.
+ * Marca un payment manualmente como APPROVED. "Último recurso" —
+ * cuando MP no replicó el webhook. Sólo opera sobre logged-in flows
+ * (Payment con userId set); para anónimos el backend devuelve 400 con
+ * indicación de usar POST /admin/users. Crea Entry y audit log.
  */
-export async function approvePayment(id: string): Promise<Payment> {
-  return api.post(`admin/payments/${id}/approve`).json<Payment>();
+export async function approvePayment(
+  id: string,
+): Promise<{ paymentId: string; entryId: string; userId: string }> {
+  return api
+    .post(`admin/payments/${id}/approve`)
+    .json<{ paymentId: string; entryId: string; userId: string }>();
 }
 
 // ── Matches ─────────────────────────────────────────────────────
@@ -429,8 +430,6 @@ export interface ScoringRuleEntry {
 }
 
 export async function listScoringRules(): Promise<ScoringRuleEntry[]> {
-  // TODO(backend): GET /admin/scoring-rules — devuelve los 5 outcome
-  // types con sus basePoints actuales.
   return api.get("admin/scoring-rules").json<ScoringRuleEntry[]>();
 }
 
@@ -451,7 +450,6 @@ export interface PhaseMultiplierEntry {
 }
 
 export async function listPhaseMultipliers(): Promise<PhaseMultiplierEntry[]> {
-  // TODO(backend): GET /admin/phase-multipliers — 7 fases × multiplier.
   return api.get("admin/phase-multipliers").json<PhaseMultiplierEntry[]>();
 }
 
@@ -464,14 +462,20 @@ export async function updatePhaseMultiplier(
     .json<PhaseMultiplierEntry>();
 }
 
+/**
+ * Keys del schema (`special_prize_rules.key`): champion, runnerUp,
+ * thirdPlace, topScorer, totalGoalsExact, totalGoalsClose.
+ */
+export type SpecialPrizeKey =
+  | "champion"
+  | "runnerUp"
+  | "thirdPlace"
+  | "topScorer"
+  | "totalGoalsExact"
+  | "totalGoalsClose";
+
 export interface SpecialPrizeRuleEntry {
-  key:
-    | "CHAMPION"
-    | "RUNNER_UP"
-    | "THIRD_PLACE"
-    | "TOP_SCORER"
-    | "TOTAL_GOALS"
-    | "FAIR_PLAY";
+  key: SpecialPrizeKey;
   points: number;
   description: string | null;
   updatedAt: string;
@@ -479,7 +483,6 @@ export interface SpecialPrizeRuleEntry {
 }
 
 export async function listSpecialPrizeRules(): Promise<SpecialPrizeRuleEntry[]> {
-  // TODO(backend): GET /admin/special-prize-rules.
   return api
     .get("admin/special-prize-rules")
     .json<SpecialPrizeRuleEntry[]>();

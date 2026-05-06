@@ -49,12 +49,12 @@ const PHASE_LABELS: Record<Phase, string> = {
 };
 
 const SPECIAL_LABELS: Record<SpecialPrizeRuleEntry["key"], string> = {
-  CHAMPION: "Campeon",
-  RUNNER_UP: "Subcampeon",
-  THIRD_PLACE: "Tercero",
-  TOP_SCORER: "Goleador",
-  TOTAL_GOALS: "Total de goles",
-  FAIR_PLAY: "Fair play",
+  champion: "Campeón",
+  runnerUp: "Subcampeón",
+  thirdPlace: "Tercer puesto",
+  topScorer: "Goleador del torneo",
+  totalGoalsExact: "Total de goles · exacto",
+  totalGoalsClose: "Total de goles · ±5",
 };
 
 const APP_CONFIG_LABELS: Record<string, string> = {
@@ -586,12 +586,15 @@ function defaultPhaseMultipliers(): PhaseMultiplierEntry[] {
 }
 
 function defaultSpecialRules(): SpecialPrizeRuleEntry[] {
+  // Defaults usados sólo cuando el endpoint del backend falla — los
+  // valores reales vienen del seed seed-config.ts. Las keys deben
+  // matchear schema.prisma: special_prize_rules.key (camelCase).
   return [
-    { key: "CHAMPION", points: 30, description: null, updatedAt: "", updatedBy: null },
-    { key: "RUNNER_UP", points: 15, description: null, updatedAt: "", updatedBy: null },
-    { key: "THIRD_PLACE", points: 10, description: null, updatedAt: "", updatedBy: null },
-    { key: "TOP_SCORER", points: 15, description: null, updatedAt: "", updatedBy: null },
-    { key: "TOTAL_GOALS", points: 10, description: null, updatedAt: "", updatedBy: null },
-    { key: "FAIR_PLAY", points: 5, description: null, updatedAt: "", updatedBy: null },
+    { key: "champion", points: 25, description: null, updatedAt: "", updatedBy: null },
+    { key: "runnerUp", points: 12, description: null, updatedAt: "", updatedBy: null },
+    { key: "thirdPlace", points: 8, description: null, updatedAt: "", updatedBy: null },
+    { key: "topScorer", points: 15, description: null, updatedAt: "", updatedBy: null },
+    { key: "totalGoalsExact", points: 10, description: null, updatedAt: "", updatedBy: null },
+    { key: "totalGoalsClose", points: 5, description: null, updatedAt: "", updatedBy: null },
   ];
 }
