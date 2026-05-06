@@ -129,6 +129,7 @@ export class MatchesService {
         orderBy: { kickoffAt: 'asc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
+        include: { homeTeam: true, awayTeam: true },
       }),
       this.prisma.match.count({ where }),
     ]);
@@ -155,6 +156,7 @@ export class MatchesService {
       },
       orderBy: { kickoffAt: 'asc' },
       take: 10,
+      include: { homeTeam: true, awayTeam: true },
     });
   }
 
