@@ -17,6 +17,7 @@ import { AdminAlertsModule } from './shared/admin-alerts/admin-alerts.module.js'
 import { CheckoutModule } from './shared/checkout/checkout.module.js';
 import { PaymentsModule } from './modules/payments/payments.module.js';
 import { MatchesModule } from './modules/matches/matches.module.js';
+import { PlayersModule } from './modules/players/players.module.js';
 import { PredictionsModule } from './modules/predictions/predictions.module.js';
 import { ScoringModule } from './modules/scoring/scoring.module.js';
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module.js';
@@ -110,6 +111,7 @@ const IS_NON_PROD = process.env.NODE_ENV !== 'production';
     AuthModule,
     PaymentsModule,
     MatchesModule,
+    PlayersModule,
     PredictionsModule,
     ScoringModule,
     LeaderboardModule,
