@@ -29,6 +29,10 @@ export const queryKeys = {
     predictionCount: (matchId: string) =>
       ["matches", matchId, "predictionCount"] as const,
   },
+  players: {
+    all: () => ["players"] as const,
+    byTeam: (teamId: string) => ["players", "team", teamId] as const,
+  },
   /**
    * Multi-prode (v1.1+): predicciones y special prediction se asocian
    * al `entryId`, no al `userId`. Cada entry del user tiene su propio

@@ -245,12 +245,14 @@ function GroupedMatchList({
     dto: { scoreHome: number; scoreAway: number },
   ) => void;
 }) {
-  // Group by day (kickoff date in ART timezone).
+  // Agrupar por día en la TZ del navegador del usuario. kickoffAt llega
+  // en UTC; un partido a las 23:00 ART (= 02:00 UTC del día siguiente)
+  // aparece bajo el día calendario que le corresponde al usuario donde
+  // está parado, no al día ART.
   const dayFormatter = new Intl.DateTimeFormat("es-AR", {
     weekday: "long",
     day: "numeric",
     month: "long",
-    timeZone: "America/Argentina/Buenos_Aires",
   });
   const groups = new Map<string, Match[]>();
   // Sort by kickoffAt ascending, then group.

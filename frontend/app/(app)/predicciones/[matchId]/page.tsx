@@ -362,20 +362,26 @@ function KickoffMeta({ iso }: { iso: string }) {
   let formatted = "—";
   try {
     const d = new Date(iso);
+    // Sin timeZone explícito → TZ del navegador del usuario.
     const fmt = new Intl.DateTimeFormat("es-AR", {
       weekday: "short",
       day: "numeric",
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
-      timeZone: "America/Argentina/Buenos_Aires",
       hour12: false,
     });
     formatted = fmt.format(d);
+    const tzPart = new Intl.DateTimeFormat("es-AR", {
+      timeZoneName: "short",
+    })
+      .formatToParts(d)
+      .find((p) => p.type === "timeZoneName")?.value;
+    if (tzPart) formatted = `${formatted} ${tzPart}`;
   } catch {}
   return (
     <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
-      {formatted} ART
+      {formatted}
     </span>
   );
 }

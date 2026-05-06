@@ -20,6 +20,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { TeamFlag } from "@/components/domain/team-flag";
+import { formatPlayerName } from "@/lib/landing/format-player-name";
 
 // Lazy-load the team picker — only mounted when the user taps a team slot.
 const TeamSelectModal = dynamic(
@@ -28,13 +29,23 @@ const TeamSelectModal = dynamic(
       (m) => m.TeamSelectModal,
     ),
 );
+
+// Lazy-load the player picker — solo se monta cuando el user toca el slot
+// de goleador. El backend de players (/players?teamId=X) puede no estar
+// disponible aún; el modal maneja el error gracefully.
+const PlayerSelectModal = dynamic(
+  () =>
+    import("@/components/domain/player-select-modal").then(
+      (m) => m.PlayerSelectModal,
+    ),
+);
 import { queryKeys } from "@/lib/api/queryKeys";
 import { getMatchesByPhase } from "@/lib/api/matches";
 import {
   getEntrySpecialPrediction,
   upsertEntrySpecialPrediction,
 } from "@/lib/api/predictions";
-import type { SpecialPrediction, Team } from "@/lib/api/types";
+import type { Player, SpecialPrediction, Team } from "@/lib/api/types";
 import { useActiveEntry } from "@/lib/hooks/use-active-entry";
 import { cn } from "@/lib/utils/cn";
 
@@ -43,10 +54,8 @@ const formSchema = z
     championTeamId: z.string().min(1, "Elegi un campeon"),
     runnerUpTeamId: z.string().min(1, "Elegi un subcampeon"),
     thirdPlaceTeamId: z.string().min(1, "Elegi un tercer puesto"),
-    topScorerName: z
-      .string()
-      .min(2, "Indica al menos 2 caracteres")
-      .max(80, "Demasiado largo"),
+    topScorerId: z.string().min(1, "Elegí al goleador"),
+    topScorerName: z.string().min(1).max(120),
     totalGoals: z
       .number({ message: "Indica un numero" })
       .int("Tiene que ser un entero")
@@ -218,9 +227,19 @@ function ReadOnlyView({
       />
       <div className={cardSurface}>
         <p className={labelClasses}>Goleador</p>
-        <p className="mt-2 font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight leading-none text-[var(--color-landing-text)]">
-          {special.topScorer?.fullName ?? special.topScorerName ?? "—"}
-        </p>
+        <div className="mt-2 flex items-center gap-3">
+          <p className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight leading-none text-[var(--color-landing-text)]">
+            {formatPlayerName(
+              special.topScorer?.fullName ?? special.topScorerName ?? "",
+            ) || "—"}
+          </p>
+          {special.topScorer?.shirtNumber !== null &&
+          special.topScorer?.shirtNumber !== undefined ? (
+            <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-landing-surface-2)] border border-[var(--color-landing-line-strong)] font-[family-name:var(--font-landing-mono)] text-[11px] font-bold tabular-nums text-[var(--color-landing-gold)]">
+              {special.topScorer.shirtNumber}
+            </span>
+          ) : null}
+        </div>
       </div>
       <div className={cardSurface}>
         <p className={labelClasses}>Total de goles del torneo</p>
@@ -282,6 +301,13 @@ function EditableForm({
   const [openSlot, setOpenSlot] = useState<Slot | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<FormValues | null>(null);
+  const [topScorerOpen, setTopScorerOpen] = useState(false);
+  // Tracking del Player elegido para mostrar nombre formateado +
+  // shirtNumber + bandera del team. La API solo guarda el id/name pero
+  // necesitamos el objeto completo para el render.
+  const [selectedTopScorer, setSelectedTopScorer] = useState<Player | null>(
+    existing?.topScorer ?? null,
+  );
 
   const {
     control,
@@ -296,7 +322,8 @@ function EditableForm({
       championTeamId: existing?.championTeamId ?? "",
       runnerUpTeamId: existing?.runnerUpTeamId ?? "",
       thirdPlaceTeamId: existing?.thirdPlaceTeamId ?? "",
-      topScorerName: existing?.topScorerName ?? "",
+      topScorerId: existing?.topScorerId ?? "",
+      topScorerName: existing?.topScorerName ?? existing?.topScorer?.fullName ?? "",
       totalGoals: existing?.totalGoals ?? 0,
     },
   });
@@ -316,8 +343,11 @@ function EditableForm({
         championTeamId: vals.championTeamId,
         runnerUpTeamId: vals.runnerUpTeamId,
         thirdPlaceTeamId: vals.thirdPlaceTeamId,
+        topScorerId: vals.topScorerId,
+        // Mandamos el `fullName` raw (formato "Apellido Nombre" del
+        // backend) para que el storage en DB sea consistente. El display
+        // en el cliente reformatea con `formatPlayerName()`.
         topScorerName: vals.topScorerName,
-        topScorerId: null,
         totalGoals: vals.totalGoals,
       }),
     onSuccess: (data) => {
@@ -429,23 +459,56 @@ function EditableForm({
         })}
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="topScorerName" className={labelClasses}>
-            Goleador del torneo
-          </label>
-          <Controller
-            control={control}
-            name="topScorerName"
-            render={({ field }) => (
-              <input
-                id="topScorerName"
-                placeholder="Ej. Lionel Messi"
-                className={inputClasses}
-                {...field}
-              />
+          <label className={labelClasses}>Goleador del torneo</label>
+          <button
+            type="button"
+            onClick={() => setTopScorerOpen(true)}
+            className="flex items-center gap-3 rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-4 text-left transition-colors hover:border-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)] border-l-[3px]"
+            style={{ borderLeftColor: "var(--color-landing-red)" }}
+          >
+            {selectedTopScorer ? (
+              <>
+                {(() => {
+                  const team = selectedTopScorer.teamId
+                    ? teamById.get(selectedTopScorer.teamId)
+                    : undefined;
+                  return team ? (
+                    <TeamFlag fifaCode={team.fifaCode} src={team.flagUrl} size={32} />
+                  ) : (
+                    <span
+                      className="h-8 w-8 rounded-sm bg-[var(--color-landing-surface-2)]"
+                      aria-hidden
+                    />
+                  );
+                })()}
+                <span className="flex-1 font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight leading-none text-[var(--color-landing-text)] truncate">
+                  {formatPlayerName(selectedTopScorer.fullName)}
+                </span>
+                {selectedTopScorer.shirtNumber !== null &&
+                selectedTopScorer.shirtNumber !== undefined ? (
+                  <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-landing-surface-2)] border border-[var(--color-landing-line-strong)] font-[family-name:var(--font-landing-mono)] text-[11px] font-bold tabular-nums text-[var(--color-landing-gold)]">
+                    {selectedTopScorer.shirtNumber}
+                  </span>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <span
+                  className="h-8 w-8 rounded-sm bg-[var(--color-landing-surface-2)]"
+                  aria-hidden
+                />
+                <span className="flex-1 font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight leading-none text-[var(--color-landing-text-muted)]">
+                  Elegí al goleador
+                </span>
+              </>
             )}
-          />
-          {errors.topScorerName ? (
-            <p className={errorText}>{errors.topScorerName.message}</p>
+            <ChevronDown
+              className="h-4 w-4 text-[var(--color-landing-text-muted)]"
+              aria-hidden
+            />
+          </button>
+          {errors.topScorerId ? (
+            <p className={errorText}>{errors.topScorerId.message}</p>
           ) : null}
         </div>
 
@@ -511,6 +574,21 @@ function EditableForm({
         );
       })}
 
+      <PlayerSelectModal
+        open={topScorerOpen}
+        onOpenChange={setTopScorerOpen}
+        teams={teams}
+        selectedPlayer={selectedTopScorer}
+        onSelect={(player) => {
+          setSelectedTopScorer(player);
+          setValue("topScorerId", player.id, { shouldDirty: true });
+          // Storage en DB: formato raw "Apellido Nombre" para consistencia.
+          setValue("topScorerName", player.fullName, { shouldDirty: true });
+          trigger(["topScorerId", "topScorerName"]);
+        }}
+        title="Elegí al goleador del torneo"
+      />
+
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogTitle className="font-[family-name:var(--font-landing-display)] text-3xl uppercase tracking-tight text-[var(--color-landing-text)]">
@@ -540,7 +618,7 @@ function EditableForm({
               />
               <ConfirmRow
                 label="Goleador"
-                value={pendingValues.topScorerName}
+                value={formatPlayerName(pendingValues.topScorerName)}
               />
               <ConfirmRow
                 label="Total de goles"

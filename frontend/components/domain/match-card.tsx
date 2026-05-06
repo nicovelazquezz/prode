@@ -262,17 +262,29 @@ function TeamRow({
 }
 
 function KickoffTime({ iso }: { iso: string }) {
-  // Visualizamos hora ART (UTC-3). Mas detallado en spec §6.4
-  // (formatos de fecha completos lo maneja la pagina, no la card).
+  // kickoffAt llega en UTC; renderizamos en la TZ del browser del
+  // usuario (Intl.DateTimeFormat sin timeZone explícito). El sufijo
+  // `tzShort` deriva del navegador para mostrar "ART"/"EDT"/"CET" según
+  // corresponda — un usuario en California ve "20:00 PDT", en Bahía
+  // Blanca ve "00:00 ART".
   try {
     const d = new Date(iso);
     const formatter = new Intl.DateTimeFormat("es-AR", {
       hour: "2-digit",
       minute: "2-digit",
-      timeZone: "America/Argentina/Buenos_Aires",
       hour12: false,
     });
-    return <>{formatter.format(d)} ART</>;
+    const tzShort = new Intl.DateTimeFormat("es-AR", {
+      timeZoneName: "short",
+    })
+      .formatToParts(d)
+      .find((p) => p.type === "timeZoneName")?.value;
+    return (
+      <>
+        {formatter.format(d)}
+        {tzShort ? ` ${tzShort}` : ""}
+      </>
+    );
   } catch {
     return <>--:--</>;
   }
