@@ -1,13 +1,18 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Logger,
+  NotFoundException,
+  Param,
+  Patch,
   Post,
   Req,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
+import { randomBytes } from 'node:crypto';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import {
   CurrentUser,
@@ -18,6 +23,7 @@ import { AuthService } from '../auth/auth.service.js';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { CreateManualUserDto } from './dto/create-manual-user.dto.js';
+import { UpdateUserDto } from './dto/update-user.dto.js';
 import {
   DniAlreadyExistsException,
   WhatsappAlreadyExistsException,
@@ -204,6 +210,183 @@ export class AdminUsersController {
         position: result.entry.position,
         status: result.entry.status,
       },
+    };
+  }
+
+  /**
+   * Edita campos seleccionados de un user existente: nombre/apellido,
+   * whatsapp, status (ACTIVE/INACTIVE/BANNED), role (USER/ADMIN).
+   *
+   * No incluye dni (rompería identidad/audit trail) ni password (endpoint
+   * dedicado abajo). Audita un diff de los campos modificados.
+   */
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+    @CurrentUser() admin: AuthenticatedUser | undefined,
+    @Req() req: Request,
+  ) {
+    if (!admin?.id) {
+      throw new UnauthorizedException('Authenticated admin required');
+    }
+    const ctx = getRequestContext(req);
+
+    const existing = await this.prisma.user.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`User ${id} not found`);
+    }
+
+    // Lockout-prevention: el admin no puede demoteerse a USER en una
+    // sola request (queda sin admins). Para casos legítimos (cambio de
+    // ownership), el admin entrante hace el cambio en una request aparte.
+    if (admin.id === id && dto.role === 'USER') {
+      throw new BadRequestException(
+        'No podés demotearte a USER en la misma request. Pedile a otro admin que lo haga.',
+      );
+    }
+
+    // WhatsApp unique check sólo si cambió.
+    if (dto.whatsapp && dto.whatsapp !== existing.whatsapp) {
+      const dupWa = await this.prisma.user.findUnique({
+        where: { whatsapp: dto.whatsapp },
+      });
+      if (dupWa && dupWa.id !== id) throw new WhatsappAlreadyExistsException();
+    }
+
+    // Construir el diff: sólo campos efectivamente cambiados, para que
+    // el audit log no espamee con noops cuando el frontend manda toda la
+    // forma sin tocar.
+    const diff: Record<string, { from: unknown; to: unknown }> = {};
+    const data: {
+      firstName?: string;
+      lastName?: string;
+      whatsapp?: string;
+      status?: 'ACTIVE' | 'INACTIVE' | 'BANNED';
+      role?: 'USER' | 'ADMIN';
+    } = {};
+    if (dto.firstName !== undefined && dto.firstName !== existing.firstName) {
+      diff.firstName = { from: existing.firstName, to: dto.firstName };
+      data.firstName = dto.firstName;
+    }
+    if (dto.lastName !== undefined && dto.lastName !== existing.lastName) {
+      diff.lastName = { from: existing.lastName, to: dto.lastName };
+      data.lastName = dto.lastName;
+    }
+    if (dto.whatsapp !== undefined && dto.whatsapp !== existing.whatsapp) {
+      diff.whatsapp = { from: existing.whatsapp, to: dto.whatsapp };
+      data.whatsapp = dto.whatsapp;
+    }
+    if (dto.status !== undefined && dto.status !== existing.status) {
+      diff.status = { from: existing.status, to: dto.status };
+      data.status = dto.status;
+    }
+    if (dto.role !== undefined && dto.role !== existing.role) {
+      diff.role = { from: existing.role, to: dto.role };
+      data.role = dto.role;
+    }
+
+    if (Object.keys(diff).length === 0) {
+      // No-op: devolvemos el shape igual sin tocar DB ni auditar.
+      return this.toPublicUser(existing);
+    }
+
+    const updated = await this.prisma.user.update({ where: { id }, data });
+
+    void this.audit.log({
+      action: 'user.updated_by_admin',
+      entity: 'user',
+      entityId: id,
+      changes: diff,
+      userId: admin.id,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+    });
+
+    this.logger.log(
+      `Admin ${admin.id} updated user ${id} fields=${Object.keys(diff).join(',')}`,
+    );
+    return this.toPublicUser(updated);
+  }
+
+  /**
+   * Genera una password nueva para el user, la persiste hasheada con
+   * bcrypt y revoca todos los refresh tokens activos. Devuelve la
+   * password en plano una vez para que el admin se la comunique al user
+   * por WhatsApp/voz. El user puede después usar el flow estándar de
+   * `/forgot-password` para cambiarla a una de su elección.
+   *
+   * 12 hex chars = 48 bits de entropía: suficiente para un one-time
+   * compartido offline. Cumple `min 8 chars + 1 digit` del schema (hex
+   * tiene 0-9).
+   */
+  @Post(':id/reset-password')
+  async resetPassword(
+    @Param('id') id: string,
+    @CurrentUser() admin: AuthenticatedUser | undefined,
+    @Req() req: Request,
+  ) {
+    if (!admin?.id) {
+      throw new UnauthorizedException('Authenticated admin required');
+    }
+    const ctx = getRequestContext(req);
+
+    const existing = await this.prisma.user.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`User ${id} not found`);
+    }
+
+    const newPassword = randomBytes(6).toString('hex');
+    const passwordHash = await this.authService.hashPassword(newPassword);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({ where: { id }, data: { passwordHash } });
+      // Echar a todas las sesiones activas — si la password se filtró,
+      // queremos que el atacante pierda acceso aunque haya un access
+      // token vivo (que vence en minutos de todos modos).
+      await tx.refreshToken.updateMany({
+        where: { userId: id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    });
+
+    void this.audit.log({
+      action: 'user.password_reset_by_admin',
+      entity: 'user',
+      entityId: id,
+      // No persistir el plaintext en el audit log — sólo la traza.
+      changes: { rotatedAt: new Date().toISOString() },
+      userId: admin.id,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+    });
+
+    this.logger.log(`Admin ${admin.id} reset password for user ${id}`);
+    return { password: newPassword };
+  }
+
+  /**
+   * Shape público del User para los responses de PATCH/POST de este
+   * controller. Match con `User` del frontend (lib/api/types.ts) sin
+   * passwordHash ni timestamps internos.
+   */
+  private toPublicUser(u: {
+    id: string;
+    dni: string;
+    firstName: string;
+    lastName: string;
+    whatsapp: string;
+    role: 'USER' | 'ADMIN';
+    status: 'ACTIVE' | 'INACTIVE' | 'BANNED';
+  }) {
+    return {
+      id: u.id,
+      dni: u.dni,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      whatsapp: u.whatsapp,
+      role: u.role,
+      status: u.status,
     };
   }
 }
