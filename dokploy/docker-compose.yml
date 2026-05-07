@@ -27,6 +27,35 @@ services:
     image: redis:7-alpine
     volumes:
       - prode-redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  prode-wa-backend:
+    image: prode-wa-backend:latest
+    build:
+      context: ./wa-backend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      WA_API_TOKEN: ${WHATSAPP_API_TOKEN}
+      WA_AUTH_DIR: /app/data/auth
+      WA_SEND_DELAY_MS: '500'
+      WA_VERIFY_RECIPIENT: 'false'
+      WA_RECONNECT_MAX_BACKOFF_MS: '60000'
+      LOG_LEVEL: info
+      TZ: America/Argentina/Buenos_Aires
+    volumes:
+      - prode-wa-data:/app/data
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3001/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
 
   prode-backend:
@@ -61,6 +90,8 @@ services:
       prode-postgres:
         condition: service_healthy
       prode-redis:
+        condition: service_healthy
+      prode-wa-backend:
         condition: service_started
     restart: unless-stopped
 
@@ -104,3 +135,4 @@ services:
 volumes:
   prode-pg-data:
   prode-redis-data:
+  prode-wa-data:
