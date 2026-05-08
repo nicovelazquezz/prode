@@ -67,13 +67,18 @@ describe('POST /auth/login (integration)', () => {
 
   /**
    * Regression: Phase 0 of the frontend plan flipped SameSite from
-   * Strict → Lax (so the cookie rides cross-subdomain top-level
-   * navigations) and added a non-httpOnly `has_session=1` hint the
-   * frontend reads with `document.cookie` to skip /auth/refresh on
-   * anonymous landings. Both cookies share `path=/` and matching
-   * scope so they live and die together.
+   * SameSite=Strict (CSRF hardening): frontend (`prodeplus.com`)
+   * y API (`api.prodeplus.com`) son same-site (mismo eTLD+1
+   * `prodeplus.com`), así que la cookie viaja en requests cross-origin
+   * pero same-site iniciadas desde el frontend. Una página en `evil.com`
+   * NO puede gatillar `/auth/refresh` ni `/auth/logout` porque el browser
+   * no envía la cookie en requests cross-site con strict.
+   *
+   * El hint `has_session=1` es NON-httpOnly para que el frontend lo lea
+   * con `document.cookie` y skip /auth/refresh en landings anónimos.
+   * Ambos comparten `path=/` y scope para vivir y morir juntos.
    */
-  it('emits both refresh_token (HttpOnly + SameSite=Lax) and has_session=1 cookies on login', async () => {
+  it('emits both refresh_token (HttpOnly + SameSite=Strict) and has_session=1 cookies on login', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/login')
       .send({ dni: ADMIN_DNI, password: ADMIN_PASSWORD });
@@ -87,14 +92,14 @@ describe('POST /auth/login (integration)', () => {
     const refresh = cookies.find((c) => c.startsWith('refresh_token='));
     expect(refresh).toBeDefined();
     expect(refresh).toMatch(/HttpOnly/i);
-    expect(refresh).toMatch(/SameSite=Lax/i);
+    expect(refresh).toMatch(/SameSite=Strict/i);
     expect(refresh).toMatch(/Path=\//i);
 
     const hint = cookies.find((c) => c.startsWith('has_session='));
     expect(hint).toBeDefined();
     // has_session must NOT be HttpOnly — frontend reads it from JS.
     expect(hint).not.toMatch(/HttpOnly/i);
-    expect(hint).toMatch(/SameSite=Lax/i);
+    expect(hint).toMatch(/SameSite=Strict/i);
     expect(hint).toMatch(/Path=\//i);
     expect(hint!.split(';')[0]).toBe('has_session=1');
   });

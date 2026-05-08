@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { IosInstallBanner } from "@/components/domain/ios-install-banner";
 import { ActiveEntryProvider } from "@/providers/active-entry-provider";
 import { useAuth } from "@/lib/hooks/use-auth";
 
@@ -30,11 +31,18 @@ export default function AppLayout({
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
+  // Defensa en profundidad: si el user existe pero está BANNED (caso
+  // raro: admin lo banea durante una sesión activa), lo expulsamos. El
+  // backend rechaza login de BANNED, pero un access token previo sigue
+  // válido hasta su expiración (~15min) — sin este guard verían
+  // predicciones, leaderboard, etc en esa ventana.
+  const isBanned = user?.status === "BANNED";
+
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && (!user || isBanned)) {
       router.replace("/login");
     }
-  }, [isLoading, user, router]);
+  }, [isLoading, user, isBanned, router]);
 
   if (isLoading) {
     return (
@@ -51,7 +59,7 @@ export default function AppLayout({
     );
   }
 
-  if (!user) {
+  if (!user || isBanned) {
     // Redirect ya disparado en el efecto; renderizamos vacio para
     // no flashear contenido protegido durante el frame de transicion.
     return null;
@@ -63,6 +71,10 @@ export default function AppLayout({
         <AppHeader userName={user.firstName} />
         <main className="flex-1 pb-16 md:pb-0">{children}</main>
         <BottomNav />
+        {/* Banner sticky de "Instalá la app" — solo visible en iOS
+            Safari no-standalone. Se cierra una vez y queda dismissed
+            forever via localStorage. */}
+        <IosInstallBanner />
       </div>
     </ActiveEntryProvider>
   );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -42,6 +42,7 @@ const errorClass =
  */
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -54,11 +55,25 @@ export default function LoginPage() {
     defaultValues: { dni: "", password: "" },
   });
 
+  /**
+   * Si el user vino redirigido por sesión expirada (`?returnTo=/predicciones`),
+   * después del login lo mandamos de vuelta a esa URL. Validamos que empiece
+   * con "/" y NO con "//" para evitar open-redirects (//evil.com sería tomado
+   * como external por algunos navegadores).
+   */
+  const rawReturnTo = searchParams.get("returnTo");
+  const safeReturnTo =
+    rawReturnTo &&
+    rawReturnTo.startsWith("/") &&
+    !rawReturnTo.startsWith("//")
+      ? rawReturnTo
+      : null;
+
   const onSubmit = async (values: LoginValues) => {
     try {
       const user = await login(values);
-      const target = user.role === "ADMIN" ? "/admin" : "/predicciones";
-      router.replace(target);
+      const defaultTarget = user.role === "ADMIN" ? "/admin" : "/predicciones";
+      router.replace(safeReturnTo ?? defaultTarget);
     } catch (err) {
       const msg =
         err instanceof Error && err.message

@@ -32,6 +32,18 @@ interface PredictionInputProps {
    * si no se provee.
    */
   ariaLabel?: string;
+  /**
+   * Tinte por estado del match card padre. Ajusta el border color
+   * para reforzar la lectura "saved" (green) / "retrying" (red) /
+   * "empty" (gold tenue) sin replicar la logica del MatchCard.
+   *
+   * - default: border line-strong (sin tinte)
+   * - saved: border green
+   * - retrying: border red
+   * - empty: border gold tenue (el MatchCard puede sumar `input-pulse`
+   *   via className para animar el border)
+   */
+  tone?: "default" | "saved" | "retrying" | "empty";
   className?: string;
 }
 
@@ -60,6 +72,7 @@ export function PredictionInput({
   onOpenSheet,
   onChange,
   ariaLabel = "Prediccion",
+  tone = "default",
   className,
 }: PredictionInputProps) {
   const isMobile = useMediaQuery("(max-width: 767px)");
@@ -74,6 +87,20 @@ export function PredictionInput({
     setLocalValue(value === null ? "" : String(value));
   }, [value]);
 
+  // Border color por tono — solo aplica a estados open (no disabled).
+  // El MatchCard padre setea el tono según `state`. La altura/ancho/
+  // tipografía no cambian para no romper rítmica del card.
+  const toneBorder =
+    tone === "saved"
+      ? "border-[var(--color-landing-green)]"
+      : tone === "retrying"
+        ? "border-[var(--color-landing-red)]"
+        : tone === "empty"
+          ? "border-[rgba(200,160,83,0.5)]"
+          : value === null
+            ? "border-[var(--color-landing-line-strong)]"
+            : "border-[var(--color-landing-text)]";
+
   if (isMobile) {
     return (
       <button
@@ -82,16 +109,20 @@ export function PredictionInput({
         disabled={disabled}
         aria-label={ariaLabel}
         className={cn(
-          "w-14 h-14 min-w-14 rounded-sm",
-          "font-[family-name:var(--font-landing-display)] text-[32px] tabular-nums leading-none",
+          "w-12 h-14 min-w-12 rounded-sm",
+          "font-[family-name:var(--font-landing-display)] text-[28px] tabular-nums leading-none",
           "flex items-center justify-center",
-          "border transition-colors duration-200",
+          "border-2 transition-colors duration-200",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-landing-gold)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-landing-surface)]",
           disabled
-            ? "bg-[var(--color-landing-surface-2)] border-[var(--color-landing-line)] text-[var(--color-landing-text-muted)] cursor-not-allowed"
-            : value === null
-              ? "bg-[var(--color-landing-surface-2)] border-[var(--color-landing-line-strong)] text-[var(--color-landing-text-muted)] hover:border-[var(--color-landing-text)]"
-              : "bg-[var(--color-landing-surface-2)] border-[var(--color-landing-text)] text-[var(--color-landing-text)]",
+            ? "bg-black/20 border-[var(--color-landing-line)] border-dashed text-[var(--color-landing-text-muted)] cursor-not-allowed"
+            : cn(
+                "bg-[rgba(241,236,224,0.04)] hover:border-[var(--color-landing-gold)]",
+                toneBorder,
+                value === null
+                  ? "text-[var(--color-landing-text-muted)]"
+                  : "text-[var(--color-landing-text)]",
+              ),
           className,
         )}
       >
@@ -100,7 +131,7 @@ export function PredictionInput({
     );
   }
 
-  // Desktop: input nativo con border-bottom underline.
+  // Desktop: bordered box (no underline) para matchear V4 scoreboard look.
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
     setLocalValue(raw);
@@ -126,15 +157,18 @@ export function PredictionInput({
       maxLength={2}
       placeholder="—"
       className={cn(
-        "w-12 h-12 text-center bg-transparent",
-        "font-[family-name:var(--font-landing-display)] text-[24px] tabular-nums leading-none",
-        "border-0 border-b outline-none",
-        "transition-colors duration-200",
+        "w-11 h-12 md:h-[50px] rounded-sm text-center",
+        "font-[family-name:var(--font-landing-display)] text-[26px] md:text-[28px] tabular-nums leading-none",
+        "border-2 outline-none transition-colors duration-200",
         "placeholder:text-[var(--color-landing-text-muted)]",
-        "focus:border-b-2 focus:border-[var(--color-landing-green)] focus:outline-none",
+        "focus:border-[var(--color-landing-gold)]",
         disabled
-          ? "border-[var(--color-landing-line)] text-[var(--color-landing-text-muted)] cursor-not-allowed"
-          : "border-[var(--color-landing-line-strong)] text-[var(--color-landing-text)]",
+          ? "bg-black/20 border-[var(--color-landing-line)] border-dashed text-[var(--color-landing-text-muted)] cursor-not-allowed"
+          : cn(
+              "bg-[rgba(241,236,224,0.04)] hover:border-[var(--color-landing-gold)]",
+              toneBorder,
+              "text-[var(--color-landing-text)]",
+            ),
         className,
       )}
     />

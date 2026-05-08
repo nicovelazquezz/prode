@@ -84,6 +84,7 @@ enum NotificationType {
   PHASE_WINNER
   PASSWORD_RESET
   ADMIN_BROADCAST
+  PAYMENT_OVER_CAP
 }
 
 enum NotificationChannel {
@@ -350,7 +351,7 @@ model PhaseWinner {
   id           String      @id @default(cuid())
   phase        Phase       @unique
   entryId      String
-  entry        Entry       @relation(fields: [entryId], references: [id])
+  entry        Entry       @relation(fields: [entryId], references: [id], onDelete: Restrict)
   pointsEarned Int
   prizeAmount  Decimal?    @db.Decimal(10, 2)
   prizeStatus  PrizeStatus @default(PENDING)

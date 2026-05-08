@@ -16,7 +16,7 @@ const validEnv = {
   WHATSAPP_API_URL: 'https://example.com',
   WHATSAPP_API_TOKEN: 'tok',
   ADMIN_WHATSAPP_NUMBER: '5492914000000',
-  EMAIL_FROM: 'prode@tirofederal.com',
+  EMAIL_FROM: 'noreply@prodeplus.com',
   FRONTEND_URL: 'http://localhost:3000',
   API_URL: 'http://localhost:3001',
 };
@@ -53,5 +53,139 @@ describe('loadEnv', () => {
     expect(() => loadEnv()).toThrow('process.exit called');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(errSpy).toHaveBeenCalled();
+  });
+
+  describe('production safety guard', () => {
+    function spyOnExit() {
+      return jest
+        .spyOn(process, 'exit')
+        .mockImplementation(((_code?: number) => {
+          throw new Error('process.exit called');
+        }) as never);
+    }
+
+    it('aborts when THROTTLER_BYPASS_TEST is set in production', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.THROTTLER_BYPASS_TEST = '1';
+      const exitSpy = spyOnExit();
+      const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => loadEnv()).toThrow('process.exit called');
+      expect(exitSpy).toHaveBeenCalledWith(1);
+      const message = errSpy.mock.calls[0]?.[0] as string;
+      expect(message).toMatch(/THROTTLER_BYPASS_TEST/);
+    });
+
+    it('aborts when a JWT secret contains the dev sentinel', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.JWT_ACCESS_SECRET =
+        'dev_only_access_secret_at_least_32_chars_long_xxx';
+      const exitSpy = spyOnExit();
+      const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => loadEnv()).toThrow('process.exit called');
+      expect(exitSpy).toHaveBeenCalledWith(1);
+      const message = errSpy.mock.calls[0]?.[0] as string;
+      expect(message).toMatch(/JWT_ACCESS_SECRET/);
+      expect(message).toMatch(/dev_only/);
+    });
+
+    it('aborts when ADMIN_DEFAULT_PASSWORD has the ChangeMe sentinel', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.ADMIN_DEFAULT_PASSWORD = 'ChangeMe_DevOnly!';
+      const exitSpy = spyOnExit();
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => loadEnv()).toThrow('process.exit called');
+      expect(exitSpy).toHaveBeenCalledWith(1);
+    });
+
+    it('does NOT abort when secrets are clean and required prod vars are set', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.JWT_ACCESS_SECRET = 'p'.repeat(64);
+      process.env.JWT_REFRESH_SECRET = 'q'.repeat(64);
+      process.env.MP_WEBHOOK_SECRET = 'wh-prod-real-secret';
+      process.env.WHATSAPP_API_TOKEN = 'wa-prod-real-token';
+      process.env.TURNSTILE_SECRET_KEY = 'ts-prod-real-secret';
+      process.env.SENTRY_DSN = 'https://abc@sentry.io/1';
+      process.env.ADMIN_DEFAULT_PASSWORD = 'admin-prod-real-pwd';
+      delete (process.env as Record<string, string | undefined>)
+        .THROTTLER_BYPASS_TEST;
+
+      const env = loadEnv();
+      expect(env.NODE_ENV).toBe('production');
+    });
+
+    it('aborts when TURNSTILE_SECRET_KEY is missing in production', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.JWT_ACCESS_SECRET = 'p'.repeat(64);
+      process.env.JWT_REFRESH_SECRET = 'q'.repeat(64);
+      process.env.MP_WEBHOOK_SECRET = 'wh-prod-real-secret';
+      process.env.WHATSAPP_API_TOKEN = 'wa-prod-real-token';
+      process.env.SENTRY_DSN = 'https://abc@sentry.io/1';
+      process.env.ADMIN_DEFAULT_PASSWORD = 'admin-prod-real-pwd';
+      delete (process.env as Record<string, string | undefined>)
+        .TURNSTILE_SECRET_KEY;
+      delete (process.env as Record<string, string | undefined>)
+        .THROTTLER_BYPASS_TEST;
+      const exitSpy = spyOnExit();
+      const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => loadEnv()).toThrow('process.exit called');
+      expect(exitSpy).toHaveBeenCalledWith(1);
+      const message = errSpy.mock.calls[0]?.[0] as string;
+      expect(message).toMatch(/TURNSTILE_SECRET_KEY/);
+    });
+
+    it('aborts when SENTRY_DSN is missing in production', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.JWT_ACCESS_SECRET = 'p'.repeat(64);
+      process.env.JWT_REFRESH_SECRET = 'q'.repeat(64);
+      process.env.MP_WEBHOOK_SECRET = 'wh-prod-real-secret';
+      process.env.WHATSAPP_API_TOKEN = 'wa-prod-real-token';
+      process.env.TURNSTILE_SECRET_KEY = 'ts-prod-real-secret';
+      process.env.ADMIN_DEFAULT_PASSWORD = 'admin-prod-real-pwd';
+      delete (process.env as Record<string, string | undefined>).SENTRY_DSN;
+      delete (process.env as Record<string, string | undefined>)
+        .THROTTLER_BYPASS_TEST;
+      const exitSpy = spyOnExit();
+      const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => loadEnv()).toThrow('process.exit called');
+      expect(exitSpy).toHaveBeenCalledWith(1);
+      const message = errSpy.mock.calls[0]?.[0] as string;
+      expect(message).toMatch(/SENTRY_DSN/);
+    });
+
+    it('aborts when ADMIN_DEFAULT_PASSWORD is missing in production', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.JWT_ACCESS_SECRET = 'p'.repeat(64);
+      process.env.JWT_REFRESH_SECRET = 'q'.repeat(64);
+      process.env.MP_WEBHOOK_SECRET = 'wh-prod-real-secret';
+      process.env.WHATSAPP_API_TOKEN = 'wa-prod-real-token';
+      process.env.TURNSTILE_SECRET_KEY = 'ts-prod-real-secret';
+      process.env.SENTRY_DSN = 'https://abc@sentry.io/1';
+      delete (process.env as Record<string, string | undefined>)
+        .ADMIN_DEFAULT_PASSWORD;
+      delete (process.env as Record<string, string | undefined>)
+        .THROTTLER_BYPASS_TEST;
+      const exitSpy = spyOnExit();
+      const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => loadEnv()).toThrow('process.exit called');
+      expect(exitSpy).toHaveBeenCalledWith(1);
+      const message = errSpy.mock.calls[0]?.[0] as string;
+      expect(message).toMatch(/ADMIN_DEFAULT_PASSWORD/);
+    });
+
+    it('does NOT abort in development even with dev sentinels (intended)', () => {
+      process.env.NODE_ENV = 'development';
+      process.env.JWT_ACCESS_SECRET =
+        'dev_only_access_secret_at_least_32_chars_long_xxx';
+      process.env.THROTTLER_BYPASS_TEST = '1';
+
+      const env = loadEnv();
+      expect(env.NODE_ENV).toBe('development');
+    });
   });
 });

@@ -40,19 +40,20 @@ import {
   WhatsappAlreadyExistsException,
 } from '../../common/exceptions/domain.exceptions.js';
 import { assertUnderUserCap } from '../../common/limits/user-cap.js';
+import { maskDni } from '../../common/utils/mask.js';
 
 const REFRESH_COOKIE = 'refresh_token';
 const SESSION_HINT_COOKIE = 'has_session';
 const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 /**
- * Production cookie domain. Frontend (`prode.tirofederal.com`) and backend
- * (`api.prode.tirofederal.com`) sit on different subdomains, so the cookie
+ * Production cookie domain. Frontend (`prodeplus.com`) and backend
+ * (`api.prodeplus.com`) sit on different subdomains, so the cookie
  * must be scoped to the parent domain or the browser won't send it back to
  * the API on cross-subdomain requests. Locally we omit `domain` entirely
  * (cookies stay host-only on `localhost`), which is the right default for
  * `npm run start:dev`.
  */
-const PROD_COOKIE_DOMAIN = '.tirofederal.com';
+const PROD_COOKIE_DOMAIN = '.prodeplus.com';
 
 /**
  * Builds the cookie options shared by `refresh_token` and `has_session`.
@@ -60,10 +61,19 @@ const PROD_COOKIE_DOMAIN = '.tirofederal.com';
  * `domain`/`sameSite`/`secure` between calls leaves stale cookies behind
  * that the browser can't replace.
  *
- * `sameSite: 'lax'` (was 'strict' previously) so the cookie still rides
- * top-level navigations from the frontend host to the API host. 'strict'
- * was incompatible with the cross-subdomain split required for the prod
- * deploy (see `PROD_COOKIE_DOMAIN`).
+ * `sameSite: 'strict'` para mitigar CSRF. Frontend (`prodeplus.com`)
+ * y API (`api.prodeplus.com`) son **same-site** (mismo eTLD+1
+ * `prodeplus.com`), así que la cookie viaja en requests cross-origin
+ * pero same-site iniciadas desde el frontend. Lo que strict bloquea es
+ * exactamente el vector CSRF: una página en `evil.com` no puede gatillar
+ * `/auth/refresh` ni `/auth/logout` porque la cookie no se envía en
+ * requests cross-site.
+ *
+ * Nota histórica: el código tuvo `sameSite: 'lax'` en algún momento. Lax
+ * ya bloquea form-POSTs cross-site (solo deja pasar GETs top-level), así
+ * que la diferencia práctica con strict en este endpoint POST es chica
+ * — pero strict es estrictamente más conservador y funciona idéntico en
+ * el deploy de subdominios. No hay razón para no usarlo.
  */
 function buildCookieOptions(
   isProd: boolean,
@@ -71,7 +81,7 @@ function buildCookieOptions(
 ): {
   httpOnly: boolean;
   secure: boolean;
-  sameSite: 'lax';
+  sameSite: 'strict';
   path: string;
   maxAge: number;
   domain?: string;
@@ -79,7 +89,7 @@ function buildCookieOptions(
   return {
     httpOnly: options.httpOnly,
     secure: isProd,
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
     maxAge: options.maxAge,
     ...(isProd ? { domain: PROD_COOKIE_DOMAIN } : {}),
@@ -122,12 +132,6 @@ function clearAuthCookies(res: Response, isProd: boolean): void {
   };
   res.clearCookie(REFRESH_COOKIE, baseOpts);
   res.clearCookie(SESSION_HINT_COOKIE, baseOpts);
-}
-
-/** Masks a DNI for audit logs: `12345678` → `12***678`. */
-function maskDni(dni: string): string {
-  if (dni.length <= 5) return '***';
-  return `${dni.slice(0, 2)}***${dni.slice(-3)}`;
 }
 
 function pickPublicUser(user: {

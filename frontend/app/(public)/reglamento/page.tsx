@@ -102,6 +102,12 @@ export default function ReglamentoPage() {
           multiplicador), mientras que el mismo acierto en grupos vale 5
           pts.
         </p>
+        <p>
+          <strong>Importante:</strong> en los partidos de fase eliminatoria,
+          el puntaje se calcula sobre el resultado de los 90 minutos.
+          Penales y tiempo extra no se consideran para puntuar — solo
+          definen quién avanza en el cuadro.
+        </p>
       </Section>
 
       <Section title="4. Predicciones especiales">
@@ -119,6 +125,12 @@ export default function ReglamentoPage() {
           <li>Total de goles exacto: <strong>10 pts</strong></li>
           <li>Total de goles ±5: <strong>5 pts</strong></li>
         </ul>
+        <p>
+          <strong>Empate de goleador:</strong> si dos o más jugadores
+          terminan el torneo con la misma cantidad de goles, todos son
+          considerados goleadores válidos. Cualquier participante que
+          haya pickeado a alguno de ellos cobra los puntos del goleador.
+        </p>
       </Section>
 
       <Section title="5. Distribución del pozo">

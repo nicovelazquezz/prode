@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
+import type { Redis } from 'ioredis';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { TurnstileGuard } from '../../common/guards/turnstile.guard.js';
 import { PaymentsService } from './payments.service.js';
@@ -21,6 +22,15 @@ import {
   CHECKOUT_PROVIDER,
   type CheckoutProvider,
 } from '../../shared/checkout/checkout.provider.js';
+import { REDIS_CLIENT } from '../../shared/redis/redis.service.js';
+
+/**
+ * Idempotency cache key prefix para webhooks de MP. Guardamos el
+ * `request-id` con TTL = 24h. MP retransmite con backoff exponencial
+ * hasta ~24h; pasada esa ventana nunca es un retry legítimo, es replay.
+ */
+const WEBHOOK_IDEMPOTENCY_KEY_PREFIX = 'mp:webhook:request-id:';
+const WEBHOOK_IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
 
 /**
  * Public payment endpoints. `JwtAuthGuard` is bypassed via `@Public()`
@@ -36,6 +46,8 @@ export class PaymentsController {
     private readonly paymentsService: PaymentsService,
     @Inject(CHECKOUT_PROVIDER)
     private readonly checkoutProvider: CheckoutProvider,
+    @Inject(REDIS_CLIENT)
+    private readonly redis: Redis,
   ) {}
 
   @Public()
@@ -58,13 +70,22 @@ export class PaymentsController {
 
   /**
    * Webhook entry point. Order matters here:
-   *   1) Verify HMAC signature first — invalid headers throw 401 before
-   *      we touch the DB or burn an MP API call.
-   *   2) Hand off to PaymentsService for atomic update + side effects.
+   *   1) Verify HMAC signature + replay window — invalid headers o `ts`
+   *      fuera de ±5 min tiran 401 antes de tocar BD ni MP.
+   *   2) Idempotency por `request-id` en Redis (TTL 24h). Si MP nos
+   *      reentrega el mismo evento (timeout en su lado), respondemos
+   *      200 sin re-procesar.
+   *   3) Hand off a PaymentsService para update + side effects.
    *
-   * `@Public()` because MP doesn't authenticate; HMAC is the gate.
-   * The body is parsed normally — the signature scheme covers `data.id`
-   * + `request-id` + ts, NOT the full body, so we don't need rawBody here.
+   * `@Public()` porque MP no autentica; HMAC es la barrera.
+   * El body se parsea normalmente — la firma cubre `data.id` +
+   * `request-id` + ts, NO el body completo, así que no hace falta
+   * rawBody acá.
+   *
+   * Sobre la idempotency: hay dos capas. Esta capa (request-id en
+   * Redis) atrapa retries de la infraestructura de MP sin pegarle a
+   * Postgres. La capa interna en `PaymentsService.processWebhook`
+   * sigue siendo idempotente a nivel pago — cinturón + tirantes.
    */
   @Public()
   @SkipThrottle({
@@ -85,6 +106,24 @@ export class PaymentsController {
       requestId: requestId ?? '',
       dataId: String(body?.data?.id ?? ''),
     });
+
+    // Idempotency: SET NX con TTL 24h. Si la key ya existía (NX falla),
+    // skip processing — devolvemos 200 igual para que MP no insista.
+    if (requestId) {
+      const key = `${WEBHOOK_IDEMPOTENCY_KEY_PREFIX}${requestId}`;
+      const set = await this.redis.set(
+        key,
+        '1',
+        'EX',
+        WEBHOOK_IDEMPOTENCY_TTL_SECONDS,
+        'NX',
+      );
+      if (set === null) {
+        // Ya procesado — no-op.
+        return { received: true };
+      }
+    }
+
     return this.paymentsService.processWebhook(body);
   }
 

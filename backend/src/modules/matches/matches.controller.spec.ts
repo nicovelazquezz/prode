@@ -406,4 +406,114 @@ describe('MatchesController (integration)', () => {
       expect(res.status).toBe(400);
     });
   });
+
+  describe('POST /admin/matches/:id/cancel', () => {
+    it('sets status=CANCELLED for a SCHEDULED match and audits the transition', async () => {
+      const target = await prisma.match.findFirstOrThrow({
+        where: { matchNumber: 63 },
+      });
+      restoreList.push(await snapshot(target.id));
+
+      const res = await request(app.getHttpServer())
+        .post(`/admin/matches/${target.id}/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send();
+      expect(res.status).toBe(201);
+      expect(res.body.status).toBe('CANCELLED');
+
+      await new Promise((r) => setTimeout(r, 100));
+      const audit = await prisma.auditLog.findFirst({
+        where: { action: 'match.cancelled', entityId: target.id },
+      });
+      expect(audit).toBeTruthy();
+    });
+
+    it('cancels a LOCKED match', async () => {
+      const target = await prisma.match.findFirstOrThrow({
+        where: { matchNumber: 64 },
+      });
+      restoreList.push(await snapshot(target.id));
+      await prisma.match.update({
+        where: { id: target.id },
+        data: { status: 'LOCKED' },
+      });
+
+      const res = await request(app.getHttpServer())
+        .post(`/admin/matches/${target.id}/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send();
+      expect(res.status).toBe(201);
+      expect(res.body.status).toBe('CANCELLED');
+    });
+
+    it('cancels a POSTPONED match', async () => {
+      const target = await prisma.match.findFirstOrThrow({
+        where: { matchNumber: 65 },
+      });
+      restoreList.push(await snapshot(target.id));
+      await prisma.match.update({
+        where: { id: target.id },
+        data: { status: 'POSTPONED' },
+      });
+
+      const res = await request(app.getHttpServer())
+        .post(`/admin/matches/${target.id}/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send();
+      expect(res.status).toBe(201);
+      expect(res.body.status).toBe('CANCELLED');
+    });
+
+    it('rejects cancelling a FINISHED match with 400', async () => {
+      const target = await prisma.match.findFirstOrThrow({
+        where: { matchNumber: 66 },
+      });
+      restoreList.push(await snapshot(target.id));
+      await prisma.match.update({
+        where: { id: target.id },
+        data: { status: 'FINISHED' },
+      });
+
+      const res = await request(app.getHttpServer())
+        .post(`/admin/matches/${target.id}/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send();
+      expect(res.status).toBe(400);
+    });
+
+    it('is idempotent on an already CANCELLED match', async () => {
+      const target = await prisma.match.findFirstOrThrow({
+        where: { matchNumber: 67 },
+      });
+      restoreList.push(await snapshot(target.id));
+      await prisma.match.update({
+        where: { id: target.id },
+        data: { status: 'CANCELLED' },
+      });
+
+      const res = await request(app.getHttpServer())
+        .post(`/admin/matches/${target.id}/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send();
+      expect(res.status).toBe(201);
+      expect(res.body.status).toBe('CANCELLED');
+    });
+
+    it('returns 404 for unknown id', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/admin/matches/cuid_does_not_exist/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send();
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 401 without a valid auth token', async () => {
+      const sample = await prisma.match.findFirstOrThrow();
+      const res = await request(app.getHttpServer())
+        .post(`/admin/matches/${sample.id}/cancel`)
+        .set('Authorization', `Bearer not-a-real-jwt`)
+        .send();
+      expect(res.status).toBe(401);
+    });
+  });
 });

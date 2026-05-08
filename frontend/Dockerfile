@@ -65,9 +65,18 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0 \
     NEXT_TELEMETRY_DISABLED=1
+# tzdata es necesario para que la variable TZ se aplique. Sin esto,
+# musl no resuelve "America/Argentina/Buenos_Aires" y los timestamps
+# salen en UTC silenciosamente.
+RUN apk add --no-cache tzdata
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
+
+# Drop privileges: run as the built-in `node` user (uid 1000) instead of root.
+RUN chown -R node:node /app
+USER node
+
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://localhost:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"

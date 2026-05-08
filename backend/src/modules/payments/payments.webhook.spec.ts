@@ -4,11 +4,13 @@ import request from 'supertest';
 import cookieParser from 'cookie-parser';
 import { getQueueToken } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
+import type { Redis } from 'ioredis';
 import { AppModule } from '../../app.module.js';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { MockCheckoutProvider } from '../../shared/checkout/mock.provider.js';
 import { CHECKOUT_PROVIDER } from '../../shared/checkout/checkout.provider.js';
 import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
+import { REDIS_CLIENT } from '../../shared/redis/redis.service.js';
 
 /**
  * E2E for `POST /payments/webhook` with idempotency, recovery notification,
@@ -23,6 +25,7 @@ describe('POST /payments/webhook (E2E with MockCheckoutProvider)', () => {
   let prisma: PrismaService;
   let mockProvider: MockCheckoutProvider;
   let queue: Queue;
+  let redis: Redis;
   const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
 
   /** Tracks paymentIds we created so the afterAll cleanup is targeted. */
@@ -40,6 +43,14 @@ describe('POST /payments/webhook (E2E with MockCheckoutProvider)', () => {
     prisma = app.get(PrismaService);
     mockProvider = app.get(CHECKOUT_PROVIDER) as MockCheckoutProvider;
     queue = app.get<Queue>(getQueueToken(NOTIFICATIONS_QUEUE));
+    redis = app.get<Redis>(REDIS_CLIENT);
+
+    // Wipe any leftover idempotency cache from previous test runs. The
+    // controller-level cache stores `mp:webhook:request-id:<id>` with
+    // 24h TTL — keys like `req-1` from a previous run would silently
+    // skip processing this run if not cleared.
+    const stale = await redis.keys('mp:webhook:request-id:*');
+    if (stale.length > 0) await redis.del(...stale);
   }, 30_000);
 
   afterAll(async () => {

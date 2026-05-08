@@ -73,6 +73,28 @@ describe('AppThrottlerModule (integration)', () => {
     expect(sixth.status).toBe(429);
   }, 30_000);
 
+  it('isolates the login limiter per DNI: 5 attempts on each of two DNIs from the same IP both pass', async () => {
+    // Tracker es `${ip}:${dni}` — atacar 5 veces el DNI A y 5 veces el
+    // DNI B desde la misma IP debería caer en *dos* buckets separados,
+    // ninguno superando el límite de 5/60s.
+    const dniA = '22334455';
+    const dniB = '33445566';
+    const fire = (dni: string) =>
+      request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ dni, password: 'irrelevant' });
+
+    for (let i = 0; i < 5; i++) {
+      const res = await fire(dniA);
+      expect(res.status).toBe(401);
+    }
+    for (let i = 0; i < 5; i++) {
+      const res = await fire(dniB);
+      // Si el tracker fuera solo IP, el primer hit acá ya vendría 429.
+      expect(res.status).toBe(401);
+    }
+  }, 30_000);
+
   it('does NOT throttle the webhook (SkipThrottle)', async () => {
     // 10 webhook hits in a row should never 429. They will fail signature
     // verification (401), but that's the controller's domain, not the

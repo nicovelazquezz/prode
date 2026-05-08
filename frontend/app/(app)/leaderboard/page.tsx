@@ -46,8 +46,8 @@ export default function LeaderboardPage() {
     queryKey: queryKeys.leaderboard.aroundEntry(entryId),
     queryFn: () => getAroundEntry(entryId),
     enabled: !!entryId,
-    staleTime: 30_000,
-    refetchInterval: 30_000,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
   });
@@ -65,8 +65,8 @@ export default function LeaderboardPage() {
     queryKey: queryKeys.leaderboard.global(page),
     queryFn: () => getGlobal({ page, pageSize: 50 }),
     enabled: tab === "global",
-    staleTime: 30_000,
-    refetchInterval: 30_000,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
   });
@@ -75,8 +75,8 @@ export default function LeaderboardPage() {
     queryKey: queryKeys.leaderboard.phase(phase, page),
     queryFn: () => getByPhase(phase, { page, pageSize: 50 }),
     enabled: tab === "phase" && availablePhases.includes(phase),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
   });
@@ -85,8 +85,8 @@ export default function LeaderboardPage() {
     queryKey: queryKeys.leagues.me(),
     queryFn: () => getMyLeagues(),
     enabled: tab === "leagues",
-    staleTime: 30_000,
-    refetchInterval: 30_000,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
   });

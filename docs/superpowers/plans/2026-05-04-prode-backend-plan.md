@@ -372,7 +372,7 @@ MP_WEBHOOK_SECRET=...
 WHATSAPP_API_URL=https://your-whatsapp-backend.com
 WHATSAPP_API_TOKEN=...
 ADMIN_WHATSAPP_NUMBER=5492914xxxxxxx
-EMAIL_FROM=prode@tirofederal.com
+EMAIL_FROM=noreply@prodeplus.com
 RESEND_API_KEY=
 FRONTEND_URL=http://localhost:3000
 API_URL=http://localhost:3001
@@ -1943,13 +1943,13 @@ Servicios: postgres con volumen persistente, redis, prode-backend con env vars.
 
 (Acción manual en panel Dokploy.)
 
-Subdominio `api.prode.tirofederal.com` → backend container puerto 3001. Let's Encrypt automático.
+Subdominio `api.prodeplus.com` → backend container puerto 3001. Let's Encrypt automático.
 
-Configurar webhook URL en panel MercadoPago: `https://api.prode.tirofederal.com/payments/webhook`.
+Configurar webhook URL en panel MercadoPago: `https://api.prodeplus.com/payments/webhook`.
 
 **Verification:**
 ```bash
-curl -s https://api.prode.tirofederal.com/health
+curl -s https://api.prodeplus.com/health
 # Expected: {"status":"ok","db":true,...}
 ```
 

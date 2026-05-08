@@ -2,10 +2,29 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Users, Crown, KeyRound } from "lucide-react";
+import { Plus, Users, Crown, KeyRound, Share2 } from "lucide-react";
 import { queryKeys } from "@/lib/api/queryKeys";
 import { getMyLeagues } from "@/lib/api/leagues";
 import { useAuth } from "@/lib/hooks/use-auth";
+
+/**
+ * Arma el deep link `wa.me/?text=...` para invitar a una mini-liga.
+ * NO depende del backend de WhatsApp — es solo un link que abre
+ * WhatsApp en el celular del que clickea con el mensaje pre-armado.
+ *
+ * El user del enlace todavía tiene que (a) elegir un contacto al que
+ * mandárselo, (b) tocar enviar. wa.me funciona en mobile (app nativa)
+ * y desktop (WhatsApp Web). Si no tiene WhatsApp instalado, abre el
+ * landing de WhatsApp.
+ */
+function buildShareUrl(opts: {
+  leagueName: string;
+  inviteCode: string;
+  joinUrl: string;
+}): string {
+  const message = `🏆 Te invito a mi prode "${opts.leagueName}" del Mundial 2026!\n\nCódigo: ${opts.inviteCode}\n\nEntrá acá → ${opts.joinUrl}`;
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
+}
 
 const ctaPrimary =
   "inline-flex items-center justify-center gap-2 rounded-sm bg-[var(--color-landing-red)] px-6 py-4 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]";
@@ -109,6 +128,20 @@ export default function LigasPage() {
                           {l.inviteCode}
                         </span>
                       </div>
+                      <a
+                        href={buildShareUrl({
+                          leagueName: l.name,
+                          inviteCode: l.inviteCode,
+                          joinUrl: `${typeof window !== "undefined" ? window.location.origin : ""}/ligas/unirme?code=${l.inviteCode}`,
+                        })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 inline-flex items-center gap-1.5 font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-green)] underline underline-offset-4 decoration-[var(--color-landing-green)] decoration-2 hover:text-[var(--color-landing-text)] hover:decoration-[var(--color-landing-text)] transition-colors"
+                        aria-label={`Compartir ${l.name} por WhatsApp`}
+                      >
+                        <Share2 className="h-3 w-3" aria-hidden />
+                        Compartir por WhatsApp
+                      </a>
                     </div>
                     <Link
                       href={`/leaderboard/liga/${l.id}`}

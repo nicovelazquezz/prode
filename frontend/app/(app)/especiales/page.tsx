@@ -11,7 +11,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertTriangle, Lock, ChevronDown } from "lucide-react";
+import { Lock, ChevronDown, Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { TeamFlag } from "@/components/domain/team-flag";
+import { CountdownTimer } from "@/components/domain/countdown-timer";
 import { formatPlayerName } from "@/lib/landing/format-player-name";
 
 // Lazy-load the team picker — only mounted when the user taps a team slot.
@@ -137,36 +138,96 @@ export default function EspecialesPage() {
     return [...map.values()];
   }, [matchesQuery.data]);
 
-  if (specialQuery.isLoading || !entryId) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 pb-20 pt-10 md:px-8 md:pb-24 md:pt-14">
-        <div className="space-y-4" aria-busy="true">
-          <div className="h-12 w-2/3 rounded-sm bg-[var(--color-landing-surface)] animate-pulse" />
-          <div className="h-32 rounded-sm bg-[var(--color-landing-surface)] animate-pulse" />
-          <div className="h-32 rounded-sm bg-[var(--color-landing-surface)] animate-pulse" />
-        </div>
-      </div>
-    );
-  }
+  // Kickoff del primer match del torneo. Preferimos `matchNumber === 1`
+  // (FIFA usa esa numeración como source of truth) y caemos al min
+  // por `kickoffAt` si por alguna razón el #1 no aparece.
+  const firstMatchKickoffIso = useMemo<string | null>(() => {
+    const matches = matchesQuery.data ?? [];
+    if (matches.length === 0) return null;
+    const byNumber = matches.find((m) => m.matchNumber === 1);
+    if (byNumber) return byNumber.kickoffAt;
+    const earliest = [...matches].sort(
+      (a, b) =>
+        new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime(),
+    )[0];
+    return earliest?.kickoffAt ?? null;
+  }, [matchesQuery.data]);
 
-  const existing = specialQuery.data;
+  // Render strategy:
+  //  - Chrome (hero) pinta inmediatamente, sin esperar a entryId/special.
+  //  - El bloque de form/readonly espera a que `specialQuery` resuelva
+  //    porque la decisión `lockedAt !== null` (form editable vs readonly)
+  //    depende del payload — no podemos asumir un default seguro.
+  //  - Mientras tanto, mostramos un skeleton CON ESTRUCTURA (no 3 cajas
+  //    genéricas) para evitar layout shift cuando llegan los datos.
+  const isWaitingForData = specialQuery.isLoading || !entryId;
+  const existing = isWaitingForData ? null : specialQuery.data;
+  const isReadOnly = !!existing && existing.lockedAt !== null;
 
-  if (existing && existing.lockedAt !== null) {
-    return (
-      <ReadOnlyView
-        special={existing}
-        teams={teams}
-        teamsLoading={matchesQuery.isLoading}
-      />
-    );
-  }
-
-  return <EditableForm entryId={entryId} existing={existing} teams={teams} />;
+  return (
+    <div className="mx-auto max-w-2xl px-4 pb-20 pt-10 md:px-8 md:pb-24 md:pt-14 flex flex-col gap-7">
+      {heroHeader}
+      {isWaitingForData ? (
+        <FormSkeleton />
+      ) : isReadOnly ? (
+        <ReadOnlyContent
+          special={existing!}
+          teams={teams}
+          teamsLoading={matchesQuery.isLoading}
+        />
+      ) : (
+        <EditableFormContent
+          entryId={entryId}
+          existing={existing ?? undefined}
+          teams={teams}
+          firstMatchKickoffIso={firstMatchKickoffIso}
+        />
+      )}
+    </div>
+  );
 }
 
-// ─── Read-only view ─────────────────────────────────────────────
+// ─── Structural skeleton ─────────────────────────────────────────
 
-function ReadOnlyView({
+/**
+ * Skeleton que respeta la estructura del form (alert + 3 slots de podio
+ * + slot de goleador + input de goles + botón submit) para que cuando
+ * llega `specialQuery` no haya layout shift. Las dimensiones matchean
+ * 1:1 con los componentes reales.
+ */
+function FormSkeleton() {
+  return (
+    <div className="flex flex-col gap-7" aria-busy="true" aria-live="polite">
+      {/* Alert "Atención" placeholder (mismo tamaño que el real) */}
+      <div className="h-[68px] rounded-sm bg-[var(--color-landing-surface)] animate-pulse" />
+      <div className="flex flex-col gap-5">
+        {/* 3 podium slots */}
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex flex-col gap-2">
+            <div className="h-[10px] w-24 rounded-sm bg-[var(--color-landing-surface-2)] animate-pulse" />
+            <div className="h-[72px] rounded-sm bg-[var(--color-landing-surface)] animate-pulse" />
+          </div>
+        ))}
+        {/* Goleador slot */}
+        <div className="flex flex-col gap-2">
+          <div className="h-[10px] w-32 rounded-sm bg-[var(--color-landing-surface-2)] animate-pulse" />
+          <div className="h-[72px] rounded-sm bg-[var(--color-landing-surface)] animate-pulse" />
+        </div>
+        {/* Total goles slot */}
+        <div className="flex flex-col gap-2">
+          <div className="h-[10px] w-40 rounded-sm bg-[var(--color-landing-surface-2)] animate-pulse" />
+          <div className="h-12 rounded-sm bg-[var(--color-landing-surface)] animate-pulse" />
+        </div>
+        {/* Submit */}
+        <div className="h-14 rounded-sm bg-[var(--color-landing-surface)] animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Read-only content (renderiza dentro del wrapper del padre) ──
+
+function ReadOnlyContent({
   special,
   teams,
   teamsLoading,
@@ -177,8 +238,7 @@ function ReadOnlyView({
 }) {
   const teamById = new Map(teams.map((t) => [t.id, t]));
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-20 pt-10 md:px-8 md:pb-24 md:pt-14 flex flex-col gap-6">
-      {heroHeader}
+    <div className="flex flex-col gap-6">
       <div className="flex items-start gap-3 rounded-sm border-2 border-[var(--color-landing-green)] bg-[var(--color-landing-surface)] p-4">
         <Lock
           className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-landing-green)]"
@@ -286,16 +346,77 @@ function ReadOnlyRow({
   );
 }
 
-// ─── Editable form ──────────────────────────────────────────────
+// ─── Lock countdown notice ─────────────────────────────────────────
 
-function EditableForm({
+/**
+ * Aviso live del cierre de pronósticos especiales. Por decisión de
+ * producto (D5), el cierre es 1h antes del kickoff del primer partido
+ * del torneo (Match #1 según FIFA).
+ *
+ * Estados:
+ *  - Sin datos del primer match → fallback estático ("Pronto te avisamos")
+ *    para no inventar fechas durante el loading inicial.
+ *  - Datos OK → countdown compact (Días/Horas/Min/Seg) + explainer.
+ *  - Cierre pasado → CountdownTimer rinde "Cerrado" automaticamente
+ *    (en la práctica el padre ya habría virado al ReadOnlyContent
+ *    porque el backend setea `lockedAt`, pero defendemos por las dudas).
+ */
+function SpecialsLockNotice({
+  firstMatchKickoffIso,
+}: {
+  firstMatchKickoffIso: string | null;
+}) {
+  const lockAtIso = useMemo<string | null>(() => {
+    if (!firstMatchKickoffIso) return null;
+    const ms = new Date(firstMatchKickoffIso).getTime();
+    if (Number.isNaN(ms)) return null;
+    return new Date(ms - 60 * 60 * 1000).toISOString();
+  }, [firstMatchKickoffIso]);
+
+  return (
+    <div className="rounded-sm border-2 border-[var(--color-landing-red)] bg-[var(--color-landing-surface)] p-4">
+      <div className="flex items-center gap-2">
+        <Clock
+          className="h-4 w-4 shrink-0 text-[var(--color-landing-red)]"
+          aria-hidden
+        />
+        <p className="font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--color-landing-text)]">
+          Cierre de pronósticos
+        </p>
+      </div>
+      <div className="mt-3">
+        {lockAtIso ? (
+          <CountdownTimer
+            targetIso={lockAtIso}
+            compact={false}
+            finishedLabel="Cerrado"
+          />
+        ) : (
+          <p className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight leading-none text-[var(--color-landing-text-muted)]">
+            Pronto te avisamos
+          </p>
+        )}
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-[var(--color-landing-text-muted)]">
+        Cierra <strong className="text-[var(--color-landing-text)]">1 hora antes</strong>{" "}
+        del primer partido del torneo. Después no podés cambiar tus elecciones.
+      </p>
+    </div>
+  );
+}
+
+// ─── Editable form content (renderiza dentro del wrapper del padre) ──
+
+function EditableFormContent({
   entryId,
   existing,
   teams,
+  firstMatchKickoffIso,
 }: {
   entryId: string;
   existing: SpecialPrediction | null | undefined;
   teams: Team[];
+  firstMatchKickoffIso: string | null;
 }) {
   const queryClient = useQueryClient();
   const [openSlot, setOpenSlot] = useState<Slot | null>(null);
@@ -390,21 +511,8 @@ function EditableForm({
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-20 pt-10 md:px-8 md:pb-24 md:pt-14 flex flex-col gap-7">
-      {heroHeader}
-
-      <div
-        role="alert"
-        className="flex items-start gap-3 rounded-sm bg-[var(--color-landing-red)] p-4 text-[var(--color-landing-text)]"
-      >
-        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
-        <p className="text-sm leading-relaxed">
-          <span className="font-[family-name:var(--font-landing-mono)] uppercase tracking-[0.16em] font-bold">
-            Atención:{" "}
-          </span>
-          Una vez confirmadas, no podrás modificarlas después del 11/06.
-        </p>
-      </div>
+    <div className="flex flex-col gap-7">
+      <SpecialsLockNotice firstMatchKickoffIso={firstMatchKickoffIso} />
 
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -597,8 +705,8 @@ function EditableForm({
             </span>
           </DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
-            Revisá antes de guardar. Estas elecciones no podrán cambiarse
-            después del 11/06.
+            Revisá antes de guardar. Una vez que cierre el plazo (1h antes del
+            primer partido del torneo) ya no podrás cambiarlas.
           </DialogDescription>
           {pendingValues ? (
             <ul className="mt-4 flex flex-col gap-3 rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)] p-4">

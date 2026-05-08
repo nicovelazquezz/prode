@@ -166,6 +166,13 @@ export function PlayerSelectModal({
             players={playersSorted}
             loading={playersQuery.isLoading}
             errored={playersQuery.isError}
+            isBackendEmpty={
+              !playersQuery.isLoading &&
+              !playersQuery.isError &&
+              (playersQuery.data?.length ?? 0) === 0
+            }
+            onRetry={() => playersQuery.refetch()}
+            isRefetching={playersQuery.isFetching && !playersQuery.isLoading}
             query={playerQuery}
             setQuery={setPlayerQuery}
             selectedPlayerId={selectedPlayer?.id ?? null}
@@ -245,6 +252,9 @@ function PlayerStep({
   players,
   loading,
   errored,
+  isBackendEmpty,
+  onRetry,
+  isRefetching,
   query,
   setQuery,
   selectedPlayerId,
@@ -254,11 +264,21 @@ function PlayerStep({
   players: Player[];
   loading: boolean;
   errored: boolean;
+  /** True cuando el backend respondió OK pero la lista vino vacía (team
+   *  sin jugadores seedados). Distinto del caso "búsqueda sin matches". */
+  isBackendEmpty: boolean;
+  onRetry: () => void;
+  isRefetching: boolean;
   query: string;
   setQuery: (q: string) => void;
   selectedPlayerId: string | null;
   onPick: (player: Player) => void;
 }) {
+  const supportPhone =
+    process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "5492914231087";
+  const whatsappHref = `https://wa.me/${supportPhone}?text=${encodeURIComponent(
+    `hola, no aparecen jugadores para ${team?.name ?? "una selección"} en el prode`,
+  )}`;
   return (
     <>
       <div className="flex items-center gap-3 border-b border-[var(--color-landing-line-strong)] pb-3 pt-1">
@@ -282,7 +302,39 @@ function PlayerStep({
             ))}
           </div>
         ) : errored ? (
-          <EmptyMono text="Lista de jugadores no disponible aún. Probá más tarde." />
+          <div className="py-8 flex flex-col items-center gap-3" role="alert">
+            <p className="text-center font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-red)]">
+              No pudimos cargar los jugadores
+            </p>
+            <button
+              type="button"
+              onClick={onRetry}
+              disabled={isRefetching}
+              className={cn(
+                "rounded-sm border-2 border-[var(--color-landing-text)] px-4 py-2",
+                "font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)]",
+                "transition-colors hover:bg-[var(--color-landing-text)] hover:text-[var(--color-landing-bg)]",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]",
+              )}
+            >
+              {isRefetching ? "Reintentando..." : "Reintentar"}
+            </button>
+          </div>
+        ) : isBackendEmpty ? (
+          <div className="py-8 flex flex-col items-center gap-3">
+            <p className="text-center font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
+              Todavía no hay jugadores cargados para esta selección
+            </p>
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-gold)] underline underline-offset-4 hover:text-[var(--color-landing-text)] transition-colors"
+            >
+              Avisanos por WhatsApp
+            </a>
+          </div>
         ) : players.length === 0 ? (
           <EmptyMono text="No encontramos jugadores que coincidan." />
         ) : (

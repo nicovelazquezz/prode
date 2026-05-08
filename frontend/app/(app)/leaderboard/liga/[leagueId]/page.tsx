@@ -43,8 +43,8 @@ export default function LeagueLeaderboardPage({
   const leaderboardQuery = useQuery({
     queryKey: queryKeys.leaderboard.league(leagueId, page),
     queryFn: () => getByLeague(leagueId, { page, pageSize: 50 }),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
     retry: (failureCount, error) => {

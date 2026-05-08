@@ -21,10 +21,21 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '5'
     restart: unless-stopped
 
   prode-redis:
     image: redis:7-alpine
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
     volumes:
       - prode-redis-data:/data
     healthcheck:
@@ -32,10 +43,15 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '5'
     restart: unless-stopped
 
   prode-wa-backend:
-    image: prode-wa-backend:latest
+    image: prode-wa-backend:${IMAGE_TAG:-latest}
     build:
       context: ./wa-backend
       dockerfile: Dockerfile
@@ -56,10 +72,15 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '5'
     restart: unless-stopped
 
   prode-backend:
-    image: prode-backend:latest
+    image: prode-backend:${IMAGE_TAG:-latest}
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -92,11 +113,16 @@ services:
       prode-redis:
         condition: service_healthy
       prode-wa-backend:
-        condition: service_started
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '5'
     restart: unless-stopped
 
   prode-frontend:
-    image: prode-frontend:latest
+    image: prode-frontend:${IMAGE_TAG:-latest}
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -130,6 +156,11 @@ services:
       NEXT_PUBLIC_SENTRY_DSN: ${SENTRY_DSN_FRONTEND}
     depends_on:
       - prode-backend
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '5'
     restart: unless-stopped
 
 volumes:

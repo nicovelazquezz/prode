@@ -43,6 +43,7 @@ export class AdminMetricsController {
       bannedUsers,
       pendingPayments,
       revenueAgg,
+      revenueByMethod,
       paidUsers,
       loadedPredictions,
       activeEntries,
@@ -62,6 +63,12 @@ export class AdminMetricsController {
       this.prisma.payment.aggregate({
         where: { status: 'APPROVED' },
         _sum: { amount: true },
+      }),
+      this.prisma.payment.groupBy({
+        by: ['method'],
+        where: { status: 'APPROVED' },
+        _sum: { amount: true },
+        _count: { _all: true },
       }),
       this.prisma.payment.findMany({
         where: { status: 'APPROVED', userId: { not: null } },
@@ -97,6 +104,21 @@ export class AdminMetricsController {
       `,
     ]);
 
+    // Desglose por método (Q4=B). El groupBy puede no devolver una row
+    // por método si todavía no hubo ningún pago de ese tipo, así que
+    // armamos el shape completo con defaults en 0.
+    const byMethodMap = new Map(
+      revenueByMethod.map((r) => [
+        r.method,
+        { total: Number(r._sum.amount ?? 0), count: r._count._all },
+      ]),
+    );
+    const byMethod = {
+      MERCADOPAGO: byMethodMap.get('MERCADOPAGO') ?? { total: 0, count: 0 },
+      CASH: byMethodMap.get('CASH') ?? { total: 0, count: 0 },
+      TRANSFER: byMethodMap.get('TRANSFER') ?? { total: 0, count: 0 },
+    };
+
     return {
       totals: {
         users: totalUsers,
@@ -107,6 +129,7 @@ export class AdminMetricsController {
       revenue: {
         total: Number(revenueAgg._sum.amount ?? 0),
         paidUserCount: paidUsers.length,
+        byMethod,
       },
       predictions: {
         loaded: loadedPredictions,

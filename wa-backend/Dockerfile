@@ -10,6 +10,9 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+# tzdata para que la variable TZ del compose (America/Argentina/Buenos_Aires)
+# se aplique. Sin esto, musl cae en UTC silenciosamente.
+RUN apk add --no-cache tzdata
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/dist ./dist

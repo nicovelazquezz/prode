@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useState } from "react";
+import dynamic from "next/dynamic";
+import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -15,6 +16,7 @@ import {
   ArrowLeft,
   AlertTriangle,
   Calculator,
+  ChevronDown,
   CheckCircle2,
   XCircle,
 } from "lucide-react";
@@ -34,15 +36,26 @@ import {
 import { toast } from "@/components/ui/toaster";
 import { queryKeys } from "@/lib/api/queryKeys";
 import {
+  cancelMatch,
   finishMatch,
   getAdminMatch,
   postponeMatch,
   recalculateMatch,
   updateMatch,
 } from "@/lib/api/admin";
+import { getMatchesByPhase } from "@/lib/api/matches";
 import { formatDateTime } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
-import type { Match } from "@/lib/api/types";
+import type { Match, Team } from "@/lib/api/types";
+
+// Lazy-load del TeamSelectModal — pesa porque incluye 48 flags. Solo
+// se monta cuando el admin abre el picker.
+const TeamSelectModal = dynamic(
+  () =>
+    import("@/components/domain/team-select-modal").then(
+      (m) => m.TeamSelectModal,
+    ),
+);
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -64,6 +77,10 @@ export default function AdminPartidoDetailPage({ params }: PageProps) {
   const qc = useQueryClient();
   const [scoreModalOpen, setScoreModalOpen] = useState(false);
   const [recalcModalOpen, setRecalcModalOpen] = useState(false);
+  // Slot del team picker abierto: "home" | "away" | null. Reemplaza los
+  // inputs de texto crudos (que pedían cuids) por un picker visual con
+  // flag + nombre de los 48 teams del torneo.
+  const [pickerSlot, setPickerSlot] = useState<"home" | "away" | null>(null);
 
   const matchQuery = useQuery<Match>({
     queryKey: queryKeys.admin.matches.detail(id),
@@ -72,6 +89,27 @@ export default function AdminPartidoDetailPage({ params }: PageProps) {
   });
 
   const match = matchQuery.data;
+
+  // Lista de los 48 teams del torneo, derivada de los matches de fase
+  // de grupos (cada team aparece al menos una vez como home o away).
+  // Cache largo (5min) — los teams no cambian durante el torneo.
+  const teamsQuery = useQuery({
+    queryKey: queryKeys.matches.byPhase("GROUPS"),
+    queryFn: () => getMatchesByPhase("GROUPS"),
+    staleTime: 5 * 60_000,
+  });
+  const teams = useMemo<Team[]>(() => {
+    const map = new Map<string, Team>();
+    for (const m of teamsQuery.data ?? []) {
+      if (m.homeTeam) map.set(m.homeTeam.id, m.homeTeam);
+      if (m.awayTeam) map.set(m.awayTeam.id, m.awayTeam);
+    }
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [teamsQuery.data]);
+  const teamById = useMemo(
+    () => new Map(teams.map((t) => [t.id, t])),
+    [teams],
+  );
 
   const form = useForm<EditFormValues>({
     resolver: zodResolver(editSchema),
@@ -113,10 +151,11 @@ export default function AdminPartidoDetailPage({ params }: PageProps) {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: () => updateMatch(id, { status: "CANCELLED" }),
+    mutationFn: () => cancelMatch(id),
     onSuccess: () => {
       toast.success("Partido cancelado");
       qc.invalidateQueries({ queryKey: queryKeys.admin.matches.detail(id) });
+      qc.invalidateQueries({ queryKey: queryKeys.matches.all() });
     },
     onError: (err: Error) => {
       toast.error(err.message ?? "No pudimos cancelar el partido.");
@@ -250,24 +289,26 @@ export default function AdminPartidoDetailPage({ params }: PageProps) {
             <Label htmlFor="country">Pais (opcional)</Label>
             <Input id="country" type="text" {...form.register("country")} />
           </div>
-          <div>
-            <Label htmlFor="homeTeamId">ID equipo local</Label>
-            <Input
-              id="homeTeamId"
-              type="text"
-              placeholder={match.homeTeam?.id ?? "—"}
-              {...form.register("homeTeamId")}
-            />
-          </div>
-          <div>
-            <Label htmlFor="awayTeamId">ID equipo visitante</Label>
-            <Input
-              id="awayTeamId"
-              type="text"
-              placeholder={match.awayTeam?.id ?? "—"}
-              {...form.register("awayTeamId")}
-            />
-          </div>
+          <TeamPickerField
+            label="Equipo local"
+            placeholderLabel={match.homeTeamLabel}
+            teamId={form.watch("homeTeamId")}
+            teamById={teamById}
+            onOpen={() => setPickerSlot("home")}
+            onClear={() =>
+              form.setValue("homeTeamId", "", { shouldDirty: true })
+            }
+          />
+          <TeamPickerField
+            label="Equipo visitante"
+            placeholderLabel={match.awayTeamLabel}
+            teamId={form.watch("awayTeamId")}
+            teamById={teamById}
+            onOpen={() => setPickerSlot("away")}
+            onClear={() =>
+              form.setValue("awayTeamId", "", { shouldDirty: true })
+            }
+          />
           <div className="md:col-span-2 flex flex-wrap justify-end gap-2">
             <Button
               type="submit"
@@ -345,6 +386,10 @@ export default function AdminPartidoDetailPage({ params }: PageProps) {
             queryKey: queryKeys.admin.matches.detail(id),
           });
           qc.invalidateQueries({ queryKey: queryKeys.matches.all() });
+          // Cerrar un partido cambia los puntos de las predictions →
+          // el ranking debe refrescar inmediatamente, no esperar al
+          // próximo poll de 60s.
+          qc.invalidateQueries({ queryKey: queryKeys.leaderboard.all() });
           router.refresh();
         }}
       />
@@ -354,6 +399,114 @@ export default function AdminPartidoDetailPage({ params }: PageProps) {
         matchId={id}
         match={match}
       />
+
+      <TeamSelectModal
+        open={pickerSlot !== null}
+        onOpenChange={(o) => !o && setPickerSlot(null)}
+        teams={teams}
+        excludeTeamIds={
+          pickerSlot === "home"
+            ? [form.watch("awayTeamId") || ""].filter(Boolean)
+            : pickerSlot === "away"
+              ? [form.watch("homeTeamId") || ""].filter(Boolean)
+              : []
+        }
+        selectedTeamId={
+          pickerSlot === "home"
+            ? form.watch("homeTeamId") || null
+            : pickerSlot === "away"
+              ? form.watch("awayTeamId") || null
+              : null
+        }
+        onSelect={(t) => {
+          if (pickerSlot === "home") {
+            form.setValue("homeTeamId", t.id, { shouldDirty: true });
+          } else if (pickerSlot === "away") {
+            form.setValue("awayTeamId", t.id, { shouldDirty: true });
+          }
+          setPickerSlot(null);
+        }}
+        title={
+          pickerSlot === "home"
+            ? "Asignar equipo local"
+            : pickerSlot === "away"
+              ? "Asignar equipo visitante"
+              : "Asignar equipo"
+        }
+      />
+    </div>
+  );
+}
+
+/**
+ * Botón-card que abre el TeamSelectModal para el slot home/away.
+ *
+ *   - Si hay team asignado: muestra flag + nombre + botón "limpiar".
+ *   - Si no hay team: muestra el `homeTeamLabel`/`awayTeamLabel` del
+ *     match (ej "1A", "3CDFGH") como pista FIFA — ayuda al admin a
+ *     saber a qué placeholder le tiene que asignar el team correcto.
+ *
+ * Reemplaza los inputs de texto crudos (que pedían cuids) por un
+ * picker visual coherente con /especiales y EntrySwitcher.
+ */
+function TeamPickerField({
+  label,
+  placeholderLabel,
+  teamId,
+  teamById,
+  onOpen,
+  onClear,
+}: {
+  label: string;
+  placeholderLabel: string | null;
+  teamId: string | undefined;
+  teamById: Map<string, Team>;
+  onOpen: () => void;
+  onClear: () => void;
+}) {
+  const team = teamId ? teamById.get(teamId) : null;
+  return (
+    <div>
+      <Label>{label}</Label>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="mt-1 flex w-full items-center gap-3 rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)] p-3 text-left transition-colors hover:border-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
+      >
+        {team ? (
+          <>
+            <TeamFlag fifaCode={team.fifaCode} src={team.flagUrl} size={32} />
+            <span className="flex-1 font-[family-name:var(--font-landing-display)] text-lg uppercase tracking-tight text-[var(--color-landing-text)]">
+              {team.name}
+            </span>
+          </>
+        ) : (
+          <>
+            <span
+              className="h-8 w-8 shrink-0 rounded-sm bg-[var(--color-landing-bg)] border border-dashed border-[var(--color-landing-line)]"
+              aria-hidden
+            />
+            <span className="flex-1 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
+              {placeholderLabel
+                ? `Slot FIFA: ${placeholderLabel} — asignar`
+                : "Asignar equipo"}
+            </span>
+          </>
+        )}
+        <ChevronDown
+          className="h-4 w-4 shrink-0 text-[var(--color-landing-text-muted)]"
+          aria-hidden
+        />
+      </button>
+      {team ? (
+        <button
+          type="button"
+          onClick={onClear}
+          className="mt-1 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)] hover:text-[var(--color-landing-red)] transition-colors"
+        >
+          Limpiar
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -557,6 +710,8 @@ function RecalcModal({
       qc.invalidateQueries({
         queryKey: queryKeys.admin.matches.detail(matchId),
       });
+      // Recalcular cambia los puntos → ranking debe refrescar.
+      qc.invalidateQueries({ queryKey: queryKeys.leaderboard.all() });
       onOpenChange(false);
     },
     onError: (err: Error) => {

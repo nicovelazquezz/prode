@@ -276,7 +276,7 @@ Igual que la general pero con puntos solo de esa fase.
 5. Envía mensaje al WhatsApp del usuario:
    ```
    Hola Juan, recibimos un pedido de cambio de contraseña.
-   Si fuiste vos, hacé click acá: https://prode.tirofederal.com/reset?token=abc123
+   Si fuiste vos, hacé click acá: https://prodeplus.com/reset?token=abc123
    El link expira en 30 minutos.
    Si no fuiste vos, ignorá este mensaje.
    ```
@@ -298,10 +298,10 @@ Usaremos whatsapp web js asique no abusaremos de los mensajes, por ej no podemos
 Tipos:
 
 ### Notificación de inscripción confirmada
-> ✅ ¡Listo Juan! Tu pago fue confirmado. Ya podés cargar tus pronósticos en https://prode.tirofederal.com
+> ✅ ¡Listo Juan! Tu pago fue confirmado. Ya podés cargar tus pronósticos en https://prodeplus.com
 
 ### Recordatorio de cierre de pronósticos
-> ⏰ Faltan 2 horas para Argentina vs Brasil y todavía no cargaste tu pronóstico. Cargalo en https://prode.tirofederal.com
+> ⏰ Faltan 2 horas para Argentina vs Brasil y todavía no cargaste tu pronóstico. Cargalo en https://prodeplus.com
 
 ### Resultado y puntos
 > 🎯 Sumaste 5 pts en Argentina 3-2 Brasil (resultado exacto x1 grupos). Estás en la posición #8 con 142 pts.

@@ -26,13 +26,13 @@ El frontend asume cambios en el backend que NO están en el spec backend actual 
 
 | # | Cambio | Justificación |
 |---|--------|---------------|
-| 1 | **Cookie del refresh token: cambiar `SameSite=Strict` → `SameSite=Lax` + agregar `Domain=.tirofederal.com`** | Frontend en `prode.tirofederal.com` y backend en `api.prode.tirofederal.com` son subdominios distintos. Strict no envía la cookie cross-subdomain. Update en `auth.controller.ts` del backend (~3 líneas). |
+| 1 | **Cookie del refresh token: cambiar `SameSite=Strict` → `SameSite=Lax` + agregar `Domain=.prodeplus.com`** | Frontend en `prodeplus.com` y backend en `api.prodeplus.com` son subdominios distintos. Strict no envía la cookie cross-subdomain. Update en `auth.controller.ts` del backend (~3 líneas). |
 | 2 | **`POST /dev/simulate-webhook`** (gated por `NODE_ENV !== 'production'`) | Body: `{ paymentId: string, status: 'approved' \| 'rejected' \| 'pending', payerEmail?: string }`. Bypassa firma MP, construye payload fake estilo MP y dispatch al handler real de webhook. Fundamental para el mock checkout local. |
 | 3 | **`GET /stats/public`** | Retorna `{ enrolledUsers: number, pozoEstimate: number }`. Para el live counter de la landing. Cache backend 60s. Si el backend no quiere agregarlo, eliminar la stats bar de la landing. |
 | 4 | **`GET /auth/me`** | Retorna info del user del access token. Usado por `AuthProvider` en mount (después de refresh exitoso). Si el backend no lo expone, derivamos del JWT decoded del lado cliente. |
 | 5 | **`POST /auth/change-password`** | Body: `{ currentPassword, newPassword }`. Auth required. Para la página de perfil. |
 | 6 | **`GET /users/:id/public-profile`** | Retorna `{ firstName, lastName, predictionsFinished: [...] }` solo de partidos finalizados. Para el drawer al click en row del leaderboard. Public, no auth necesaria. |
-| 7 | **CORS update** | Permitir origin `https://prode.tirofederal.com` con `credentials: true`. Backend ya tiene `FRONTEND_URL` env, solo verificar que esté seteado. |
+| 7 | **CORS update** | Permitir origin `https://prodeplus.com` con `credentials: true`. Backend ya tiene `FRONTEND_URL` env, solo verificar que esté seteado. |
 
 **`POST /auth/logout`** y `GET /predictions/special/me` ya existen en el backend (Tasks 3.6 y 7.3 del plan backend).
 
@@ -93,7 +93,7 @@ El frontend asume cambios en el backend que NO están en el spec backend actual 
 └─────────────────┬──────────────────────────────┘
                   │
 ┌─────────────────▼──────────────────────────────┐
-│  Backend NestJS (api.prode.tirofederal.com)    │
+│  Backend NestJS (api.prodeplus.com)    │
 └────────────────────────────────────────────────┘
 ```
 
@@ -377,9 +377,9 @@ Reglas críticas (de ui-ux-pro-max):
 ### 5.1 Tokens
 
 - **Access token**: JWT firmado por backend, 15 min de vida. Vive **solo en memoria de JS** (variable de módulo en `lib/auth/token-store.ts`). NUNCA persistido a localStorage/sessionStorage.
-- **Refresh token**: JWT 7 días, en cookie `httpOnly` + `Secure` + `SameSite=Lax` + `Domain=.tirofederal.com`. Backend lo emite en `/auth/login` y lo rota en `/auth/refresh`.
+- **Refresh token**: JWT 7 días, en cookie `httpOnly` + `Secure` + `SameSite=Lax` + `Domain=.prodeplus.com`. Backend lo emite en `/auth/login` y lo rota en `/auth/refresh`.
 
-**Por qué SameSite=Lax (no Strict):** frontend en `prode.tirofederal.com` y backend en `api.prode.tirofederal.com` son subdominios distintos. `SameSite=Strict` no enviaría la cookie en navegaciones cross-subdomain. `Lax` cubre el caso (POST same-site, GET cross-site OK). Ver Prerequisito Backend #1.
+**Por qué SameSite=Lax (no Strict):** frontend en `prodeplus.com` y backend en `api.prodeplus.com` son subdominios distintos. `SameSite=Strict` no enviaría la cookie en navegaciones cross-subdomain. `Lax` cubre el caso (POST same-site, GET cross-site OK). Ver Prerequisito Backend #1.
 
 **`tokenStore` es client-only**, no debe importarse desde RSC:
 
@@ -836,8 +836,8 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 
 `.env.production`:
 ```bash
-NEXT_PUBLIC_API_URL=https://api.prode.tirofederal.com
-NEXT_PUBLIC_FRONTEND_URL=https://prode.tirofederal.com
+NEXT_PUBLIC_API_URL=https://api.prodeplus.com
+NEXT_PUBLIC_FRONTEND_URL=https://prodeplus.com
 NEXT_PUBLIC_ENABLE_MOCK_CHECKOUT=false
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x...
 NEXT_PUBLIC_SENTRY_DSN=https://...
@@ -1069,8 +1069,8 @@ prode-frontend:
   environment:
     NODE_ENV: production
     TZ: America/Argentina/Buenos_Aires
-    NEXT_PUBLIC_API_URL: https://api.prode.tirofederal.com
-    NEXT_PUBLIC_FRONTEND_URL: https://prode.tirofederal.com
+    NEXT_PUBLIC_API_URL: https://api.prodeplus.com
+    NEXT_PUBLIC_FRONTEND_URL: https://prodeplus.com
     NEXT_PUBLIC_WORLD_CUP_START: '2026-06-11T18:00:00-03:00'
     NEXT_PUBLIC_INSCRIPCION_PRECIO: '15000'
     NEXT_PUBLIC_ENABLE_MOCK_CHECKOUT: 'false'
@@ -1083,8 +1083,8 @@ prode-frontend:
 
 ### 12.3 Dominio + cookies
 
-- Dominio: `prode.tirofederal.com` con Let's Encrypt automático en Dokploy.
-- Backend update menor: cookies refresh con `SameSite=Lax` y `Domain=.tirofederal.com` para que viajen entre `prode.*` y `api.prode.*`.
+- Dominio: `prodeplus.com` con Let's Encrypt automático en Dokploy.
+- Backend update menor: cookies refresh con `SameSite=Lax` y `Domain=.prodeplus.com` para que viajen entre `prode.*` y `api.prode.*`.
 
 ## 12.4 Logout flow
 
@@ -1108,7 +1108,7 @@ prode-frontend:
 5. **Vitest + RTL** en vez de Jest.
 6. **No Storybook** en esta etapa.
 7. **No Server Actions** — todo via REST.
-8. **JWT access en memoria + refresh httpOnly cookie SameSite=Lax + Domain=.tirofederal.com**.
+8. **JWT access en memoria + refresh httpOnly cookie SameSite=Lax + Domain=.prodeplus.com**.
 9. **3 grupos de rutas con layouts independientes**: `(public)`, `(app)`, `(admin)`.
 10. **PWA sí desde el día 1**, con `<IosInstallHint>` para Safari iOS.
 11. **Mock checkout local-only**: backend devuelve initPoint apuntando a `/dev/mock-checkout`, frontend simula la UX completa, backend tiene endpoint `/dev/simulate-webhook` solo activo en `NODE_ENV !== 'production'`.

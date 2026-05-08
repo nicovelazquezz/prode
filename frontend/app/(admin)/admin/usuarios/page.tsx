@@ -2,15 +2,22 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Plus, Search } from "lucide-react";
+import { Copy, MoreHorizontal, Plus, Search } from "lucide-react";
 import {
   AdminDataTable,
   RowActionsCell,
 } from "@/components/domain/admin-data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +26,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toaster";
-import { listUsers, type AdminUser } from "@/lib/api/admin";
+import {
+  listUsers,
+  resetUserPassword,
+  updateUser,
+  type AdminUser,
+} from "@/lib/api/admin";
 import { queryKeys } from "@/lib/api/queryKeys";
 import { formatDate, formatNumber } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
@@ -332,39 +344,188 @@ function StatusBadge({ status }: { status: AdminUser["status"] }) {
   );
 }
 
+/**
+ * Menú de acciones por fila. Gestiona 4 mutaciones:
+ *  - Activar / Reactivar     → updateUser({status: "ACTIVE"})
+ *  - Desactivar              → updateUser({status: "INACTIVE"})
+ *  - Banear                  → updateUser({status: "BANNED"})
+ *  - Reset password          → resetUserPassword() → modal con password
+ *
+ * Las acciones de status muestran toast directo (operación rápida).
+ * Reset password abre un modal con el password generado + botón
+ * "Copiar" porque es info que el admin necesita comunicar al user
+ * por fuera del sistema (WhatsApp).
+ *
+ * Invalidación: lista de users (`admin.users.list`). El optimistic
+ * update no aplica acá porque la lista viene paginada — un refetch es
+ * más simple y rápido.
+ */
 function UserActionsMenu({ user }: { user: AdminUser }) {
-  const handle = (action: string) => {
-    // TODO(backend): wire admin user actions cuando los endpoints
-    // existan (PATCH /admin/users/:id, POST .../reset-password, etc.).
-    toast.info(`${action} — proximamente`);
-  };
+  const queryClient = useQueryClient();
+  const [resetOpen, setResetOpen] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(
+    null,
+  );
+
+  const statusMutation = useMutation({
+    mutationFn: (status: "ACTIVE" | "INACTIVE" | "BANNED") =>
+      updateUser(user.id, { status }),
+    onSuccess: (_data, status) => {
+      const verb =
+        status === "ACTIVE"
+          ? "reactivado"
+          : status === "INACTIVE"
+            ? "desactivado"
+            : "baneado";
+      toast.success(`${user.firstName} ${user.lastName} ${verb}`);
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.users.list(),
+      });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message ?? "No pudimos actualizar el usuario");
+    },
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: () => resetUserPassword(user.id),
+    onSuccess: ({ password }) => {
+      setGeneratedPassword(password);
+      setResetOpen(true);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message ?? "No pudimos resetear el password");
+    },
+  });
+
+  const isActive = user.status === "ACTIVE";
+  const isInactive = user.status === "INACTIVE";
+  const isBanned = user.status === "BANNED";
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={`Acciones para ${user.firstName} ${user.lastName}`}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-sm hover:bg-[var(--color-landing-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-landing-gold)]"
-      >
-        <MoreHorizontal className="h-4 w-4" aria-hidden />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[180px]">
-        <DropdownMenuItem onSelect={() => handle("Ver detalle")}>
-          Ver detalle
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => handle("Desactivar")}>
-          Desactivar
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={() => handle("Banear")}
-          className="text-[var(--color-landing-red)]"
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label={`Acciones para ${user.firstName} ${user.lastName}`}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-sm hover:bg-[var(--color-landing-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-landing-gold)]"
+          disabled={statusMutation.isPending || resetMutation.isPending}
         >
-          Banear
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => handle("Reset password")}>
-          Reset password
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <MoreHorizontal className="h-4 w-4" aria-hidden />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-[180px]">
+          <DropdownMenuItem asChild>
+            <Link href={`/admin/usuarios/${user.id}`}>Ver detalle</Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {isInactive || isBanned ? (
+            <DropdownMenuItem
+              onSelect={() => statusMutation.mutate("ACTIVE")}
+              className="text-[var(--color-landing-green)]"
+            >
+              Reactivar
+            </DropdownMenuItem>
+          ) : null}
+          {isActive ? (
+            <DropdownMenuItem onSelect={() => statusMutation.mutate("INACTIVE")}>
+              Desactivar
+            </DropdownMenuItem>
+          ) : null}
+          {!isBanned ? (
+            <DropdownMenuItem
+              onSelect={() => statusMutation.mutate("BANNED")}
+              className="text-[var(--color-landing-red)]"
+            >
+              Banear
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => resetMutation.mutate()}>
+            Reset password
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ResetPasswordDialog
+        open={resetOpen}
+        onOpenChange={(o) => {
+          setResetOpen(o);
+          if (!o) setGeneratedPassword(null);
+        }}
+        userName={`${user.firstName} ${user.lastName}`}
+        password={generatedPassword}
+      />
+    </>
+  );
+}
+
+/**
+ * Modal post-reset. Muestra el password generado UNA SOLA VEZ con
+ * un botón de copiar al portapapeles. El backend rota refresh tokens
+ * activos del user, así que esta password queda firme hasta que el
+ * user la cambie. El admin la comunica por WhatsApp.
+ */
+function ResetPasswordDialog({
+  open,
+  onOpenChange,
+  userName,
+  password,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  userName: string;
+  password: string | null;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    if (!password) return;
+    try {
+      await navigator.clipboard.writeText(password);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("No pudimos copiar al portapapeles");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogTitle className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
+          <span className="inline-block border-b-[3px] border-[var(--color-landing-green)] pb-1">
+            Password reseteado
+          </span>
+        </DialogTitle>
+        <DialogDescription className="text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+          Nuevo password para <strong>{userName}</strong>. Compartilo por
+          WhatsApp — solo se muestra una vez.
+        </DialogDescription>
+        {password ? (
+          <div className="mt-3 flex items-center gap-2 rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)] p-3">
+            <code className="flex-1 font-[family-name:var(--font-landing-mono)] text-base tracking-wider text-[var(--color-landing-gold)]">
+              {password}
+            </code>
+            <button
+              type="button"
+              onClick={copy}
+              className="inline-flex items-center gap-1 rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-3 py-1.5 font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)]"
+              aria-label="Copiar password"
+            >
+              <Copy className="h-3 w-3" aria-hidden />
+              {copied ? "Copiado" : "Copiar"}
+            </button>
+          </div>
+        ) : null}
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="inline-flex items-center justify-center rounded-sm bg-[var(--color-landing-red)] px-6 py-3 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)]"
+          >
+            Listo
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

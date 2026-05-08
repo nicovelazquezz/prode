@@ -362,4 +362,52 @@ export class MatchesService {
 
     return updated;
   }
+
+  /**
+   * Cancela un partido: status → CANCELLED. Pensado para casos en que
+   * el organizador (FIFA, etc.) decide que el partido no se juega — distinto
+   * de `postpone` que mueve a una fecha nueva. No pedimos `reason` porque
+   * la decisión es externa al sistema; el audit log registra la transición.
+   *
+   * No se puede cancelar un partido FINISHED (el resultado es canónico —
+   * usar `recalculateMatch` para corregir scores). Idempotente si ya está
+   * CANCELLED. Las predicciones existentes quedan intactas: como `scoring`
+   * solo se dispara en transiciones a FINISHED, nunca se les asignan
+   * puntos y el leaderboard las ignora.
+   */
+  async cancel(id: string, ctx: AuditContext = {}): Promise<Match> {
+    const existing = await this.prisma.match.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`Match ${id} not found`);
+    }
+    if (existing.status === MatchStatus.FINISHED) {
+      throw new BadRequestException(
+        'Cannot cancel a match that has already finished',
+      );
+    }
+    if (existing.status === MatchStatus.CANCELLED) {
+      // Idempotente: ya está cancelado, nada que actualizar.
+      return existing;
+    }
+
+    const updated = await this.prisma.match.update({
+      where: { id },
+      data: { status: MatchStatus.CANCELLED },
+    });
+
+    void this.audit.log({
+      userId: ctx.userId,
+      action: 'match.cancelled',
+      entity: 'match',
+      entityId: id,
+      changes: {
+        from: { status: existing.status },
+        to: { status: MatchStatus.CANCELLED },
+      },
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+    });
+
+    return updated;
+  }
 }

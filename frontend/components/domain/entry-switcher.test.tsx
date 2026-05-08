@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { EntrySwitcher } from "./entry-switcher";
 import {
   ActiveEntryContext,
@@ -49,10 +50,17 @@ function buildCtx(
 }
 
 function renderWithCtx(ctx: ActiveEntryContextValue, onCreateNew = vi.fn()) {
+  // QueryClient requerido porque EntrySwitcher ahora usa
+  // useMutation/useQueryClient para el flujo de renombrar entry.
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <ActiveEntryContext.Provider value={ctx}>
-      <EntrySwitcher onCreateNew={onCreateNew} />
-    </ActiveEntryContext.Provider>,
+    <QueryClientProvider client={queryClient}>
+      <ActiveEntryContext.Provider value={ctx}>
+        <EntrySwitcher onCreateNew={onCreateNew} />
+      </ActiveEntryContext.Provider>
+    </QueryClientProvider>,
   );
 }
 

@@ -1,10 +1,16 @@
 import { Module } from '@nestjs/common';
 import { PaymentsModule } from '../payments/payments.module.js';
+import { ScoringModule } from '../scoring/scoring.module.js';
+import { LeaderboardModule } from '../leaderboard/leaderboard.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { AdminUsersController } from './admin-users.controller.js';
 import { AdminEntriesController } from './admin-entries.controller.js';
 import { AdminPaymentsController } from './admin-payments.controller.js';
 import { AdminMetricsController } from './admin-metrics.controller.js';
 import { AdminConfigController } from './admin-config.controller.js';
+import { AdminTournamentResultsController } from './admin-tournament-results.controller.js';
+import { AdminPhasesPrizesController } from './admin-phases-prizes.controller.js';
+import { AdminNotificationsController } from './admin-notifications.controller.js';
 
 /**
  * Hosts admin-only endpoints que no encajan en un feature module. Hoy:
@@ -28,13 +34,21 @@ import { AdminConfigController } from './admin-config.controller.js';
  * via `PaymentsModule` para el endpoint de aprobación manual.
  */
 @Module({
-  imports: [PaymentsModule],
+  imports: [
+    PaymentsModule,
+    ScoringModule,
+    LeaderboardModule,
+    NotificationsModule,
+  ],
   controllers: [
     AdminUsersController,
     AdminEntriesController,
     AdminPaymentsController,
     AdminMetricsController,
     AdminConfigController,
+    AdminTournamentResultsController,
+    AdminPhasesPrizesController,
+    AdminNotificationsController,
   ],
 })
 export class AdminModule {}

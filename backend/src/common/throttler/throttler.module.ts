@@ -46,6 +46,27 @@ function isAnyPath(ctx: ExecutionContext, ...paths: string[]): boolean {
 
 const isTestBypass = (): boolean => process.env.THROTTLER_BYPASS_TEST === '1';
 
+/**
+ * Tracker para `/auth/login`: combina IP con DNI. Sin DNI, IPs distintas
+ * de un atacante (botnet, residential proxies) podrían probar 5 logins
+ * c/u contra el mismo DNI sin disparar el límite global.
+ *
+ * El body de la request es leído por el body-parser de Nest *antes* de
+ * que el guard corra, así que `req.body.dni` está disponible. Si por
+ * alguna razón el DNI no llegó (curl con body mal formado), caemos a
+ * solo IP — peor estrategia que perder el chequeo entero.
+ */
+function loginTracker(
+  req: Record<string, unknown>,
+): string {
+  const ip = typeof req.ip === 'string' ? req.ip : 'unknown-ip';
+  const body = req.body as { dni?: unknown } | undefined;
+  const rawDni = body?.dni;
+  const dni =
+    typeof rawDni === 'string' && rawDni.length > 0 ? rawDni.trim() : '';
+  return dni ? `${ip}:${dni}` : ip;
+}
+
 @Module({
   imports: [
     ThrottlerModule.forRootAsync({
@@ -66,6 +87,10 @@ const isTestBypass = (): boolean => process.env.THROTTLER_BYPASS_TEST === '1';
             // this isn't the login route. Per-throttler skipIf REPLACES
             // the common one, so we must re-check the bypass here.
             skipIf: (ctx) => isTestBypass() || !isPath(ctx, '/auth/login'),
+            // Track por IP+DNI: un atacante con muchas IPs no puede
+            // brute-force el mismo DNI esquivando el límite global por
+            // IP. Cuando no hay DNI parseable, cae a solo IP.
+            getTracker: (req) => loginTracker(req),
           },
           {
             name: 'auth-recovery',

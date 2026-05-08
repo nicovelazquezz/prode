@@ -20,7 +20,13 @@ import {
 import { IosInstallHint } from "@/components/domain/ios-install-hint";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { changePassword } from "@/lib/api/auth";
+import { updateMe } from "@/lib/api/users";
 import { cn } from "@/lib/utils/cn";
+
+// Regex letras + espacios + tildes + ñ + apóstrofe + guión.
+// Mismo patrón que el DTO backend (UpdateMeDto.NAME_REGEX). Si lo
+// cambiás acá, cambialo allá también para mantener simetría.
+const NAME_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúñÑüÜ' -]+$/;
 
 /**
  * /perfil — datos personales (read-only), editables (whatsapp +
@@ -84,14 +90,11 @@ export default function PerfilPage() {
         </h1>
       </header>
 
-      <PersonalDataSection
-        dni={user.dni}
+      <IdentitySection dni={user.dni} role={user.role} />
+
+      <EditableProfileSection
         firstName={user.firstName}
         lastName={user.lastName}
-        role={user.role}
-      />
-
-      <ContactSection
         whatsapp={user.whatsapp}
         whatsappOptIn={user.whatsappOptIn}
       />
@@ -119,26 +122,25 @@ export default function PerfilPage() {
   );
 }
 
-function PersonalDataSection({
+/**
+ * Identidad (read-only). DNI no se puede editar desde el flow de user
+ * (es identificador fiscal — si hay error, requiere admin). Rol viene
+ * del backend, tampoco editable desde acá.
+ */
+function IdentitySection({
   dni,
-  firstName,
-  lastName,
   role,
 }: {
   dni: string;
-  firstName: string;
-  lastName: string;
   role: "USER" | "ADMIN";
 }) {
   return (
-    <section aria-labelledby="personal-section-title" className="space-y-3">
-      <h2 id="personal-section-title" className={sectionTitle}>
-        Datos personales
+    <section aria-labelledby="identity-section-title" className="space-y-3">
+      <h2 id="identity-section-title" className={sectionTitle}>
+        Identidad
       </h2>
       <dl className={cn("grid grid-cols-1 sm:grid-cols-2 gap-5", cardSurface)}>
         <Field label="DNI" value={dni} />
-        <Field label="Nombre" value={firstName} />
-        <Field label="Apellido" value={lastName} />
         <div className="flex flex-col gap-1.5">
           <dt className={labelClasses}>Rol</dt>
           <dd>
@@ -171,57 +173,174 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-const whatsappSchema = z.object({
+/**
+ * Schema del form unificado de "Mis datos". Mismas validaciones que el
+ * DTO backend (UpdateMeDto) — si cambia uno, cambiar el otro:
+ *   - firstName/lastName: regex letras + tildes + ñ + apóstrofe + guión,
+ *     mín 2 chars (post-trim), máx 100.
+ *   - whatsapp: 10-15 dígitos sin signos (E.164 sin "+"). Para el form
+ *     dejamos un sanitizer suave en client (string solo dígitos antes
+ *     de submit) para tolerar que el user escriba "+54 9 ..." y se
+ *     normalice al patrón backend.
+ *
+ * El user puede cambiar 1, 2, 3 o los 4 campos a la vez. El submit
+ * envía solo los que efectivamente cambiaron (dirty fields) — esto
+ * matchea el comportamiento del backend que tolera body parcial.
+ */
+const profileSchema = z.object({
+  firstName: z
+    .string()
+    .trim()
+    .min(2, "Mínimo 2 caracteres")
+    .max(100, "Máximo 100 caracteres")
+    .regex(NAME_REGEX, "Solo letras, espacios, tildes, ñ, ' y -"),
+  lastName: z
+    .string()
+    .trim()
+    .min(2, "Mínimo 2 caracteres")
+    .max(100, "Máximo 100 caracteres")
+    .regex(NAME_REGEX, "Solo letras, espacios, tildes, ñ, ' y -"),
   whatsapp: z
     .string()
-    .min(8, "Numero invalido")
-    .max(20, "Numero invalido")
-    .regex(/^\+?[\d\s-]+$/i, "Solo digitos, espacios, guiones y +"),
+    .regex(/^\d{10,15}$/, "10-15 dígitos sin signos"),
   whatsappOptIn: z.boolean(),
 });
-type WhatsappForm = z.infer<typeof whatsappSchema>;
+type ProfileForm = z.infer<typeof profileSchema>;
 
-function ContactSection({
+/**
+ * Form unificado: nombre, apellido, whatsapp, opt-in. Cuando cambia
+ * el whatsapp, mostramos un dialog de confirmación porque es por
+ * donde el user recibe TODA la comunicación (recordatorios, premio,
+ * cambios de horario). Los demás campos se guardan directo.
+ *
+ * Después de guardar, llamamos `refresh()` del AuthProvider para
+ * que el saludo del header y el resto del estado global se sincronicen.
+ */
+function EditableProfileSection({
+  firstName,
+  lastName,
   whatsapp,
   whatsappOptIn,
 }: {
+  firstName: string;
+  lastName: string;
   whatsapp: string;
   whatsappOptIn: boolean;
 }) {
-  const [confirmDialog, setConfirmDialog] = useState<WhatsappForm | null>(null);
+  const { refresh } = useAuth();
+  const [confirmDialog, setConfirmDialog] = useState<ProfileForm | null>(null);
 
-  const form = useForm<WhatsappForm>({
-    resolver: zodResolver(whatsappSchema),
-    defaultValues: {
-      whatsapp,
-      whatsappOptIn,
+  const form = useForm<ProfileForm>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: { firstName, lastName, whatsapp, whatsappOptIn },
+  });
+
+  const mutation = useMutation({
+    mutationFn: (dto: ProfileForm) => {
+      // Mandamos solo los campos que cambiaron — backend acepta body
+      // parcial. Esto evita audit logs ruidosos con before/after iguales.
+      const dirty = form.formState.dirtyFields;
+      const payload: Partial<ProfileForm> = {};
+      if (dirty.firstName) payload.firstName = dto.firstName.trim();
+      if (dirty.lastName) payload.lastName = dto.lastName.trim();
+      if (dirty.whatsapp) payload.whatsapp = dto.whatsapp;
+      if (dirty.whatsappOptIn) payload.whatsappOptIn = dto.whatsappOptIn;
+      return updateMe(payload);
+    },
+    onSuccess: async (updated) => {
+      // Reset el form con los valores actualizados (sano por si el
+      // backend trimmeó algo o normalizó). Después refresh() para que
+      // useAuth() y el header reflejen los cambios.
+      form.reset({
+        firstName: updated.firstName,
+        lastName: updated.lastName,
+        whatsapp: updated.whatsapp,
+        whatsappOptIn: updated.whatsappOptIn,
+      });
+      await refresh();
+      setConfirmDialog(null);
+      toast.success("Perfil actualizado");
+    },
+    onError: async (err: Error) => {
+      let message = "No pudimos guardar los cambios.";
+      if (err instanceof HTTPError) {
+        try {
+          const body = (await err.response.clone().json()) as {
+            message?: string | string[];
+          };
+          if (typeof body?.message === "string") message = body.message;
+          else if (Array.isArray(body?.message))
+            message = body.message.join(", ");
+        } catch {
+          // dejamos el message default
+        }
+      }
+      toast.error(message);
     },
   });
 
-  const saveWhatsapp = (data: WhatsappForm) => {
-    void data;
-    toast.success("Cambios guardados (mock — backend pendiente).");
-    form.reset(data);
-    setConfirmDialog(null);
-  };
-
-  const onSubmit = (data: WhatsappForm) => {
+  const onSubmit = (data: ProfileForm) => {
+    // Si el WhatsApp es lo que cambia, pedir confirmación: es el canal
+    // por donde recibe TODO. Si solo cambian nombres / opt-in, guardamos
+    // directo sin diálogo (cambios bajos en consecuencia).
     if (data.whatsapp !== whatsapp) {
       setConfirmDialog(data);
     } else {
-      saveWhatsapp(data);
+      mutation.mutate(data);
     }
   };
 
   return (
-    <section aria-labelledby="contact-section-title" className="space-y-3">
-      <h2 id="contact-section-title" className={sectionTitle}>
-        Contacto
+    <section aria-labelledby="profile-section-title" className="space-y-3">
+      <h2 id="profile-section-title" className={sectionTitle}>
+        Mis datos
       </h2>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn("space-y-5", cardSurface)}
+        noValidate
       >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="firstName" className={labelClasses}>
+              Nombre
+            </label>
+            <input
+              id="firstName"
+              type="text"
+              autoComplete="given-name"
+              aria-invalid={
+                form.formState.errors.firstName ? "true" : "false"
+              }
+              className={inputClasses}
+              {...form.register("firstName")}
+            />
+            {form.formState.errors.firstName ? (
+              <p className={errorText}>
+                {form.formState.errors.firstName.message}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="lastName" className={labelClasses}>
+              Apellido
+            </label>
+            <input
+              id="lastName"
+              type="text"
+              autoComplete="family-name"
+              aria-invalid={form.formState.errors.lastName ? "true" : "false"}
+              className={inputClasses}
+              {...form.register("lastName")}
+            />
+            {form.formState.errors.lastName ? (
+              <p className={errorText}>
+                {form.formState.errors.lastName.message}
+              </p>
+            ) : null}
+          </div>
+        </div>
+
         <div className="flex flex-col gap-2">
           <label htmlFor="whatsapp" className={labelClasses}>
             WhatsApp
@@ -229,12 +348,16 @@ function ContactSection({
           <input
             id="whatsapp"
             type="tel"
-            inputMode="tel"
+            inputMode="numeric"
             autoComplete="tel"
+            placeholder="5492914xxxxxxx"
             aria-invalid={form.formState.errors.whatsapp ? "true" : "false"}
             className={inputClasses}
             {...form.register("whatsapp")}
           />
+          <p className="font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)]">
+            10-15 dígitos sin signos. Ej: 5492914000000
+          </p>
           {form.formState.errors.whatsapp ? (
             <p className={errorText}>
               {form.formState.errors.whatsapp.message}
@@ -267,11 +390,11 @@ function ContactSection({
 
         <button
           type="submit"
-          disabled={!form.formState.isDirty}
+          disabled={!form.formState.isDirty || mutation.isPending}
           className={buttonPrimary}
         >
           <Save className="h-4 w-4" aria-hidden />
-          Guardar cambios
+          {mutation.isPending ? "Guardando..." : "Guardar cambios"}
         </button>
       </form>
 
@@ -282,30 +405,33 @@ function ContactSection({
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
-              Confirmar cambio
+              Confirmar cambio de WhatsApp
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
-              Vamos a actualizar tu número de WhatsApp a{" "}
+              Vamos a actualizar tu número a{" "}
               <span className="font-[family-name:var(--font-landing-mono)] text-[var(--color-landing-gold)]">
                 {confirmDialog?.whatsapp}
               </span>
-              . Es por acá que vas a recibir todas las notificaciones.
+              . Es por acá que vas a recibir todas las notificaciones del
+              torneo.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-stretch">
             <button
               type="button"
               onClick={() => setConfirmDialog(null)}
+              disabled={mutation.isPending}
               className={cn(buttonOutlined, "flex-1")}
             >
               Cancelar
             </button>
             <button
               type="button"
-              onClick={() => confirmDialog && saveWhatsapp(confirmDialog)}
+              onClick={() => confirmDialog && mutation.mutate(confirmDialog)}
+              disabled={mutation.isPending}
               className={cn(buttonPrimary, "flex-1")}
             >
-              Confirmar
+              {mutation.isPending ? "Guardando..." : "Confirmar"}
             </button>
           </DialogFooter>
         </DialogContent>

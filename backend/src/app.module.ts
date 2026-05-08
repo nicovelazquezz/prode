@@ -45,7 +45,7 @@ import { AppThrottlerModule } from './common/throttler/throttler.module.js';
  * Pino logger config (spec 9.2):
  *   - JSON in production / pretty-printed in dev
  *   - redactor scrubs password, *.token, *.cardNumber, *.cvv,
- *     authorization & cookie headers from logs
+ *     dni (PII argentino), authorization & cookie headers from logs
  *   - per-request `requestId` (echoes incoming `x-request-id` if any)
  *   - skips logging the `/health` poll to keep operational noise down
  */
@@ -64,6 +64,15 @@ function buildLoggerParams() {
           '*.token',
           '*.cardNumber',
           '*.cvv',
+          // DNI: PII de identidad fiscal argentina. Aparece en bodies
+          // de /auth/login, /auth/forgot-password, /admin/users, etc.
+          // El audit log lo enmascara con `maskDni()` en el persist;
+          // acá lo enmascaramos a nivel transport para los logs de
+          // request/response que el HTTP logger emite por su cuenta.
+          'dni',
+          '*.dni',
+          'req.body.dni',
+          'res.body.dni',
           'req.headers.authorization',
           'req.headers.cookie',
           'req.headers["x-turnstile-token"]',

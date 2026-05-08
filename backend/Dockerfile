@@ -22,6 +22,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV TZ=America/Argentina/Buenos_Aires
 
+# tzdata es necesario para que la variable TZ se aplique. Sin esto,
+# musl no resuelve "America/Argentina/Buenos_Aires" y los timestamps
+# del sistema (logs, Date.toString(), etc.) salen en UTC.
+RUN apk add --no-cache tzdata
+
 # Install only prod deps
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
@@ -43,6 +48,10 @@ COPY --from=build /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 # Entrypoint: run `prisma migrate deploy`, then start Nest.
 COPY scripts/start.sh ./scripts/start.sh
 RUN chmod +x ./scripts/start.sh
+
+# Drop privileges: run as the built-in `node` user (uid 1000) instead of root.
+RUN chown -R node:node /app
+USER node
 
 # Healthcheck (Docker-level, complements the /health endpoint)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

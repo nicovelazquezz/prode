@@ -50,6 +50,9 @@ function mapStatus(mpStatus: string | null | undefined): ProviderPaymentStatus {
  */
 @Injectable()
 export class MercadoPagoCheckoutProvider implements CheckoutProvider {
+  /** Tolerancia ±5 min para el `ts` del webhook (clock drift + delivery). */
+  static readonly REPLAY_WINDOW_MS = 5 * 60 * 1000;
+
   private readonly logger = new Logger(MercadoPagoCheckoutProvider.name);
   private readonly env: Env;
   private readonly preference: Preference;
@@ -154,9 +157,14 @@ export class MercadoPagoCheckoutProvider implements CheckoutProvider {
    *   - manifest: `id:<dataId>;request-id:<requestId>;ts:<ts>;`
    *   - hash: HMAC-SHA256(manifest) using `MP_WEBHOOK_SECRET`
    *
-   * The `ts` is opaque to us — MP supplies it and includes it in the hash;
-   * we don't independently validate freshness here (no replay window) since
-   * the per-payment idempotency in the handler is the authoritative guard.
+   * Además del HMAC, ahora aplicamos **replay protection**: rechazamos
+   * webhooks cuyo `ts` esté fuera de una ventana de ±5 min vs. ahora.
+   * Sin esto, un atacante que capturó un webhook válido pasado podría
+   * replicarlo meses después y volver a disparar processWebhook (que
+   * tiene idempotency a nivel pago, pero la idempotency por
+   * `request-id` se hace en el controller para evitar el round-trip
+   * a la BD en caso de retries de MP). Conjuntamente, replay + per
+   * request-id idempotency = seguridad en profundidad.
    */
   verifyWebhookSignature(params: VerifyWebhookSignatureParams): void {
     const { signatureHeader, requestId, dataId } = params;
@@ -177,6 +185,22 @@ export class MercadoPagoCheckoutProvider implements CheckoutProvider {
     const v1 = parts.v1;
     if (!ts || !v1) {
       throw new UnauthorizedException('Malformed webhook signature header');
+    }
+
+    // Replay protection: rechazar si `ts` está fuera de la ventana de
+    // ±REPLAY_WINDOW_SECONDS vs ahora. MP típicamente entrega en ms; un
+    // delivery legítimo está dentro de segundos. Tolerancia bidireccional
+    // para drift de reloj entre MP y nuestro server.
+    const tsNum = Number(ts);
+    if (!Number.isFinite(tsNum)) {
+      throw new UnauthorizedException('Webhook ts is not numeric');
+    }
+    const tsMs = tsNum < 1e12 ? tsNum * 1000 : tsNum; // segundos vs millis
+    const ageMs = Math.abs(Date.now() - tsMs);
+    if (ageMs > MercadoPagoCheckoutProvider.REPLAY_WINDOW_MS) {
+      throw new UnauthorizedException(
+        `Webhook timestamp outside replay window (age: ${Math.floor(ageMs / 1000)}s)`,
+      );
     }
 
     const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;

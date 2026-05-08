@@ -78,6 +78,11 @@ export async function resetUserPassword(
  * Payment + datos del user asociado y mpRawData crudo (solo admin).
  * El backend puede devolver `mpRawData` como cualquier shape MP — lo
  * dejamos como `unknown` y el panel lo renderiza con JSON.stringify.
+ *
+ * `entry`: el Entry asociado al payment (relación 1:1). Aparece en
+ * payments APPROVED para habilitar la acción "Anular prode" en la UI.
+ * Null si el payment no tiene entry todavía (PENDING) o ya fue
+ * anulado (REFUNDED).
  */
 export interface AdminPayment extends Payment {
   user?: {
@@ -85,6 +90,11 @@ export interface AdminPayment extends Payment {
     dni: string;
     firstName: string;
     lastName: string;
+  } | null;
+  entry?: {
+    id: string;
+    position: number;
+    status: string;
   } | null;
   mpRawData?: unknown;
 }
@@ -116,6 +126,73 @@ export async function approvePayment(
     .json<{ paymentId: string; entryId: string; userId: string }>();
 }
 
+/**
+ * Registra un pago manual (CASH o TRANSFER) para un user que **ya
+ * existe** en el sistema. Path A del flow operacional: el user pagó
+ * por fuera (transferencia/efectivo) y avisó por WhatsApp; el admin
+ * lo registra. Crea Payment + Entry adicional + audit log.
+ *
+ * Errores típicos:
+ *   - 404: User no existe
+ *   - 403: User no está ACTIVE
+ *   - 409 con code `ENTRY_CAP_REACHED`: el user llegó al cap
+ *   - 409 con code `REGISTRATION_CLOSED`: pasó la fecha de cierre
+ */
+export interface CreateManualPaymentDto {
+  userId: string;
+  method: "CASH" | "TRANSFER";
+  notes?: string;
+}
+
+export interface CreateManualPaymentResponse {
+  payment: {
+    id: string;
+    userId: string;
+    amount: number;
+    method: string;
+    status: string;
+    notes: string | null;
+    createdAt: string;
+  };
+  entry: {
+    id: string;
+    userId: string;
+    position: number;
+    status: string;
+    createdAt: string;
+  };
+}
+
+export async function createManualPayment(
+  dto: CreateManualPaymentDto,
+): Promise<CreateManualPaymentResponse> {
+  return api
+    .post("admin/payments/manual", { json: dto })
+    .json<CreateManualPaymentResponse>();
+}
+
+/**
+ * Anula un Entry. Borra predicciones del entry + special prediction +
+ * memberships en mini-ligas. El Payment asociado pasa a REFUNDED
+ * (no se borra para audit). Operación destructiva — el backend genera
+ * un audit log con la cantidad de predicciones afectadas.
+ */
+export interface AnnulEntryResponse {
+  ok: true;
+  entryId: string;
+  userId: string;
+  deletedPredictions: number;
+  deletedSpecialPredictions: number;
+  deletedLeagueMemberships: number;
+  paymentRefunded: string | null;
+}
+
+export async function annulEntry(
+  entryId: string,
+): Promise<AnnulEntryResponse> {
+  return api.delete(`admin/entries/${entryId}`).json<AnnulEntryResponse>();
+}
+
 // ── Matches ─────────────────────────────────────────────────────
 
 export async function getAdminMatch(id: string): Promise<Match> {
@@ -144,6 +221,16 @@ export async function postponeMatch(
   return api
     .post(`admin/matches/${id}/postpone`, { json: dto })
     .json<Match>();
+}
+
+/**
+ * Marca un partido como CANCELLED. Sin body — la razón es decisión externa
+ * (FIFA/organizador), solo se registra la transición en audit log.
+ * Idempotente: si ya estaba CANCELLED, devuelve el match sin cambios.
+ * Rechaza con 400 si el partido ya está FINISHED.
+ */
+export async function cancelMatch(id: string): Promise<Match> {
+  return api.post(`admin/matches/${id}/cancel`).json<Match>();
 }
 
 /**
@@ -373,6 +460,17 @@ export interface AdminMetrics {
   revenue: {
     total: number;
     paidUserCount: number;
+    /**
+     * Desglose de recaudado por método de pago. Solo cuenta payments
+     * en estado APPROVED. `count` = cantidad de payments, `total` =
+     * suma de montos. Se completa con 0 si todavía no hubo pagos del
+     * tipo correspondiente.
+     */
+    byMethod: {
+      MERCADOPAGO: { total: number; count: number };
+      CASH: { total: number; count: number };
+      TRANSFER: { total: number; count: number };
+    };
   };
   predictions: {
     loaded: number;

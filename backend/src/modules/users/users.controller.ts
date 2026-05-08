@@ -1,14 +1,24 @@
 import {
+  Body,
   Controller,
   Get,
   Inject,
   NotFoundException,
   Param,
+  Patch,
+  Req,
 } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from '@nestjs/cache-manager';
+import type { Request } from 'express';
 import { Public } from '../../common/decorators/public.decorator.js';
+import {
+  CurrentUser,
+  type AuthenticatedUser,
+} from '../../common/decorators/current-user.decorator.js';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
+import { UsersService } from './users.service.js';
+import { UpdateMeDto } from './dto/update-me.dto.js';
 
 const PROFILE_TTL_MS = 60 * 1000;
 
@@ -55,7 +65,57 @@ export class UsersController {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
+    private readonly users: UsersService,
   ) {}
+
+  /**
+   * PATCH /users/me — el user edita campos editables de su perfil
+   * (firstName, lastName, whatsapp, whatsappOptIn). Devuelve el User
+   * actualizado sin password ni campos sensibles. Audit log automático.
+   *
+   * Validación: class-validator vía UpdateMeDto (regex names + whatsapp
+   * E.164). Si alguno falla, ValidationPipe global devuelve 400 con
+   * mensajes específicos.
+   *
+   * No-op friendly: si el body es `{}` o todos los valores son iguales
+   * al estado actual, devuelve el user sin tocar la BD ni escribir audit.
+   */
+  @Patch('me')
+  async updateMe(
+    @CurrentUser() current: AuthenticatedUser,
+    @Body() body: UpdateMeDto,
+    @Req() req: Request,
+  ): Promise<{
+    id: string;
+    dni: string;
+    firstName: string;
+    lastName: string;
+    whatsapp: string;
+    whatsappOptIn: boolean;
+    role: string;
+    status: string;
+    createdAt: Date;
+    lastLoginAt: Date | null;
+  }> {
+    const updated = await this.users.updateMe(current.id, body, {
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+    // Mismo shape que /auth/me — no exponemos passwordHash ni
+    // tokens. Reusamos los campos públicos del modelo Prisma.
+    return {
+      id: updated.id,
+      dni: updated.dni,
+      firstName: updated.firstName,
+      lastName: updated.lastName,
+      whatsapp: updated.whatsapp,
+      whatsappOptIn: updated.whatsappOptIn,
+      role: updated.role,
+      status: updated.status,
+      createdAt: updated.createdAt,
+      lastLoginAt: updated.lastLoginAt,
+    };
+  }
 
   /**
    * Public read-only profile used by the leaderboard drawer when an

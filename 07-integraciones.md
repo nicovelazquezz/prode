@@ -9,7 +9,7 @@
 3. Obtener:
    - `Access Token` (privado, va en backend)
    - `Public Key` (puede estar en frontend)
-4. Configurar webhook URL: `https://api.prode.tirofederal.com/payments/webhook`
+4. Configurar webhook URL: `https://api.prodeplus.com/payments/webhook`
 5. Activar acreditación a 14 días para reducir comisiones
 
 ### Flujo de pago (Checkout Pro)
@@ -373,7 +373,7 @@ Aprovechando tu setup existente con Dokploy + B2:
 ### Configuración
 
 Reusar el setup S3-compatible que ya tenés. Bucket separado para este proyecto:
-- `tirofederal-prode-backups`
+- `prodeplus-backups`
 - Lifecycle: borrar backups > 90 días
 - Cifrado del lado servidor activado
 
@@ -390,7 +390,7 @@ BACKUP_FILE="/tmp/prode-db-$DATE.sql.gz"
 docker exec prode-postgres pg_dump -U prodeuser prode | gzip > $BACKUP_FILE
 
 # Upload to B2 (vía rclone o aws-cli)
-aws s3 cp $BACKUP_FILE s3://tirofederal-prode-backups/db/ \
+aws s3 cp $BACKUP_FILE s3://prodeplus-backups/db/ \
   --endpoint-url=https://s3.us-west-002.backblazeb2.com
 
 # Limpiar local

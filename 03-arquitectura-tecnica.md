@@ -127,7 +127,7 @@ WHATSAPP_API_URL="https://tu-whatsapp-backend.com"
 WHATSAPP_API_TOKEN="..."
 
 # Frontend URL (para CORS y links)
-FRONTEND_URL="https://prode.tirofederal.com"
+FRONTEND_URL="https://prodeplus.com"
 
 # Inscripción
 INSCRIPCION_PRECIO=5000
@@ -141,7 +141,7 @@ ADMIN_DEFAULT_PASSWORD="..."  # solo para seed inicial
 ### Frontend (.env.local)
 
 ```bash
-NEXT_PUBLIC_API_URL=https://api.prode.tirofederal.com
+NEXT_PUBLIC_API_URL=https://api.prodeplus.com
 NEXT_PUBLIC_MP_PUBLIC_KEY=...
 NEXT_PUBLIC_WORLD_CUP_START="2026-06-11T18:00:00-03:00"
 ```
@@ -165,7 +165,7 @@ NEXT_PUBLIC_WORLD_CUP_START="2026-06-11T18:00:00-03:00"
 
 1. Usuario ingresa DNI en formulario
 2. Si existe, se genera token de reset (random, expiración 30 min, guardado en `password_resets`)
-3. Se envía link al WhatsApp registrado: `https://prode.tirofederal.com/reset?token=...`
+3. Se envía link al WhatsApp registrado: `https://prodeplus.com/reset?token=...`
 4. Usuario abre link, ingresa nueva contraseña
 5. Token se marca como usado
 
@@ -239,8 +239,8 @@ Aprovechando que ya manejás Dokploy:
   - Web Next.js (puerto 3000)
   - Reverse proxy (Traefik o Caddy, viene con Dokploy)
 - **Dominios**:
-  - `prode.tirofederal.com` → web
-  - `api.prode.tirofederal.com` → api
+  - `prodeplus.com` → web
+  - `api.prodeplus.com` → api
 - **SSL**: Let's Encrypt automático
 - **Backups**:
   - BD: diario, retención 30 días

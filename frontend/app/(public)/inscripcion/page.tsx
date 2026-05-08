@@ -82,7 +82,7 @@ export default function InscripcionPage() {
                 Reintentar
               </button>
               <a
-                href="https://wa.me/5492914231087?text=hola%20quiero%20inscribirme%20al%20prode"
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "5492914231087"}?text=${encodeURIComponent("hola quiero inscribirme al prode")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-[family-name:var(--font-landing-mono)] text-xs uppercase tracking-[0.12em] text-[var(--color-landing-text-muted)] transition-colors hover:text-[var(--color-landing-text)]"

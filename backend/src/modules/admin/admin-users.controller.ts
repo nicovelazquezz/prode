@@ -2,17 +2,30 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Logger,
   NotFoundException,
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { Type } from 'class-transformer';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import type { Request } from 'express';
 import { randomBytes } from 'node:crypto';
+import { Role, UserStatus } from '../../../generated/prisma/enums.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import {
   CurrentUser,
@@ -29,6 +42,7 @@ import {
   WhatsappAlreadyExistsException,
 } from '../../common/exceptions/domain.exceptions.js';
 import { assertUnderUserCap } from '../../common/limits/user-cap.js';
+import { maskDni } from '../../common/utils/mask.js';
 
 function getRequestContext(req: Request): {
   ipAddress?: string;
@@ -39,9 +53,36 @@ function getRequestContext(req: Request): {
   return { ipAddress: req.ip ?? req.socket?.remoteAddress, userAgent };
 }
 
-function maskDni(dni: string): string {
-  if (dni.length <= 5) return '***';
-  return `${dni.slice(0, 2)}***${dni.slice(-3)}`;
+/**
+ * Query DTO para `GET /admin/users`. Todos los campos opcionales; el
+ * controller aplica defaults (page=1, pageSize=20, sin filtros).
+ */
+class ListAdminUsersDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  pageSize?: number;
+
+  @IsOptional()
+  @IsEnum(UserStatus)
+  status?: keyof typeof UserStatus;
+
+  @IsOptional()
+  @IsEnum(Role)
+  role?: keyof typeof Role;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  search?: string;
 }
 
 /**
@@ -75,6 +116,88 @@ export class AdminUsersController {
     private readonly authService: AuthService,
     private readonly audit: AuditService,
   ) {}
+
+  /**
+   * GET /admin/users — listado paginado con filtros básicos para que la
+   * página `/admin/usuarios` del panel pueda buscar / filtrar / paginar.
+   *
+   * Query params (todos opcionales):
+   *   - page (default 1)
+   *   - pageSize (default 20, max 100)
+   *   - status: ACTIVE | INACTIVE | BANNED
+   *   - role: USER | ADMIN
+   *   - search: matchea contra firstName, lastName y dni (case-insensitive)
+   *
+   * Response: `{ page, pageSize, total, data: AdminUser[] }`. Cada user
+   * trae su `paidAt` (timestamp del Payment APPROVED más reciente, o null)
+   * para que el admin pueda ordenar por "quién pagó cuándo" sin un join
+   * extra del lado del frontend.
+   */
+  @Get()
+  async list(@Query() query: ListAdminUsersDto) {
+    const page = query.page ?? 1;
+    const pageSize = Math.min(100, query.pageSize ?? 20);
+    const skip = (page - 1) * pageSize;
+
+    const search = query.search?.trim();
+    const where = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.role ? { role: query.role } : {}),
+      ...(search
+        ? {
+            OR: [
+              { firstName: { contains: search, mode: 'insensitive' as const } },
+              { lastName: { contains: search, mode: 'insensitive' as const } },
+              { dni: { contains: search } },
+            ],
+          }
+        : {}),
+    };
+
+    const [rows, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+        select: {
+          id: true,
+          dni: true,
+          firstName: true,
+          lastName: true,
+          whatsapp: true,
+          whatsappOptIn: true,
+          role: true,
+          status: true,
+          createdAt: true,
+          lastLoginAt: true,
+          payments: {
+            where: { status: 'APPROVED' },
+            orderBy: { paidAt: 'desc' },
+            take: 1,
+            select: { paidAt: true },
+          },
+        },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    const data = rows.map((u) => ({
+      id: u.id,
+      dni: u.dni,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      whatsapp: u.whatsapp,
+      whatsappOptIn: u.whatsappOptIn,
+      role: u.role,
+      status: u.status,
+      createdAt: u.createdAt,
+      lastLoginAt: u.lastLoginAt,
+      paidAt: u.payments[0]?.paidAt ?? null,
+    }));
+
+    return { page, pageSize, total, data };
+  }
 
   @Post()
   async createManual(

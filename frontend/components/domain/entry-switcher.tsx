@@ -1,8 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Check, ChevronDown, Plus } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Check, ChevronDown, Pencil, Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -11,9 +19,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "@/components/ui/toaster";
+import { updateEntryAlias } from "@/lib/api/entries";
+import { queryKeys } from "@/lib/api/queryKeys";
 import { useActiveEntry } from "@/lib/hooks/use-active-entry";
 import type { EntrySummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils/cn";
+
+const MAX_ALIAS_LENGTH = 40;
 
 const ENTRY_PRICE_LABEL = "$10.000";
 
@@ -59,6 +72,13 @@ export function EntrySwitcher({ onCreateNew, className }: EntrySwitcherProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // Renombrar abre un Dialog separado del DropdownMenu — Radix
+  // intercepta keyboard events dentro del menú, así que un input
+  // inline complica la UX. El dialog también es más visible para
+  // confirmar que el cambio se guardó.
+  const [renamingEntry, setRenamingEntry] = useState<EntrySummary | null>(
+    null,
+  );
 
   if (isLoading) {
     return (
@@ -122,12 +142,18 @@ export function EntrySwitcher({ onCreateNew, className }: EntrySwitcherProps) {
         {entries.map((entry) => {
           const isActive = entry.id === activeEntry?.id;
           const stats = entry.stats;
+          // El alias se puede renombrar hasta el kickoff inaugural; el
+          // backend valida la ventana. Como proxy en UI, el flag
+          // `specialPredictionLocked` nos dice cuándo se cerró todo
+          // lo "pre-torneo" — incluye el alias. Si está locked, no
+          // mostramos el botón de Pencil.
+          const renameLocked = stats.specialPredictionLocked;
           return (
             <DropdownMenuItem
               key={entry.id}
               onSelect={() => handleSelect(entry.id)}
               className={cn(
-                "flex items-start gap-2 px-2 py-2 cursor-pointer",
+                "flex items-start gap-2 px-2 py-2 cursor-pointer group",
                 isActive && "bg-[var(--color-landing-surface-2)]",
               )}
             >
@@ -147,6 +173,28 @@ export function EntrySwitcher({ onCreateNew, className }: EntrySwitcherProps) {
                   {stats.rank !== null ? ` · pos ${stats.rank}` : ""}
                 </p>
               </div>
+              {!renameLocked ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    // Stop propagation impide que el click sobre el
+                    // ícono dispare el handleSelect del item padre.
+                    e.stopPropagation();
+                    setOpen(false);
+                    setRenamingEntry(entry);
+                  }}
+                  aria-label={`Renombrar ${displayName(entry)}`}
+                  className={cn(
+                    "mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm",
+                    "text-[var(--color-landing-text-muted)] transition-colors",
+                    "hover:text-[var(--color-landing-gold)] hover:bg-[var(--color-landing-bg)]",
+                    "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-landing-gold)]",
+                  )}
+                >
+                  <Pencil className="h-3 w-3" aria-hidden />
+                </button>
+              ) : null}
             </DropdownMenuItem>
           );
         })}
@@ -188,6 +236,121 @@ export function EntrySwitcher({ onCreateNew, className }: EntrySwitcherProps) {
           </p>
         ) : null}
       </DropdownMenuContent>
+
+      <RenameEntryDialog
+        entry={renamingEntry}
+        onClose={() => setRenamingEntry(null)}
+      />
     </DropdownMenu>
+  );
+}
+
+/**
+ * Dialog para renombrar un entry. Pre-llena con el alias actual; si
+ * el user lo deja vacío, el backend interpreta como "limpiar alias"
+ * y volvemos al fallback "Mi prode #N". Validación: max 40 chars,
+ * trim al guardar. Bloqueado por backend después del kickoff (devuelve
+ * 4xx; mostramos toast).
+ */
+function RenameEntryDialog({
+  entry,
+  onClose,
+}: {
+  entry: EntrySummary | null;
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [value, setValue] = useState("");
+
+  // Sync cuando se abre/cambia entry — pre-llenamos con el alias.
+  useEffect(() => {
+    setValue(entry?.alias ?? "");
+  }, [entry]);
+
+  const mutation = useMutation({
+    mutationFn: async (next: string | null) => {
+      if (!entry) throw new Error("No entry selected");
+      return updateEntryAlias(entry.id, next);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.entries.me() });
+      toast.success("Prode renombrado");
+      onClose();
+    },
+    onError: (err: Error) => {
+      toast.error(err.message ?? "No pudimos guardar el nuevo nombre");
+    },
+  });
+
+  const trimmed = value.trim();
+  const tooLong = trimmed.length > MAX_ALIAS_LENGTH;
+  const isUnchanged = trimmed === (entry?.alias?.trim() ?? "");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (tooLong || mutation.isPending) return;
+    // Vacío = null para que el backend lo interprete como "sin alias".
+    mutation.mutate(trimmed.length === 0 ? null : trimmed);
+  };
+
+  return (
+    <Dialog open={entry !== null} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogTitle className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
+          <span className="inline-block border-b-[3px] border-[var(--color-landing-green)] pb-1">
+            Renombrar prode
+          </span>
+        </DialogTitle>
+        <DialogDescription className="text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+          Ponele un nombre para distinguirlo del resto. Dejalo vacío para
+          volver al nombre por defecto.
+        </DialogDescription>
+        <form onSubmit={handleSubmit} className="mt-3 flex flex-col gap-2">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            maxLength={MAX_ALIAS_LENGTH + 10}
+            autoFocus
+            placeholder={`Mi prode #${entry?.position ?? 1}`}
+            aria-label="Nuevo nombre del prode"
+            className="h-12 w-full rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)] px-3 text-base text-[var(--color-landing-text)] placeholder:text-[var(--color-landing-text-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
+          />
+          <div className="flex items-center justify-between font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em]">
+            <span
+              className={
+                tooLong
+                  ? "text-[var(--color-landing-red)]"
+                  : "text-[var(--color-landing-text-muted)]"
+              }
+            >
+              {trimmed.length} / {MAX_ALIAS_LENGTH}
+            </span>
+            {tooLong ? (
+              <span className="text-[var(--color-landing-red)]">
+                Máximo {MAX_ALIAS_LENGTH} caracteres
+              </span>
+            ) : null}
+          </div>
+          <DialogFooter className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-stretch">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={mutation.isPending}
+              className="inline-flex flex-1 items-center justify-center rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-6 py-3 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] disabled:opacity-40"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={tooLong || isUnchanged || mutation.isPending}
+              className="inline-flex flex-1 items-center justify-center rounded-sm bg-[var(--color-landing-red)] px-6 py-3 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {mutation.isPending ? "Guardando..." : "Guardar"}
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

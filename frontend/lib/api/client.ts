@@ -43,7 +43,24 @@ function buildClient(): KyInstance {
 
           if (!refreshed) {
             if (typeof window !== "undefined") {
-              window.location.href = "/login";
+              // Capturamos la URL actual para que después del login
+              // el user vuelva a donde estaba (no al inicio).
+              // Saltamos páginas públicas para evitar loops:
+              // /login → /login?returnTo=/login no tiene sentido.
+              const here =
+                window.location.pathname + window.location.search;
+              const isPublicPath =
+                here === "/" ||
+                here.startsWith("/login") ||
+                here.startsWith("/registro") ||
+                here.startsWith("/forgot-password") ||
+                here.startsWith("/reset-password") ||
+                here.startsWith("/inscripcion") ||
+                here.startsWith("/completar-registro");
+              const target = isPublicPath
+                ? "/login"
+                : `/login?returnTo=${encodeURIComponent(here)}`;
+              window.location.href = target;
             }
             return response;
           }

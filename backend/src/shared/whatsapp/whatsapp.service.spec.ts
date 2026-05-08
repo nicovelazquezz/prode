@@ -11,7 +11,7 @@ describe('WhatsappService', () => {
   // Real-mode tests need a non-placeholder URL so the dev-simulate
   // shortcut doesn't kick in. The project .env has example.com which
   // triggers simulate mode; we override per-test.
-  const REAL_URL = 'https://wa.tirofederal.com';
+  const REAL_URL = 'https://wa.prodeplus.com';
   const expectedAuth = 'Bearer dev-token';
 
   beforeEach(() => {

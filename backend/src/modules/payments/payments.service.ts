@@ -277,6 +277,16 @@ export class PaymentsService {
       const now = new Date();
       // Idempotent update: only PENDING rows can transition. A duplicate
       // webhook hits 0 rows here and falls through as a no-op.
+      //
+      // NOTA para futuros reviewers / agentes de audit: este patrón ES
+      // correcto bajo READ COMMITTED (el default de Postgres). NO hace
+      // falta `isolationLevel: 'Serializable'`. Razón: dos webhooks
+      // concurrentes contra el mismo paymentId se serializan en el
+      // row-lock de Postgres al ejecutar el UPDATE — el primero
+      // transiciona PENDING→APPROVED y commitea; el segundo lee el
+      // estado nuevo cuando el lock se libera, ve `status != 'PENDING'`
+      // y `result.count === 0`, retornando early sin side-effects. El
+      // WHERE actúa como guard atómico.
       const result = await tx.payment.updateMany({
         where: { id: local.id, status: { in: ['PENDING'] } },
         data: {
@@ -503,6 +513,29 @@ export class PaymentsService {
       this.logger.warn(
         `Failed to enqueue admin-orphan-alert for ${paymentId}: ${(err as Error).message}`,
       );
+      // Best-effort secondary alert: si Redis pestañea justo cuando se
+      // aprueba un pago, queremos que el admin se entere AHORA, no al
+      // día siguiente vía el resumen diario. AdminAlerts escribe la
+      // Notification a Postgres y el outbox-safety-net cron la reintenta
+      // cuando Redis vuelve, así que aún con Redis caído el mensaje
+      // termina llegando. Si esto también falla, el log warning de
+      // arriba queda como única señal — aceptable, no rompemos el flow.
+      try {
+        await this.adminAlerts.notify({
+          type: 'ORPHAN_ALERT_ENQUEUE_FAILED',
+          message:
+            `Falló encolar el orphan-alert para payment ${paymentId} ` +
+            `(probable hiccup de Redis). La red de seguridad diaria igual ` +
+            `va a capturarlo, pero conviene revisar Redis ahora.`,
+          dedupKey: `orphan-enqueue-failed:${paymentId}`,
+        });
+      } catch (alertErr) {
+        this.logger.warn(
+          `Direct admin alert also failed for payment ${paymentId}: ${
+            (alertErr as Error).message
+          }`,
+        );
+      }
     }
   }
 

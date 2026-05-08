@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthContext, type AuthContextValue } from "@/providers/auth-provider";
 import type { User } from "@/lib/api/types";
 import { AppHeader } from "./app-header";
@@ -36,9 +37,17 @@ function renderWithAuth(
     refresh: vi.fn(),
     ...overrides,
   };
+  // QueryClient requerido porque AppHeader ahora usa useQueryClient()
+  // para hacer prefetch de la special prediction al hover de "Especiales".
+  // Cada test recibe un cliente nuevo para no compartir estado.
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return {
     ...render(
-      <AuthContext.Provider value={value}>{ui}</AuthContext.Provider>,
+      <QueryClientProvider client={queryClient}>
+        <AuthContext.Provider value={value}>{ui}</AuthContext.Provider>
+      </QueryClientProvider>,
     ),
     value,
   };

@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   useQuery,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
+import { HTTPError } from "ky";
 import { toast } from "sonner";
 import { PhaseTabs, type PhaseTabValue } from "@/components/domain/phase-tabs";
 import { MatchCard } from "@/components/domain/match-card";
@@ -130,10 +131,29 @@ export default function PrediccionesPage() {
       }
       return { prev, cacheKey };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: async (err, _vars, ctx) => {
       // Rollback to pre-mutation snapshot.
       if (ctx?.prev && ctx.cacheKey) {
         queryClient.setQueryData(ctx.cacheKey, ctx.prev);
+      }
+      // Caso reactivo: el backend rechazó porque las predicciones cerraron
+      // mientras el user tenía la página vieja abierta. Mensaje específico
+      // + invalidate para que la card flipee a "cerrado".
+      if (err instanceof HTTPError) {
+        try {
+          const body = (await err.response.clone().json()) as {
+            code?: string;
+          };
+          if (body.code === "PREDICTION_LOCKED") {
+            toast.error("Las predicciones para este partido ya cerraron.");
+            queryClient.invalidateQueries({
+              queryKey: queryKeys.matches.all(),
+            });
+            return;
+          }
+        } catch {
+          // body no era JSON o falló parse — caemos al toast genérico.
+        }
       }
       toast.error("No pudimos guardar tu prediccion. Reintenta en un momento.");
     },
@@ -153,6 +173,33 @@ export default function PrediccionesPage() {
     upsertMutation.mutate({ entryId, matchId, dto });
   };
 
+  // Caso proactivo: programar un invalidate exactamente cuando el partido
+  // más próximo se cierra (lockAt + 1s). Cuando ese timer dispare, el query
+  // se refrescará, las cards mostrarán "CERRADO" y el efecto se re-ejecuta
+  // para programar el siguiente. Cubre el gap entre lockAt real y el cron
+  // backend (60s) + el staleTime del front (30s).
+  const earliestLockAt = useMemo(() => {
+    const matches = matchesQuery.data ?? [];
+    let earliest: number | null = null;
+    for (const m of matches) {
+      if (m.status !== "SCHEDULED") continue;
+      const t = new Date(m.predictionsLockAt).getTime();
+      if (t > Date.now() && (earliest === null || t < earliest)) {
+        earliest = t;
+      }
+    }
+    return earliest;
+  }, [matchesQuery.data]);
+  useEffect(() => {
+    if (earliestLockAt === null) return;
+    const delay = earliestLockAt - Date.now() + 1000;
+    if (delay <= 0) return;
+    const id = window.setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.matches.all() });
+    }, delay);
+    return () => window.clearTimeout(id);
+  }, [earliestLockAt, queryClient]);
+
   // Active match for the shared NumberPadSheet (mobile).
   const activeMatch =
     activeMatchId && matchesQuery.data
@@ -162,6 +209,16 @@ export default function PrediccionesPage() {
     ? predictionsByMatch.get(activeMatchId)
     : undefined;
 
+  // Stats para el masthead — solo cuentan matches OPEN (no locked /
+  // finished) en el tab activo. "Cargados" es la cantidad con
+  // prediction asociada del entry activo.
+  const openMatches = (matchesQuery.data ?? []).filter(
+    (m) => m.status === "SCHEDULED",
+  );
+  const openTotal = openMatches.length;
+  const openLoaded = openMatches.filter((m) => predictionsByMatch.has(m.id))
+    .length;
+
   return (
     <>
       <PhaseTabs
@@ -170,8 +227,10 @@ export default function PrediccionesPage() {
         availablePhases={availablePhases}
       />
 
-      <section className="mx-auto max-w-2xl px-4 py-8 md:px-8 md:py-10">
+      <section className="mx-auto max-w-2xl px-4 py-6 md:px-8 md:py-8">
         <h1 className="sr-only">Mis predicciones</h1>
+
+        <Masthead tab={tab} openTotal={openTotal} openLoaded={openLoaded} />
 
         {matchesQuery.isLoading || predictionsQuery.isLoading ? (
           <SkeletonList />
@@ -227,6 +286,69 @@ export default function PrediccionesPage() {
   );
 }
 
+/**
+ * Masthead "newspaper" del listado — eyebrow + título Anton 56px +
+ * subline + bloque de stats a la derecha (X/Y cargados). Cierra con
+ * border-top text + border-bottom line. Es la entrada al fixture.
+ */
+function Masthead({
+  tab,
+  openTotal,
+  openLoaded,
+}: {
+  tab: PhaseTabValue;
+  openTotal: number;
+  openLoaded: number;
+}) {
+  const titleByTab: Record<PhaseTabValue, [string, string]> = {
+    UPCOMING: ["FIXTURE", "ABIERTO"],
+    GROUPS: ["FASE DE", "GRUPOS"],
+    ROUND_32: ["DIECISEIS", "AVOS"],
+    ROUND_16: ["OCTAVOS", "DE FINAL"],
+    QUARTERS: ["CUARTOS", "DE FINAL"],
+    SEMIS: ["SEMI", "FINALES"],
+    THIRD_PLACE: ["TERCER", "PUESTO"],
+    FINAL: ["LA", "FINAL"],
+  };
+  const [line1, line2] = titleByTab[tab] ?? ["FIXTURE", "ABIERTO"];
+
+  const pendientes = Math.max(0, openTotal - openLoaded);
+  const subline =
+    openTotal === 0
+      ? "SIN PARTIDOS ABIERTOS"
+      : `${openTotal} ${openTotal === 1 ? "PARTIDO" : "PARTIDOS"} ABIERTOS`;
+
+  return (
+    <header className="border-t-[4px] border-t-[var(--color-landing-text)] border-b border-b-[var(--color-landing-line)] mb-8 flex items-end justify-between gap-4 pt-5 pb-4">
+      <div className="min-w-0">
+        <div className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)] mb-2">
+          Mis predicciones
+        </div>
+        <h2 className="font-[family-name:var(--font-landing-display)] text-[44px] md:text-[56px] uppercase leading-[0.9] tracking-[-0.005em] text-[var(--color-landing-text)] m-0">
+          {line1}
+          <br />
+          {line2}
+        </h2>
+        <div className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)] mt-2">
+          {subline}
+        </div>
+      </div>
+      {openTotal > 0 ? (
+        <div className="text-right font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)] leading-[1.6] flex-shrink-0">
+          <span className="block font-[family-name:var(--font-landing-display)] text-[32px] md:text-[36px] leading-none mb-1 text-[var(--color-landing-gold)] tabular-nums">
+            {openLoaded}/{openTotal}
+          </span>
+          Cargados
+          <br />
+          <span className="text-[var(--color-landing-text-muted)]">
+            {pendientes} {pendientes === 1 ? "pendiente" : "pendientes"}
+          </span>
+        </div>
+      ) : null}
+    </header>
+  );
+}
+
 function GroupedMatchList({
   matches,
   predictionsByMatch,
@@ -245,37 +367,35 @@ function GroupedMatchList({
     dto: { scoreHome: number; scoreAway: number },
   ) => void;
 }) {
-  // Agrupar por día en la TZ del navegador del usuario. kickoffAt llega
-  // en UTC; un partido a las 23:00 ART (= 02:00 UTC del día siguiente)
-  // aparece bajo el día calendario que le corresponde al usuario donde
-  // está parado, no al día ART.
-  const dayFormatter = new Intl.DateTimeFormat("es-AR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-  const groups = new Map<string, Match[]>();
-  // Sort by kickoffAt ascending, then group.
+  // Sort por kickoffAt ascending; agrupamos en la TZ del navegador
+  // (kickoffAt llega en UTC). Un partido a las 23:00 ART aparece bajo
+  // el día calendario que le corresponde al usuario, no al día ART.
   const sorted = [...matches].sort(
     (a, b) =>
       new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime(),
   );
+  // Agrupa con un key estable basado en yyyy-mm-dd local, separado del
+  // texto formateado para que el render de los headers no dependa del
+  // locale (titlecase / espacios) — solo del día.
+  const groups = new Map<string, { day: Date; matches: Match[] }>();
   for (const m of sorted) {
-    const key = dayFormatter.format(new Date(m.kickoffAt));
-    const list = groups.get(key) ?? [];
-    list.push(m);
-    groups.set(key, list);
+    const d = new Date(m.kickoffAt);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.matches.push(m);
+    } else {
+      groups.set(key, { day: d, matches: [m] });
+    }
   }
 
   const entries = [...groups.entries()];
 
   return (
-    <div className="flex flex-col gap-8">
-      {entries.map(([day, list]) => (
-        <div key={day} className="flex flex-col gap-4">
-          <h2 className="font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
-            {day}
-          </h2>
+    <div className="flex flex-col gap-10">
+      {entries.map(([key, { day, matches: list }]) => (
+        <section key={key} className="flex flex-col gap-4">
+          <DayHeader day={day} count={list.length} />
           <div className="flex flex-col gap-3">
             {list.map((m) => (
               <MatchCard
@@ -289,8 +409,42 @@ function GroupedMatchList({
               />
             ))}
           </div>
-        </div>
+        </section>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Header gigante por día — patrón editorial del landing: weekday
+ * abreviado + número en gold (Anton) + mes abreviado, con border-bottom
+ * line-strong y meta a la derecha (cantidad de partidos).
+ */
+function DayHeader({ day, count }: { day: Date; count: number }) {
+  // Ej: "SÁB 13 JUN" — usamos formatToParts para poder darle color
+  // distinto al número del día (el "13" en gold).
+  const fmt = new Intl.DateTimeFormat("es-AR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+  const parts = fmt.formatToParts(day);
+  const weekday =
+    parts.find((p) => p.type === "weekday")?.value.replace(".", "") ?? "";
+  const dayNum = parts.find((p) => p.type === "day")?.value ?? "";
+  const month =
+    parts.find((p) => p.type === "month")?.value.replace(".", "") ?? "";
+
+  return (
+    <div className="flex items-baseline gap-3 md:gap-4 border-b border-[var(--color-landing-line-strong)] pb-2">
+      <h2 className="font-[family-name:var(--font-landing-display)] text-[44px] md:text-[64px] uppercase leading-[0.9] tracking-[-0.01em] text-[var(--color-landing-text)] m-0">
+        {weekday.toUpperCase()}{" "}
+        <span className="text-[var(--color-landing-gold)]">{dayNum}</span>{" "}
+        {month.toUpperCase()}
+      </h2>
+      <span className="ml-auto text-right font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)] leading-[1.4]">
+        {count} {count === 1 ? "PARTIDO" : "PARTIDOS"}
+      </span>
     </div>
   );
 }

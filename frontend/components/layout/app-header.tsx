@@ -3,11 +3,14 @@
 import { useContext, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
 import { EntrySwitcher } from "@/components/domain/entry-switcher";
 import { NewEntryModal } from "@/components/domain/new-entry-modal";
 import { ActiveEntryContext } from "@/providers/active-entry-provider";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { queryKeys } from "@/lib/api/queryKeys";
+import { getEntrySpecialPrediction } from "@/lib/api/predictions";
 import { cn } from "@/lib/utils/cn";
 
 interface AppHeaderProps {
@@ -54,10 +57,32 @@ export function AppHeader({ userName = "Usuario", className }: AppHeaderProps) {
   // del provider (tests aislados, /admin), simplemente no renderiza el
   // EntrySwitcher en lugar de tirar.
   const activeEntryCtx = useContext(ActiveEntryContext);
+  const queryClient = useQueryClient();
   const [newEntryOpen, setNewEntryOpen] = useState(false);
 
   const handleLogout = () => {
     void logout();
+  };
+
+  // Prefetch de la special prediction al hacer hover sobre la tab
+  // "Especiales". Cuando el user clickea, los datos ya estan en cache y
+  // la pagina renderiza instantaneo sin pegar al backend. Solo aplica en
+  // desktop (hover); mobile usa BottomNav que renderea sin prefetch
+  // — el costo de un fetch extra ahi no compensa.
+  //
+  // No-op si:
+  //   - no hay activeEntry (user todavia no resolvio entries)
+  //   - el cache ya esta fresco (staleTime 30s respetado por prefetchQuery)
+  //   - se monta fuera de QueryClientProvider (improbable; el (app)
+  //     layout siempre lo provee)
+  const prefetchEspeciales = () => {
+    const entryId = activeEntryCtx?.activeEntry?.id;
+    if (!entryId) return;
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.entries.special(entryId),
+      queryFn: () => getEntrySpecialPrediction(entryId),
+      staleTime: 30_000,
+    });
   };
 
   return (
@@ -107,11 +132,14 @@ export function AppHeader({ userName = "Usuario", className }: AppHeaderProps) {
           {NAV_TABS.map(({ href, label }) => {
             const isActive =
               pathname === href || (pathname?.startsWith(href + "/") ?? false);
+            const isEspeciales = href === "/especiales";
             return (
               <Link
                 key={href}
                 href={href}
                 aria-current={isActive ? "page" : undefined}
+                onMouseEnter={isEspeciales ? prefetchEspeciales : undefined}
+                onFocus={isEspeciales ? prefetchEspeciales : undefined}
                 className={cn(
                   "relative inline-flex h-16 items-center px-4",
                   "font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em]",

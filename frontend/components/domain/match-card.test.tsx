@@ -76,12 +76,12 @@ const basePrediction: Prediction = {
   updatedAt: new Date().toISOString(),
 };
 
-describe("MatchCard — 5 visual states", () => {
-  it("state=empty: open match, no prediction → PENDIENTE badge", () => {
+describe("MatchCard — base states", () => {
+  it("state=empty: open match, no prediction → FALTA TU PRONÓSTICO badge", () => {
     render(<MatchCard match={baseMatch} prediction={null} />);
     const article = screen.getByRole("article");
     expect(article).toHaveAttribute("data-state", "empty");
-    expect(screen.getByText("PENDIENTE")).toBeInTheDocument();
+    expect(screen.getByText(/FALTA TU PRON/i)).toBeInTheDocument();
     // Inputs are enabled (not disabled).
     const inputs = screen.getAllByRole("textbox");
     expect(inputs[0]).not.toBeDisabled();
@@ -112,67 +112,116 @@ describe("MatchCard — 5 visual states", () => {
     render(<MatchCard match={lockedMatch} prediction={basePrediction} />);
     const article = screen.getByRole("article");
     expect(article).toHaveAttribute("data-state", "locked");
-    // Hay 2 ocurrencias de "CERRADO": countdown text + state badge.
+    // Hay 2 ocurrencias de "CERRADO": foot left + foot right.
     expect(screen.getAllByText(/CERRADO/i).length).toBeGreaterThanOrEqual(1);
     const inputs = screen.getAllByRole("textbox");
     inputs.forEach((i) => expect(i).toBeDisabled());
   });
 
-  it("state=finished: with points → shows resultado, prediccion, points badge", () => {
-    const finishedMatch: Match = {
+  it("state=locked + IN_PROGRESS: shows EN VIVO indicator", () => {
+    const liveMatch: Match = { ...baseMatch, status: "IN_PROGRESS" };
+    render(<MatchCard match={liveMatch} prediction={basePrediction} />);
+    const article = screen.getByRole("article");
+    expect(article).toHaveAttribute("data-state", "locked");
+    // "EN VIVO" puede aparecer 2 veces (foot-left badge + center subtext).
+    // Garantizamos al menos una ocurrencia.
+    expect(screen.getAllByText(/EN VIVO/i).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("state=locked + CANCELLED: shows CANCELADO instead of CERRADO", () => {
+    const cancelledMatch: Match = { ...baseMatch, status: "CANCELLED" };
+    render(<MatchCard match={cancelledMatch} prediction={basePrediction} />);
+    const article = screen.getByRole("article");
+    // El comportamiento (inputs disabled) sigue siendo "locked"; lo que
+    // cambia es la presentación: "CANCELADO" en vez de "CERRADO" para que
+    // el usuario sepa que el partido NO se juega (decisión externa).
+    expect(article).toHaveAttribute("data-state", "locked");
+    expect(screen.getAllByText(/CANCELADO/i).length).toBeGreaterThanOrEqual(1);
+    // CERRADO no debe aparecer (sería contradictorio).
+    expect(screen.queryByText(/^CERRADO$/i)).not.toBeInTheDocument();
+    const inputs = screen.getAllByRole("textbox");
+    inputs.forEach((i) => expect(i).toBeDisabled());
+  });
+
+  it("knockout sin equipos asignados: muestra ESPERANDO EQUIPOS y deshabilita inputs", () => {
+    const placeholderMatch: Match = {
       ...baseMatch,
-      status: "FINISHED",
-      scoreHome: 2,
-      scoreAway: 1,
+      phase: "ROUND_32",
+      homeTeam: null,
+      awayTeam: null,
+      homeTeamLabel: "Ganador Grupo A",
+      awayTeamLabel: "Segundo Grupo B",
     };
-    const evaluatedPrediction: Prediction = {
+    render(<MatchCard match={placeholderMatch} prediction={null} />);
+    expect(screen.getByText(/ESPERANDO EQUIPOS/i)).toBeInTheDocument();
+    const inputs = screen.getAllByRole("textbox");
+    inputs.forEach((i) => expect(i).toBeDisabled());
+  });
+});
+
+describe("MatchCard — finished outcome subtypes", () => {
+  const finishedMatch: Match = {
+    ...baseMatch,
+    status: "FINISHED",
+    scoreHome: 2,
+    scoreAway: 1,
+  };
+
+  it("finished + EXACT → data-outcome=exact + ★ EXACTO + +5 PTS gold", () => {
+    const pred: Prediction = {
       ...basePrediction,
       outcomeType: "EXACT",
-      basePoints: 3,
+      basePoints: 5,
       multiplier: 1,
-      pointsEarned: 3,
+      pointsEarned: 5,
       evaluatedAt: new Date().toISOString(),
     };
-    render(
-      <MatchCard match={finishedMatch} prediction={evaluatedPrediction} />,
-    );
+    render(<MatchCard match={finishedMatch} prediction={pred} />);
     const article = screen.getByRole("article");
     expect(article).toHaveAttribute("data-state", "finished");
-    expect(screen.getByText("+3 PTS")).toBeInTheDocument();
-    // Resultado + Tu prediccion both visible.
-    expect(screen.getByText(/^Resultado$/i)).toBeInTheDocument();
-    expect(screen.getByText(/^Tu prediccion$/i)).toBeInTheDocument();
+    expect(article).toHaveAttribute("data-outcome", "exact");
+    expect(screen.getByText(/EXACTO/)).toBeInTheDocument();
+    expect(screen.getByText("+5 PTS")).toBeInTheDocument();
+    // Resultado eyebrow visible.
+    expect(screen.getByText(/Resultado/i)).toBeInTheDocument();
     // PointsCelebration debe aparecer (evaluatedAt es justo ahora).
     expect(screen.getByTestId("points-celebration")).toBeInTheDocument();
   });
 
-  it("state=finished: omits PointsCelebration when evaluatedAt is older than 5 min", () => {
-    const finishedMatch: Match = {
-      ...baseMatch,
-      status: "FINISHED",
-      scoreHome: 2,
-      scoreAway: 1,
-    };
-    const oldPrediction: Prediction = {
+  it("finished + WINNER_AND_DIFF → data-outcome=winner-diff + GANADOR + DIFERENCIA", () => {
+    const pred: Prediction = {
       ...basePrediction,
-      outcomeType: "EXACT",
-      basePoints: 3,
+      outcomeType: "WINNER_AND_DIFF",
+      basePoints: 4,
       multiplier: 1,
-      pointsEarned: 3,
-      evaluatedAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+      pointsEarned: 4,
+      evaluatedAt: new Date().toISOString(),
     };
-    render(<MatchCard match={finishedMatch} prediction={oldPrediction} />);
-    expect(screen.queryByTestId("points-celebration")).not.toBeInTheDocument();
+    render(<MatchCard match={finishedMatch} prediction={pred} />);
+    const article = screen.getByRole("article");
+    expect(article).toHaveAttribute("data-outcome", "winner-diff");
+    expect(screen.getByText(/GANADOR \+ DIFERENCIA/)).toBeInTheDocument();
+    expect(screen.getByText("+4 PTS")).toBeInTheDocument();
   });
 
-  it("state=finished: omits PointsCelebration when pointsEarned is 0", () => {
-    const finishedMatch: Match = {
-      ...baseMatch,
-      status: "FINISHED",
-      scoreHome: 2,
-      scoreAway: 1,
+  it("finished + WINNER_ONLY → data-outcome=winner-only + GANADOR (sin diferencia)", () => {
+    const pred: Prediction = {
+      ...basePrediction,
+      outcomeType: "WINNER_ONLY",
+      basePoints: 2,
+      multiplier: 1,
+      pointsEarned: 2,
+      evaluatedAt: new Date().toISOString(),
     };
-    const missPrediction: Prediction = {
+    render(<MatchCard match={finishedMatch} prediction={pred} />);
+    const article = screen.getByRole("article");
+    expect(article).toHaveAttribute("data-outcome", "winner-only");
+    expect(screen.getByText(/^✓ GANADOR$/)).toBeInTheDocument();
+    expect(screen.getByText("+2 PTS")).toBeInTheDocument();
+  });
+
+  it("finished + MISS → data-outcome=miss + ✗ MISS + 0 PTS muted", () => {
+    const pred: Prediction = {
       ...basePrediction,
       outcomeType: "MISS",
       basePoints: 0,
@@ -180,7 +229,58 @@ describe("MatchCard — 5 visual states", () => {
       pointsEarned: 0,
       evaluatedAt: new Date().toISOString(),
     };
-    render(<MatchCard match={finishedMatch} prediction={missPrediction} />);
+    render(<MatchCard match={finishedMatch} prediction={pred} />);
+    const article = screen.getByRole("article");
+    expect(article).toHaveAttribute("data-outcome", "miss");
+    expect(screen.getByText(/MISS/)).toBeInTheDocument();
+    expect(screen.getByText("0 PTS")).toBeInTheDocument();
+    // PointsCelebration NO debe aparecer (0 pts).
     expect(screen.queryByTestId("points-celebration")).not.toBeInTheDocument();
+  });
+
+  it("finished + null outcomeType → defensivo data-outcome=miss", () => {
+    const pred: Prediction = {
+      ...basePrediction,
+      outcomeType: null,
+      basePoints: 0,
+      multiplier: 1,
+      pointsEarned: 0,
+      evaluatedAt: new Date().toISOString(),
+    };
+    render(<MatchCard match={finishedMatch} prediction={pred} />);
+    const article = screen.getByRole("article");
+    expect(article).toHaveAttribute("data-outcome", "miss");
+  });
+
+  it("finished: omits PointsCelebration when evaluatedAt is older than 5 min", () => {
+    const pred: Prediction = {
+      ...basePrediction,
+      outcomeType: "EXACT",
+      basePoints: 5,
+      multiplier: 1,
+      pointsEarned: 5,
+      evaluatedAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    };
+    render(<MatchCard match={finishedMatch} prediction={pred} />);
+    expect(screen.queryByTestId("points-celebration")).not.toBeInTheDocument();
+  });
+});
+
+describe("MatchCard — header band", () => {
+  it("renders match number padded to 2 digits and group chip", () => {
+    const match: Match = { ...baseMatch, matchNumber: 3, groupCode: "B" };
+    render(<MatchCard match={match} prediction={null} />);
+    expect(screen.getByText("03")).toBeInTheDocument();
+    expect(screen.getByText("GRUPO B")).toBeInTheDocument();
+  });
+
+  it("falls back to phase label when no group code (knockouts)", () => {
+    const match: Match = {
+      ...baseMatch,
+      phase: "QUARTERS",
+      groupCode: null,
+    };
+    render(<MatchCard match={match} prediction={null} />);
+    expect(screen.getByText("CUARTOS")).toBeInTheDocument();
   });
 });
