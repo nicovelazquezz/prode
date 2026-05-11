@@ -64,18 +64,14 @@ const SECRET_FIELDS = [
 /**
  * Variables que el schema Zod marca opcionales (porque dev/test no las
  * requiere), pero en NODE_ENV=production su ausencia es un blocker:
- *   - TURNSTILE_SECRET_KEY: sin esto, el guard de Turnstile pasa con
- *     warning y POST /payments/init queda solo defendido por el throttle
- *     por IP — abre la puerta a spam de pagos pendientes.
- *   - SENTRY_DSN: sin esto, los 5xx de prod no llegan a ningún canal.
  *   - ADMIN_DEFAULT_PASSWORD: sin esto, seed-config skipea la creación
  *     del admin y no hay panel.
+ *
+ * `TURNSTILE_SECRET_KEY` y `SENTRY_DSN` no están en esta lista para la
+ * beta cerrada: el throttle por IP defiende suficiente y los 5xx se
+ * miran por logs de Dokploy. Agregalos cuando la app esté pública.
  */
-const REQUIRED_IN_PROD = [
-  'TURNSTILE_SECRET_KEY',
-  'SENTRY_DSN',
-  'ADMIN_DEFAULT_PASSWORD',
-] as const;
+const REQUIRED_IN_PROD = ['ADMIN_DEFAULT_PASSWORD'] as const;
 
 /**
  * Hard-guard que corre **después** de la validación Zod cuando

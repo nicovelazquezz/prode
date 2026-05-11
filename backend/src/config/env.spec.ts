@@ -116,47 +116,6 @@ describe('loadEnv', () => {
       expect(env.NODE_ENV).toBe('production');
     });
 
-    it('aborts when TURNSTILE_SECRET_KEY is missing in production', () => {
-      process.env.NODE_ENV = 'production';
-      process.env.JWT_ACCESS_SECRET = 'p'.repeat(64);
-      process.env.JWT_REFRESH_SECRET = 'q'.repeat(64);
-      process.env.MP_WEBHOOK_SECRET = 'wh-prod-real-secret';
-      process.env.WHATSAPP_API_TOKEN = 'wa-prod-real-token';
-      process.env.SENTRY_DSN = 'https://abc@sentry.io/1';
-      process.env.ADMIN_DEFAULT_PASSWORD = 'admin-prod-real-pwd';
-      delete (process.env as Record<string, string | undefined>)
-        .TURNSTILE_SECRET_KEY;
-      delete (process.env as Record<string, string | undefined>)
-        .THROTTLER_BYPASS_TEST;
-      const exitSpy = spyOnExit();
-      const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
-      expect(() => loadEnv()).toThrow('process.exit called');
-      expect(exitSpy).toHaveBeenCalledWith(1);
-      const message = errSpy.mock.calls[0]?.[0] as string;
-      expect(message).toMatch(/TURNSTILE_SECRET_KEY/);
-    });
-
-    it('aborts when SENTRY_DSN is missing in production', () => {
-      process.env.NODE_ENV = 'production';
-      process.env.JWT_ACCESS_SECRET = 'p'.repeat(64);
-      process.env.JWT_REFRESH_SECRET = 'q'.repeat(64);
-      process.env.MP_WEBHOOK_SECRET = 'wh-prod-real-secret';
-      process.env.WHATSAPP_API_TOKEN = 'wa-prod-real-token';
-      process.env.TURNSTILE_SECRET_KEY = 'ts-prod-real-secret';
-      process.env.ADMIN_DEFAULT_PASSWORD = 'admin-prod-real-pwd';
-      delete (process.env as Record<string, string | undefined>).SENTRY_DSN;
-      delete (process.env as Record<string, string | undefined>)
-        .THROTTLER_BYPASS_TEST;
-      const exitSpy = spyOnExit();
-      const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
-      expect(() => loadEnv()).toThrow('process.exit called');
-      expect(exitSpy).toHaveBeenCalledWith(1);
-      const message = errSpy.mock.calls[0]?.[0] as string;
-      expect(message).toMatch(/SENTRY_DSN/);
-    });
-
     it('aborts when ADMIN_DEFAULT_PASSWORD is missing in production', () => {
       process.env.NODE_ENV = 'production';
       process.env.JWT_ACCESS_SECRET = 'p'.repeat(64);
