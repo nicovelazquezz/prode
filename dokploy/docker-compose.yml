@@ -65,6 +65,14 @@ services:
       WA_RECONNECT_MAX_BACKOFF_MS: '60000'
       LOG_LEVEL: info
       TZ: America/Argentina/Buenos_Aires
+      # Watchdog: pingea el /health del backend principal y avisa al admin
+      # por WhatsApp si lo detecta caído (3 fallas consecutivas = ~3 min).
+      WATCHDOG_ENABLED: 'true'
+      BACKEND_HEALTH_URL: http://prode-backend:3001/health
+      WATCHDOG_INTERVAL_MS: '60000'
+      WATCHDOG_FAILURE_THRESHOLD: '3'
+      WATCHDOG_FETCH_TIMEOUT_MS: '5000'
+      ADMIN_WHATSAPP_NUMBER: ${ADMIN_WHATSAPP_NUMBER}
     volumes:
       - prode-wa-data:/app/data
     healthcheck:

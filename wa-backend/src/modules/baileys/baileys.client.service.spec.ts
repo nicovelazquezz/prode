@@ -16,6 +16,11 @@ const ENV = {
   WA_VERIFY_RECIPIENT: false,
   WA_RECONNECT_MAX_BACKOFF_MS: 60_000,
   LOG_LEVEL: 'info' as const,
+  WATCHDOG_ENABLED: false,
+  BACKEND_HEALTH_URL: 'http://localhost:3001/health',
+  WATCHDOG_INTERVAL_MS: 60_000,
+  WATCHDOG_FAILURE_THRESHOLD: 3,
+  WATCHDOG_FETCH_TIMEOUT_MS: 5_000,
 };
 
 function svc(overrides: Partial<typeof ENV> = {}) {
