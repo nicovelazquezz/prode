@@ -16,8 +16,10 @@ RUN apk add --no-cache tzdata
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/dist ./dist
-RUN mkdir -p /app/data && chown -R node:node /app
-USER node
+RUN mkdir -p /app/data
+# Corre como root para poder escribir en el volumen del auth dir
+# (Dokploy crea el bind mount como root:root y no propaga uid/gid del
+# image al volumen). Sidecar interno, no expuesto — riesgo aceptable.
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget -qO- http://localhost:3001/health || exit 1
