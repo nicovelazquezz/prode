@@ -9,7 +9,7 @@ Manual runbook for deploying both the backend and the frontend to production via
 ## 1. Prerequisites
 
 - VPS with Dokploy installed and Traefik running (Dokploy ships it).
-- DNS: `api.prode.tirofederal.com` → VPS public IP (A record).
+- DNS: `api.prodeplus.com` → VPS public IP (A record).
 - Git repo accessible to Dokploy (HTTPS or deploy key).
 - Backblaze B2 bucket created for backups (see §6).
 
@@ -42,10 +42,10 @@ All vars are referenced as `${VAR}` in the compose file. None must be committed 
 | `WHATSAPP_API_URL` | Tu backend WhatsApp (provider). |
 | `WHATSAPP_API_TOKEN` | Token del provider. |
 | `ADMIN_WHATSAPP_NUMBER` | E.164 sin `+`, ej. `5492914xxxxxxx`. |
-| `EMAIL_FROM` | `prode@tirofederal.com` o el que aplique. |
+| `EMAIL_FROM` | `noreply@prodeplus.com` o el que aplique. |
 | `RESEND_API_KEY` | Resend prod key (`re_...`). |
-| `FRONTEND_URL` | `https://prode.tirofederal.com` (sin trailing slash). |
-| `API_URL` | `https://api.prode.tirofederal.com` (sin trailing slash). |
+| `FRONTEND_URL` | `https://prodeplus.com` (sin trailing slash). |
+| `API_URL` | `https://api.prodeplus.com` (sin trailing slash). |
 | `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret (server-side). |
 | `SENTRY_DSN` | DSN del proyecto en Sentry (opcional pero recomendado). |
 | `ADMIN_DEFAULT_DNI` | DNI del primer admin (7–9 dígitos). |
@@ -59,7 +59,7 @@ All vars are referenced as `${VAR}` in the compose file. None must be committed 
 
 En Dokploy → **Domains** del servicio `prode-backend`:
 
-1. **Host**: `api.prode.tirofederal.com`.
+1. **Host**: `api.prodeplus.com`.
 2. **Container port**: `3001`.
 3. **HTTPS**: ON. **Certificate provider**: Let's Encrypt.
 4. **Force HTTPS redirect**: ON.
@@ -68,7 +68,7 @@ En Dokploy → **Domains** del servicio `prode-backend`:
 Verificación post-deploy:
 
 ```bash
-curl -I https://api.prode.tirofederal.com/health
+curl -I https://api.prodeplus.com/health
 # HTTP/2 200
 ```
 
@@ -87,14 +87,14 @@ curl -I https://api.prode.tirofederal.com/health
 4. Smoke test:
 
    ```bash
-   curl -s https://api.prode.tirofederal.com/health
+   curl -s https://api.prodeplus.com/health
    # {"status":"ok","db":true,"timestamp":"..."}
    ```
 
 5. Login del admin:
 
    ```bash
-   curl -s -X POST https://api.prode.tirofederal.com/auth/login \
+   curl -s -X POST https://api.prodeplus.com/auth/login \
      -H 'content-type: application/json' \
      -d '{"dni":"<ADMIN_DEFAULT_DNI>","password":"<ADMIN_DEFAULT_PASSWORD>"}'
    # debe devolver { "accessToken": "...", "user": {...} }
@@ -107,7 +107,7 @@ curl -I https://api.prode.tirofederal.com/health
 Una vez que el dominio responde con HTTPS:
 
 1. Panel MP → **Tu integración** → **Webhooks** → **Configurar notificaciones**.
-2. URL: `https://api.prode.tirofederal.com/payments/webhook`.
+2. URL: `https://api.prodeplus.com/payments/webhook`.
 3. Eventos: `payment` (acreditación de pagos).
 4. Modo: **Producción**.
 5. Guardar el **secret** que MP genera y pegarlo en `MP_WEBHOOK_SECRET` (Dokploy → Environment) → **Redeploy** del backend.
@@ -151,7 +151,7 @@ gunzip -c prode-YYYY-MM-DD.sql.gz | psql -U postgres -d prode_restore_test
 | Ver logs en vivo | Dokploy → **Logs** del servicio, o `docker logs -f $(docker ps -qf name=prode-backend)` |
 | Reiniciar backend | Dokploy → **Restart** (o `docker compose restart prode-backend`) |
 | Aplicar migración manual | `docker exec -it $(docker ps -qf name=prode-backend) npx prisma migrate deploy` |
-| Refrescar leaderboard | `curl -X POST https://api.prode.tirofederal.com/admin/leaderboard/refresh -H 'authorization: Bearer <token>'` |
+| Refrescar leaderboard | `curl -X POST https://api.prodeplus.com/admin/leaderboard/refresh -H 'authorization: Bearer <token>'` |
 | Rollback | Dokploy → **Deployments** → re-deploy del commit anterior. Si la nueva versión introdujo migración irreversible, restaurar backup primero. |
 
 ---
@@ -171,8 +171,8 @@ El frontend es un servicio adicional dentro del mismo `dokploy/docker-compose.ym
 
 ## F1. Prerequisitos
 
-- DNS: `prode.tirofederal.com` → VPS public IP (A record).
-- Backend ya desplegado y respondiendo en `https://api.prode.tirofederal.com` (los pasos del backend deben completarse primero, sino la SSR falla en el primer render del SSR de algunas páginas).
+- DNS: `prodeplus.com` → VPS public IP (A record).
+- Backend ya desplegado y respondiendo en `https://api.prodeplus.com` (los pasos del backend deben completarse primero, sino la SSR falla en el primer render del SSR de algunas páginas).
 - Acceso al panel Dokploy del proyecto `prode`.
 
 ## F2. Configurar env vars del frontend (Dokploy → Application → Environment)
@@ -181,8 +181,8 @@ El compose pasa estas variables como **build args** (Next inlinea cada `NEXT_PUB
 
 | Variable | Valor producción | Notas |
 |---|---|---|
-| `API_URL` | `https://api.prode.tirofederal.com` | Reusa la del backend; el compose la mapea a `NEXT_PUBLIC_API_URL`. |
-| `FRONTEND_URL` | `https://prode.tirofederal.com` | Reusa la del backend; mapeada a `NEXT_PUBLIC_FRONTEND_URL`. |
+| `API_URL` | `https://api.prodeplus.com` | Reusa la del backend; el compose la mapea a `NEXT_PUBLIC_API_URL`. |
+| `FRONTEND_URL` | `https://prodeplus.com` | Reusa la del backend; mapeada a `NEXT_PUBLIC_FRONTEND_URL`. |
 | `INSCRIPCION_PRECIO` | `15000` | Pesos argentinos. Si cambia, hay que rebuild + cambiar también la config de scoring en backend si aplica. |
 | `ADMIN_WHATSAPP_NUMBER` | E.164 sin `+` (ej `5492914000000`) | Reusa la del backend; el frontend la usa para los CTAs `wa.me/...`. |
 | `TURNSTILE_SITE_KEY` | Clave **pública** de Cloudflare Turnstile | Distinta de `TURNSTILE_SECRET_KEY` (esa es server-side, vive en backend). |
@@ -194,7 +194,7 @@ El compose pasa estas variables como **build args** (Next inlinea cada `NEXT_PUB
 
 En Dokploy → **Domains** del servicio `prode-frontend`:
 
-1. **Host**: `prode.tirofederal.com`.
+1. **Host**: `prodeplus.com`.
 2. **Container port**: `3000`.
 3. **HTTPS**: ON. **Certificate provider**: Let's Encrypt.
 4. **Force HTTPS redirect**: ON.
@@ -203,7 +203,7 @@ En Dokploy → **Domains** del servicio `prode-frontend`:
 Verificación:
 
 ```bash
-curl -I https://prode.tirofederal.com
+curl -I https://prodeplus.com
 # HTTP/2 200
 ```
 
@@ -215,21 +215,21 @@ curl -I https://prode.tirofederal.com
 
    ```bash
    # Healthcheck del frontend (verifica que el SSR levantó y que puede llamar al backend)
-   curl -s https://prode.tirofederal.com/api/health
+   curl -s https://prodeplus.com/api/health
    # Expected: {"status":"ok","backend":true,"timestamp":"..."}
 
    # Landing accesible (debe devolver HTML con el countdown)
-   curl -sI https://prode.tirofederal.com/ | head -1
+   curl -sI https://prodeplus.com/ | head -1
    # HTTP/2 200
 
    # Login del admin (mismo backend)
-   curl -s -X POST https://api.prode.tirofederal.com/auth/login \
+   curl -s -X POST https://api.prodeplus.com/auth/login \
      -H 'content-type: application/json' \
      -d '{"dni":"<ADMIN_DEFAULT_DNI>","password":"<ADMIN_DEFAULT_PASSWORD>"}'
    # debe devolver { "accessToken": "...", "user": {...} }
    ```
 
-4. Probar en navegador: `https://prode.tirofederal.com` debería cargar la landing y el countdown debe estar contando hacia el `WORLD_CUP_START`. Login del admin desde la UI.
+4. Probar en navegador: `https://prodeplus.com` debería cargar la landing y el countdown debe estar contando hacia el `WORLD_CUP_START`. Login del admin desde la UI.
 
 ## F5. PWA — instalación + service worker
 
@@ -280,6 +280,6 @@ Los iconos actuales en `frontend/public/icon-*.png` son **placeholders sólidos 
 
 - **Standalone output**: Next.js produce un `.next/standalone/server.js` autocontenido que NO necesita `next start` ni el módulo `next` instalado en runtime. El Dockerfile copia ese standalone + `.next/static` + `public/` y arranca con `node server.js`.
 - **Build args vs env**: las variables `NEXT_PUBLIC_*` viajan por **ambas vías** (build args y runtime env). El motivo es que Next inlinea los valores en el bundle del cliente al build, pero algunos route handlers (ej `/api/health`) las consumen en runtime via `process.env`.
-- **Cookies cross-subdomain**: el backend ya emite el refresh cookie con `Domain=.tirofederal.com` y `SameSite=Lax`. Eso permite que `prode.tirofederal.com` y `api.prode.tirofederal.com` compartan sesión sin trampolines de CORS.
-- **Cloudflare Turnstile**: la `SITE_KEY` (pública) vive en el frontend, la `SECRET_KEY` (server-side) en el backend. Configurar el dominio `prode.tirofederal.com` en el panel de Turnstile como hostname permitido.
+- **Cookies cross-subdomain**: el backend ya emite el refresh cookie con `Domain=.prodeplus.com` y `SameSite=Lax`. Eso permite que `prodeplus.com` y `api.prodeplus.com` compartan sesión sin trampolines de CORS.
+- **Cloudflare Turnstile**: la `SITE_KEY` (pública) vive en el frontend, la `SECRET_KEY` (server-side) en el backend. Configurar el dominio `prodeplus.com` en el panel de Turnstile como hostname permitido.
 - **Sentry**: si `SENTRY_DSN_FRONTEND` está vacío, el SDK queda no-op (ver `sentry.*.config.ts`). En prod, configuralo siempre — los errores SSR y de cliente caen al mismo proyecto Sentry.

@@ -4,12 +4,12 @@ import { forwardRef, type InputHTMLAttributes } from "react";
 import { cn } from "@/lib/utils/cn";
 
 /**
- * Input estilo border-bottom only (DESIGN.md "Input / Search").
+ * Input dark editorial.
  *
- * - Sin background ni border-radius.
- * - Border inferior 1px en estado normal, 2px en focus, color near-black.
- * - Texto base 16px (evita zoom en iOS).
- * - Placeholder en text-muted.
+ * - bg surface-2 (un escalon mas claro que surface — visible sobre cards
+ *   de surface y sobre el bg base), border line-strong, rounded-sm.
+ * - Focus: outline gold (editorial), border verde (acento subtil).
+ * - Texto base 16px (evita zoom en iOS), placeholder text-muted.
  */
 export const Input = forwardRef<
   HTMLInputElement,
@@ -19,13 +19,14 @@ export const Input = forwardRef<
     type={type}
     ref={ref}
     className={cn(
-      "h-12 w-full bg-transparent text-[var(--color-prode-near-black)]",
-      "border-b border-[var(--color-prode-border)]",
-      "py-3 px-0 font-sans text-base",
-      "transition-colors duration-300 outline-none",
-      "focus:border-b-2 focus:border-[var(--color-prode-near-black)]",
+      "h-12 w-full rounded-sm bg-[var(--color-landing-surface-2)] text-[var(--color-landing-text)]",
+      "border border-[var(--color-landing-line-strong)]",
+      "px-3 font-sans text-base",
+      "transition-colors outline-none",
+      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]",
+      "focus:border-[var(--color-landing-green)]",
       "disabled:opacity-50",
-      "placeholder:text-[var(--color-prode-text-muted)]",
+      "placeholder:text-[var(--color-landing-text-muted)]",
       className,
     )}
     {...props}

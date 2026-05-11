@@ -129,15 +129,40 @@ describe('POST /admin/matches/:id/finish (integration)', () => {
   });
 
   it('returns 409 PHASE_ALREADY_PAID when phase prize already paid', async () => {
-    // Create a PAID PhaseWinner for GROUPS first.
+    // Create a PAID PhaseWinner for GROUPS first. Multi-prode requires
+    // an Entry — pick or create one for the admin user.
     const seededUser = await prisma.user.findFirstOrThrow({
       where: { dni: ADMIN_DNI },
     });
+    let entry = await prisma.entry.findFirst({
+      where: { userId: seededUser.id, status: 'ACTIVE' },
+      orderBy: { position: 'asc' },
+    });
+    if (!entry) {
+      const pmt = await prisma.payment.create({
+        data: {
+          userId: seededUser.id,
+          amount: 10_000,
+          method: 'CASH',
+          status: 'APPROVED',
+          paidAt: new Date(),
+          completedAt: new Date(),
+        },
+      });
+      entry = await prisma.entry.create({
+        data: {
+          userId: seededUser.id,
+          paymentId: pmt.id,
+          position: 1,
+          status: 'ACTIVE',
+        },
+      });
+    }
     await prisma.phaseWinner.deleteMany({ where: { phase: 'GROUPS' } });
     await prisma.phaseWinner.create({
       data: {
         phase: 'GROUPS',
-        userId: seededUser.id,
+        entryId: entry.id,
         pointsEarned: 100,
         prizeStatus: 'PAID',
       },
@@ -207,11 +232,35 @@ describe('POST /admin/matches/:id/finish (integration)', () => {
       const seededUser = await prisma.user.findFirstOrThrow({
         where: { dni: ADMIN_DNI },
       });
+      let entry = await prisma.entry.findFirst({
+        where: { userId: seededUser.id, status: 'ACTIVE' },
+        orderBy: { position: 'asc' },
+      });
+      if (!entry) {
+        const pmt = await prisma.payment.create({
+          data: {
+            userId: seededUser.id,
+            amount: 10_000,
+            method: 'CASH',
+            status: 'APPROVED',
+            paidAt: new Date(),
+            completedAt: new Date(),
+          },
+        });
+        entry = await prisma.entry.create({
+          data: {
+            userId: seededUser.id,
+            paymentId: pmt.id,
+            position: 1,
+            status: 'ACTIVE',
+          },
+        });
+      }
       await prisma.phaseWinner.deleteMany({ where: { phase: 'GROUPS' } });
       await prisma.phaseWinner.create({
         data: {
           phase: 'GROUPS',
-          userId: seededUser.id,
+          entryId: entry.id,
           pointsEarned: 50,
           prizeStatus: 'PAID',
         },

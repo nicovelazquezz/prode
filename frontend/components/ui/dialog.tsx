@@ -38,7 +38,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4",
-        "bg-white text-[var(--color-prode-near-black)] rounded-md p-8",
+        "bg-[var(--color-landing-surface)] text-[var(--color-landing-text)] border border-[var(--color-landing-line-strong)] rounded-md p-8",
         "duration-200",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
@@ -51,7 +51,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Close
         className={cn(
           "absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100",
-          "focus:outline-none focus:ring-2 focus:ring-[var(--color-prode-near-black)] focus:ring-offset-2",
+          "focus:outline-none focus:ring-2 focus:ring-[var(--color-landing-text)] focus:ring-offset-2",
           "disabled:pointer-events-none",
         )}
       >
@@ -97,7 +97,7 @@ const DialogTitle = React.forwardRef<
     className={cn(
       // Display font, large, uppercase per DESIGN.md modal title spec.
       "font-display text-3xl font-black uppercase tracking-wide leading-none",
-      "text-[var(--color-prode-near-black)]",
+      "text-[var(--color-landing-text)]",
       className,
     )}
     {...props}
@@ -112,7 +112,7 @@ const DialogDescription = React.forwardRef<
   <DialogPrimitive.Description
     ref={ref}
     className={cn(
-      "font-sans text-base text-[var(--color-prode-text-secondary)]",
+      "font-sans text-base text-[var(--color-landing-text-muted)]",
       className,
     )}
     {...props}

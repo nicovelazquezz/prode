@@ -44,16 +44,17 @@ describe('POST /auth/complete-registration (E2E)', () => {
 
   afterAll(async () => {
     if (prisma) {
-      // Order matters: refresh tokens + audit logs reference users; payments
-      // reference users; users reference nothing. Deleting payments first
-      // would orphan `payment.userId` only if we hadn't set it — which we
-      // did, but ON DELETE SET NULL handles that. Belt-and-suspenders.
+      // Multi-prode: Entry has paymentId NOT NULL with ON DELETE RESTRICT,
+      // so we MUST delete users (cascade → entries) BEFORE payments.
       if (createdUserIds.length > 0) {
         await prisma.refreshToken.deleteMany({
           where: { userId: { in: createdUserIds } },
         });
         await prisma.auditLog.deleteMany({
           where: { userId: { in: createdUserIds } },
+        });
+        await prisma.user.deleteMany({
+          where: { id: { in: createdUserIds } },
         });
       }
       if (createdPaymentIds.length > 0) {
@@ -64,11 +65,6 @@ describe('POST /auth/complete-registration (E2E)', () => {
         });
         await prisma.payment.deleteMany({
           where: { id: { in: createdPaymentIds } },
-        });
-      }
-      if (createdUserIds.length > 0) {
-        await prisma.user.deleteMany({
-          where: { id: { in: createdUserIds } },
         });
       }
     }

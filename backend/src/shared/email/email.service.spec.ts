@@ -57,7 +57,7 @@ describe('EmailService', () => {
     expect(payload.subject).toBe('hi');
     expect(payload.html).toBe('<p>hi</p>');
     expect(payload.text).toBe('hi');
-    // EMAIL_FROM is loaded from .env (prode@tirofederal.com)
+    // EMAIL_FROM is loaded from .env (noreply@prodeplus.com)
     expect(typeof payload.from).toBe('string');
     expect((payload.from as string).length).toBeGreaterThan(0);
   });

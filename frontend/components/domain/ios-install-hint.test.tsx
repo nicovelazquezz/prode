@@ -50,7 +50,7 @@ describe("IosInstallHint", () => {
     );
     setStandalone(false);
     render(<IosInstallHint />);
-    expect(await screen.findByText(/Instala la app/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Instal[aá] la app/i)).toBeInTheDocument();
     expect(screen.getByText(/Compartir/)).toBeInTheDocument();
     expect(screen.getByText(/Agregar a inicio/i)).toBeInTheDocument();
   });
@@ -60,7 +60,7 @@ describe("IosInstallHint", () => {
       "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124",
     );
     render(<IosInstallHint />);
-    expect(await screen.findByText(/Instala la app/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Instal[aá] la app/i)).toBeInTheDocument();
     expect(
       screen.getByText(/Agregar a la pantalla principal/i),
     ).toBeInTheDocument();

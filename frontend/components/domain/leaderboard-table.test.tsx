@@ -4,11 +4,14 @@ import userEvent from "@testing-library/user-event";
 import { LeaderboardTable } from "./leaderboard-table";
 import type { LeaderboardEntry } from "@/lib/api/types";
 
+// Single-entry case (compat con tests pre-multi-prode): cada user
+// tiene 1 entry (entryId presente, sin alias, entryPosition=1) y por
+// lo tanto no aparece sufijo "(#N)" en el display name.
 const entries: LeaderboardEntry[] = [
-  { position: 1, userId: "u1", firstName: "Ana", lastName: "Gomez", totalPoints: 100 },
-  { position: 2, userId: "u2", firstName: "Beto", lastName: "Lopez", totalPoints: 95 },
-  { position: 3, userId: "u3", firstName: "Cami", lastName: "Diaz", totalPoints: 89 },
-  { position: 4, userId: "u4", firstName: "Dami", lastName: "Ruiz", totalPoints: 70 },
+  { position: 1, entryId: "e1", userId: "u1", firstName: "Ana", lastName: "Gomez", alias: null, entryPosition: 1, totalPoints: 100 },
+  { position: 2, entryId: "e2", userId: "u2", firstName: "Beto", lastName: "Lopez", alias: null, entryPosition: 1, totalPoints: 95 },
+  { position: 3, entryId: "e3", userId: "u3", firstName: "Cami", lastName: "Diaz", alias: null, entryPosition: 1, totalPoints: 89 },
+  { position: 4, entryId: "e4", userId: "u4", firstName: "Dami", lastName: "Ruiz", alias: null, entryPosition: 1, totalPoints: 70 },
 ];
 
 describe("LeaderboardTable", () => {
@@ -22,9 +25,9 @@ describe("LeaderboardTable", () => {
 
   it("renders table headers", () => {
     render(<LeaderboardTable entries={entries} />);
-    expect(screen.getByText("POS")).toBeInTheDocument();
-    expect(screen.getByText("JUGADOR")).toBeInTheDocument();
-    expect(screen.getByText("PUNTOS")).toBeInTheDocument();
+    expect(screen.getByText("Pos")).toBeInTheDocument();
+    expect(screen.getByText("Jugador")).toBeInTheDocument();
+    expect(screen.getByText("Puntos")).toBeInTheDocument();
   });
 
   it("renders skeleton when loading", () => {
@@ -51,8 +54,48 @@ describe("LeaderboardTable", () => {
     expect(onRowClick).toHaveBeenCalledWith("u1");
   });
 
-  it("highlights current user row", () => {
+  it("highlights current user row (legacy currentUserId path)", () => {
     render(<LeaderboardTable entries={entries} currentUserId="u3" />);
     expect(screen.getByText("VOS")).toBeInTheDocument();
+  });
+
+  // ── Multi-prode: display name lógica + currentEntryId ─────────
+  it("highlights only the active entry when user has multiple entries", () => {
+    const multi: LeaderboardEntry[] = [
+      { position: 1, entryId: "e1", userId: "u1", firstName: "Juan", lastName: "Perez", alias: null, entryPosition: 1, totalPoints: 87 },
+      { position: 5, entryId: "e2", userId: "u1", firstName: "Juan", lastName: "Perez", alias: null, entryPosition: 2, totalPoints: 32 },
+    ];
+    render(<LeaderboardTable entries={multi} currentEntryId="e2" />);
+    const vosBadges = screen.getAllByText("VOS");
+    expect(vosBadges).toHaveLength(1);
+    const buttons = screen.getAllByRole("button");
+    const highlighted = buttons.find(
+      (b) => b.getAttribute("data-current-user") === "true",
+    );
+    expect(highlighted?.getAttribute("data-position")).toBe("5");
+  });
+
+  it("renders display name with alias when present", () => {
+    const withAlias: LeaderboardEntry[] = [
+      { position: 1, entryId: "e1", userId: "u1", firstName: "Juan", lastName: "Perez", alias: "Mi prode optimista", entryPosition: 1, totalPoints: 87 },
+    ];
+    render(<LeaderboardTable entries={withAlias} />);
+    expect(screen.getByText(/Juan Perez/)).toBeInTheDocument();
+    expect(screen.getByText(/· Mi prode optimista/)).toBeInTheDocument();
+  });
+
+  it("renders '(#N)' suffix when user has >1 entries and no alias", () => {
+    const multi: LeaderboardEntry[] = [
+      { position: 1, entryId: "e1", userId: "u1", firstName: "Juan", lastName: "Perez", alias: null, entryPosition: 1, totalPoints: 87 },
+      { position: 5, entryId: "e2", userId: "u1", firstName: "Juan", lastName: "Perez", alias: null, entryPosition: 2, totalPoints: 32 },
+    ];
+    render(<LeaderboardTable entries={multi} />);
+    expect(screen.getByText("(#1)")).toBeInTheDocument();
+    expect(screen.getByText("(#2)")).toBeInTheDocument();
+  });
+
+  it("does NOT add '(#N)' suffix when each user has only 1 entry", () => {
+    render(<LeaderboardTable entries={entries} />);
+    expect(screen.queryByText(/\(#\d+\)/)).not.toBeInTheDocument();
   });
 });

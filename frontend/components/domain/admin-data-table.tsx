@@ -38,9 +38,8 @@ interface AdminDataTableProps<TData> {
  * Tabla generica para el panel admin construida sobre @tanstack/react-table.
  * Mobile: scroll horizontal con sticky header. Desktop: layout normal.
  *
- * Las columnas se pasan como ColumnDef estandar. Si una columna requiere
- * un menu de acciones, el componente helper `<RowActionsCell>` ayuda a
- * detener propagacion para que `onRowClick` no se dispare al abrir el menu.
+ * Visual: dark editorial. Header con bg surface y mono uppercase
+ * tracked, filas separadas por border line, hover surface-2.
  */
 export function AdminDataTable<TData>({
   data,
@@ -64,19 +63,16 @@ export function AdminDataTable<TData>({
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       {toolbar}
-      <div className="overflow-x-auto rounded-md border border-[var(--color-prode-border)] bg-white">
-        <table
-          className="w-full border-collapse"
-          aria-label={ariaLabel}
-        >
-          <thead className="border-b border-[var(--color-prode-border)] bg-[var(--color-prode-surface)]">
+      <div className="overflow-x-auto rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)]">
+        <table className="w-full border-collapse" aria-label={ariaLabel}>
+          <thead className="border-b border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)]">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((h) => (
                   <th
                     key={h.id}
                     scope="col"
-                    className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]"
+                    className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
                   >
                     {h.isPlaceholder
                       ? null
@@ -91,11 +87,11 @@ export function AdminDataTable<TData>({
               Array.from({ length: 5 }).map((_, i) => (
                 <tr
                   key={`sk-${i}`}
-                  className="border-b border-[var(--color-prode-border)]"
+                  className="border-b border-[var(--color-landing-line)]"
                 >
                   {Array.from({ length: skeletonCount }).map((__, j) => (
                     <td key={j} className="px-4 py-3">
-                      <div className="h-4 w-full max-w-[120px] animate-pulse rounded bg-[var(--color-prode-surface)]" />
+                      <div className="h-4 w-full max-w-[120px] animate-pulse rounded-sm bg-[var(--color-landing-surface-2)]" />
                     </td>
                   ))}
                 </tr>
@@ -104,7 +100,7 @@ export function AdminDataTable<TData>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-10 text-center font-sans text-sm text-[var(--color-prode-text-secondary)]"
+                  className="px-4 py-12 text-center font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
                 >
                   {emptyMessage}
                 </td>
@@ -136,9 +132,9 @@ function RowView<TData>({
   return (
     <tr
       className={cn(
-        "border-b border-[var(--color-prode-border)] last:border-b-0",
+        "border-b border-[var(--color-landing-line)] last:border-b-0",
         interactive &&
-          "cursor-pointer transition-colors hover:bg-[var(--color-prode-surface)]",
+          "cursor-pointer transition-colors hover:bg-[var(--color-landing-surface-2)]",
       )}
       onClick={interactive ? () => onRowClick?.(row.original) : undefined}
       onKeyDown={
@@ -154,7 +150,7 @@ function RowView<TData>({
       {row.getVisibleCells().map((cell) => (
         <td
           key={cell.id}
-          className="px-4 py-3 align-middle font-sans text-sm text-[var(--color-prode-near-black)]"
+          className="px-4 py-3 align-middle font-sans text-sm text-[var(--color-landing-text)]"
         >
           {flexRender(cell.column.columnDef.cell, cell.getContext())}
         </td>

@@ -25,3 +25,10 @@ coverage/
 
 # Prisma generated client
 prisma/generated/
+
+# Scraper (Python)
+scripts/scraper/.venv/
+scripts/scraper/.cache/
+scripts/scraper/__pycache__/
+scripts/scraper/lib/__pycache__/
+

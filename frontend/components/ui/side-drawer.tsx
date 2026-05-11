@@ -51,8 +51,8 @@ const SideDrawerContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed inset-y-0 right-0 z-50 flex h-full w-full flex-col",
-        "bg-white",
-        "border-l border-[var(--color-prode-border)]",
+        "bg-[var(--color-landing-surface)]",
+        "border-l border-[var(--color-landing-line-strong)]",
         width,
         className,
       )}
@@ -60,7 +60,7 @@ const SideDrawerContent = React.forwardRef<
     >
       <VaulDrawer.Close
         aria-label="Cerrar"
-        className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-[var(--color-prode-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)]"
+        className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-sm text-[var(--color-landing-text-muted)] transition-colors hover:bg-[var(--color-landing-surface-2)] hover:text-[var(--color-landing-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
       >
         <X className="h-4 w-4" aria-hidden />
       </VaulDrawer.Close>
@@ -76,7 +76,7 @@ const SideDrawerHeader = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "border-b border-[var(--color-prode-border)] p-6 pr-12",
+      "border-b border-[var(--color-landing-line-strong)] p-6 pr-12",
       className,
     )}
     {...props}
@@ -90,8 +90,8 @@ const SideDrawerTitle = React.forwardRef<
   <VaulDrawer.Title
     ref={ref}
     className={cn(
-      "font-display text-2xl font-black uppercase tracking-wide leading-none",
-      "text-[var(--color-prode-near-black)]",
+      "font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight leading-none",
+      "text-[var(--color-landing-text)]",
       className,
     )}
     {...props}
@@ -106,7 +106,7 @@ const SideDrawerDescription = React.forwardRef<
   <VaulDrawer.Description
     ref={ref}
     className={cn(
-      "mt-2 font-sans text-sm text-[var(--color-prode-text-secondary)]",
+      "mt-2 font-sans text-sm text-[var(--color-landing-text-muted)]",
       className,
     )}
     {...props}
@@ -130,7 +130,7 @@ const SideDrawerFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "border-t border-[var(--color-prode-border)] p-6 flex flex-wrap gap-2 justify-end",
+      "border-t border-[var(--color-landing-line-strong)] p-6 flex flex-wrap gap-2 justify-end",
       className,
     )}
     {...props}

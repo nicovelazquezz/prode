@@ -17,10 +17,12 @@ import { AdminAlertsModule } from './shared/admin-alerts/admin-alerts.module.js'
 import { CheckoutModule } from './shared/checkout/checkout.module.js';
 import { PaymentsModule } from './modules/payments/payments.module.js';
 import { MatchesModule } from './modules/matches/matches.module.js';
+import { PlayersModule } from './modules/players/players.module.js';
 import { PredictionsModule } from './modules/predictions/predictions.module.js';
 import { ScoringModule } from './modules/scoring/scoring.module.js';
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module.js';
 import { LeaguesModule } from './modules/leagues/leagues.module.js';
+import { EntriesModule } from './modules/entries/entries.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 import { StatsModule } from './modules/stats/stats.module.js';
 import { DevModule } from './modules/dev/dev.module.js';
@@ -43,7 +45,7 @@ import { AppThrottlerModule } from './common/throttler/throttler.module.js';
  * Pino logger config (spec 9.2):
  *   - JSON in production / pretty-printed in dev
  *   - redactor scrubs password, *.token, *.cardNumber, *.cvv,
- *     authorization & cookie headers from logs
+ *     dni (PII argentino), authorization & cookie headers from logs
  *   - per-request `requestId` (echoes incoming `x-request-id` if any)
  *   - skips logging the `/health` poll to keep operational noise down
  */
@@ -62,6 +64,15 @@ function buildLoggerParams() {
           '*.token',
           '*.cardNumber',
           '*.cvv',
+          // DNI: PII de identidad fiscal argentina. Aparece en bodies
+          // de /auth/login, /auth/forgot-password, /admin/users, etc.
+          // El audit log lo enmascara con `maskDni()` en el persist;
+          // acá lo enmascaramos a nivel transport para los logs de
+          // request/response que el HTTP logger emite por su cuenta.
+          'dni',
+          '*.dni',
+          'req.body.dni',
+          'res.body.dni',
           'req.headers.authorization',
           'req.headers.cookie',
           'req.headers["x-turnstile-token"]',
@@ -109,10 +120,12 @@ const IS_NON_PROD = process.env.NODE_ENV !== 'production';
     AuthModule,
     PaymentsModule,
     MatchesModule,
+    PlayersModule,
     PredictionsModule,
     ScoringModule,
     LeaderboardModule,
     LeaguesModule,
+    EntriesModule,
     AdminModule,
     StatsModule,
     // DevModule mounts `POST /dev/simulate-webhook` so the local

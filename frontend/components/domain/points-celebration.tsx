@@ -66,7 +66,7 @@ export function PointsCelebration({
       transition={transition}
       className={
         className ??
-        "font-display text-3xl font-black tabular-nums text-[var(--color-prode-accent)]"
+        "font-[family-name:var(--font-landing-display)] text-3xl tabular-nums uppercase tracking-tight text-[var(--color-landing-gold)]"
       }
       role="status"
       aria-label={`Ganaste ${points} puntos`}

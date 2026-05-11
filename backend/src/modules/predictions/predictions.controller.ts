@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Inject,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -19,6 +20,7 @@ import {
 } from '../../common/decorators/current-user.decorator.js';
 import { PredictionsService } from './predictions.service.js';
 import { SpecialPredictionsService } from './special-predictions.service.js';
+import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { UpsertMatchPredictionDto } from './dto/upsert-match-prediction.dto.js';
 import { UpsertSpecialPredictionDto } from './dto/upsert-special-prediction.dto.js';
 import { ListMyPredictionsDto } from './dto/list-my-predictions.dto.js';
@@ -35,42 +37,55 @@ function getRequestContext(req: Request): {
 
 /**
  * Authenticated prediction endpoints. The global `JwtAuthGuard` runs by
- * default — every handler here needs a logged-in user, so none of the
- * routes are marked `@Public()`.
+ * default — every handler here needs a logged-in user.
  *
  * Both `POST` and `PUT` are exposed for the same upsert operation so
  * REST-purist clients can use whichever they prefer; the underlying
- * service does the same `(userId, matchId)` write either way.
+ * service does the same `(entryId, matchId)` write either way.
+ *
+ * Multi-prode interim: the legacy `/predictions/...` paths target the
+ * user's primary (lowest-position) entry. Task 5.6 rebinds them to
+ * `/entries/:entryId/predictions/...` once the frontend is ready.
  */
 @Controller('predictions')
 export class PredictionsController {
   constructor(
     private readonly predictionsService: PredictionsService,
     private readonly specialPredictionsService: SpecialPredictionsService,
+    private readonly prisma: PrismaService,
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
 
-  /**
-   * Drops the per-match count cache so the next public GET sees the new
-   * total immediately (the writer's badge bumps without waiting for the
-   * 60 s TTL). Best-effort — a failed delete is logged downstream and the
-   * stale entry expires naturally.
-   */
   private async invalidateMatchCount(matchId: string): Promise<void> {
     await this.cache.del(matchPredictionCountCacheKey(matchId));
   }
 
-  /**
-   * Resolves and asserts the current user. The global guard rejects
-   * unauthenticated requests with 401 before we get here, but the
-   * `@CurrentUser()` decorator returns `undefined` so we throw an extra
-   * 401 to make the type narrow explicit.
-   */
   private requireUser(user: AuthenticatedUser | undefined): AuthenticatedUser {
     if (!user) {
       throw new UnauthorizedException('Authentication required');
     }
     return user;
+  }
+
+  /**
+   * Resolves the primary (lowest-position) ACTIVE entry for the user.
+   * Used by the legacy `/predictions/...` paths until Task 5.6 rebinds
+   * them. Throws 404 if the user has no entry — every payer has Entry #1
+   * created at registration; the only callers that hit this without an
+   * entry are the admin and any user whose registration is incomplete.
+   */
+  private async resolvePrimaryEntryId(userId: string): Promise<string> {
+    const entry = await this.prisma.entry.findFirst({
+      where: { userId, status: 'ACTIVE' },
+      orderBy: { position: 'asc' },
+      select: { id: true },
+    });
+    if (!entry) {
+      throw new NotFoundException(
+        'No active entry found for user — pay an inscription first',
+      );
+    }
+    return entry.id;
   }
 
   @Post('match/:matchId')
@@ -81,9 +96,10 @@ export class PredictionsController {
     @Req() req: Request,
   ) {
     const me = this.requireUser(user);
-    const ctx = getRequestContext(req);
+    const entryId = await this.resolvePrimaryEntryId(me.id);
+    const ctx = { ...getRequestContext(req), userId: me.id };
     const result = await this.predictionsService.upsertMatchPrediction(
-      me.id,
+      entryId,
       matchId,
       dto,
       ctx,
@@ -100,9 +116,10 @@ export class PredictionsController {
     @Req() req: Request,
   ) {
     const me = this.requireUser(user);
-    const ctx = getRequestContext(req);
+    const entryId = await this.resolvePrimaryEntryId(me.id);
+    const ctx = { ...getRequestContext(req), userId: me.id };
     const result = await this.predictionsService.upsertMatchPrediction(
-      me.id,
+      entryId,
       matchId,
       dto,
       ctx,
@@ -117,7 +134,8 @@ export class PredictionsController {
     @CurrentUser() user: AuthenticatedUser | undefined,
   ) {
     const me = this.requireUser(user);
-    return this.predictionsService.listUserPredictions(me.id, {
+    const entryId = await this.resolvePrimaryEntryId(me.id);
+    return this.predictionsService.listEntryPredictions(entryId, {
       page: query.page,
       pageSize: query.pageSize,
       phase: query.phase,
@@ -130,7 +148,8 @@ export class PredictionsController {
     @CurrentUser() user: AuthenticatedUser | undefined,
   ) {
     const me = this.requireUser(user);
-    return this.predictionsService.findUserPrediction(me.id, matchId);
+    const entryId = await this.resolvePrimaryEntryId(me.id);
+    return this.predictionsService.findEntryPrediction(entryId, matchId);
   }
 
   // ── Special predictions ────────────────────────────────────────────
@@ -142,9 +161,10 @@ export class PredictionsController {
     @Req() req: Request,
   ) {
     const me = this.requireUser(user);
-    const ctx = getRequestContext(req);
+    const entryId = await this.resolvePrimaryEntryId(me.id);
+    const ctx = { ...getRequestContext(req), userId: me.id };
     return this.specialPredictionsService.upsertSpecialPrediction(
-      me.id,
+      entryId,
       dto,
       ctx,
     );
@@ -157,9 +177,10 @@ export class PredictionsController {
     @Req() req: Request,
   ) {
     const me = this.requireUser(user);
-    const ctx = getRequestContext(req);
+    const entryId = await this.resolvePrimaryEntryId(me.id);
+    const ctx = { ...getRequestContext(req), userId: me.id };
     return this.specialPredictionsService.upsertSpecialPrediction(
-      me.id,
+      entryId,
       dto,
       ctx,
     );
@@ -168,6 +189,7 @@ export class PredictionsController {
   @Get('special/me')
   async getMySpecial(@CurrentUser() user: AuthenticatedUser | undefined) {
     const me = this.requireUser(user);
-    return this.specialPredictionsService.findForUser(me.id);
+    const entryId = await this.resolvePrimaryEntryId(me.id);
+    return this.specialPredictionsService.findForEntry(entryId);
   }
 }

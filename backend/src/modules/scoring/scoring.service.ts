@@ -297,6 +297,172 @@ export class ScoringService {
   }
 
   /**
+   * Resultados oficiales del torneo cargados por admin al final del
+   * Mundial. Recorre TODOS los `SpecialPrediction` y popula los puntos
+   * por categoría (champion / runnerUp / thirdPlace / topScorer / total
+   * goles) según los matches con la realidad. También suma `totalPoints`
+   * y setea `evaluatedAt`.
+   *
+   * Comportamiento idempotente: re-correr el método con resultados
+   * distintos sobreescribe los puntos previos. El audit log queda con
+   * el diff (cuántos cambios, distribución de puntos por categoría).
+   *
+   * Reglas (de `seed-config.ts:SPECIAL_PRIZE_RULES`):
+   *   - champion (campeón):       25 si pred.championTeamId === results.championTeamId
+   *   - runnerUp:                 12 si match
+   *   - thirdPlace:                8 si match
+   *   - topScorer:                15 si match (compara por playerId)
+   *   - totalGoals:               10 si exacto · 5 si abs(diff) <= 5 · 0 si más
+   *
+   * No requiere que ningún match esté FINISHED — los specials son una
+   * predicción agregada del torneo, no de partidos individuales. La
+   * decisión de cuándo correr este endpoint (post-final, post-3°, etc.)
+   * queda a criterio del admin.
+   */
+  async scoreSpecialPredictions(
+    results: {
+      championTeamId: string;
+      runnerUpTeamId: string;
+      thirdPlaceTeamId: string;
+      /**
+       * Goleadores oficiales. Array para soportar empate: si dos o más
+       * jugadores comparten la cima del ranking de goles al final del
+       * torneo, todos son considerados válidos. Cualquier user que haya
+       * pickeado uno de ellos cobra los puntos del topScorer.
+       */
+      topScorerIds: string[];
+      totalGoals: number;
+    },
+    adminUserId: string,
+  ): Promise<{
+    evaluated: number;
+    totalPointsDistributed: number;
+    breakdown: {
+      champion: number;
+      runnerUp: number;
+      thirdPlace: number;
+      topScorer: number;
+      totalGoalsExact: number;
+      totalGoalsClose: number;
+    };
+  }> {
+    const prizeRules = await this.scoringConfig.getSpecialPrizeRules();
+    const evaluatedAt = new Date();
+
+    // Counters per categoría para el audit log y la respuesta.
+    const breakdown = {
+      champion: 0,
+      runnerUp: 0,
+      thirdPlace: 0,
+      topScorer: 0,
+      totalGoalsExact: 0,
+      totalGoalsClose: 0,
+    };
+    let evaluated = 0;
+    let totalPointsDistributed = 0;
+
+    await this.prisma.$transaction(
+      async (tx) => {
+        const specials = await tx.specialPrediction.findMany();
+        evaluated = specials.length;
+
+        for (const sp of specials) {
+          const championPoints =
+            sp.championTeamId === results.championTeamId
+              ? prizeRules.champion
+              : 0;
+          const runnerUpPoints =
+            sp.runnerUpTeamId === results.runnerUpTeamId
+              ? prizeRules.runnerUp
+              : 0;
+          const thirdPlacePoints =
+            sp.thirdPlaceTeamId === results.thirdPlaceTeamId
+              ? prizeRules.thirdPlace
+              : 0;
+          const topScorerPoints =
+            sp.topScorerId !== null &&
+            results.topScorerIds.includes(sp.topScorerId)
+              ? prizeRules.topScorer
+              : 0;
+
+          let totalGoalsPoints = 0;
+          if (sp.totalGoals !== null) {
+            const diff = Math.abs(sp.totalGoals - results.totalGoals);
+            if (diff === 0) totalGoalsPoints = prizeRules.totalGoalsExact;
+            else if (diff <= 5) totalGoalsPoints = prizeRules.totalGoalsClose;
+          }
+
+          const totalPoints =
+            championPoints +
+            runnerUpPoints +
+            thirdPlacePoints +
+            topScorerPoints +
+            totalGoalsPoints;
+
+          await tx.specialPrediction.update({
+            where: { id: sp.id },
+            data: {
+              championPoints,
+              runnerUpPoints,
+              thirdPlacePoints,
+              topScorerPoints,
+              totalGoalsPoints,
+              totalPoints,
+              evaluatedAt,
+            },
+          });
+
+          if (championPoints > 0) breakdown.champion += 1;
+          if (runnerUpPoints > 0) breakdown.runnerUp += 1;
+          if (thirdPlacePoints > 0) breakdown.thirdPlace += 1;
+          if (topScorerPoints > 0) breakdown.topScorer += 1;
+          if (totalGoalsPoints === prizeRules.totalGoalsExact && totalGoalsPoints > 0)
+            breakdown.totalGoalsExact += 1;
+          else if (totalGoalsPoints > 0) breakdown.totalGoalsClose += 1;
+
+          totalPointsDistributed += totalPoints;
+        }
+
+        await tx.auditLog.create({
+          data: {
+            userId: adminUserId,
+            action: 'tournament.specials_scored',
+            entity: 'tournament',
+            entityId: 'world-cup-2026',
+            // Prisma's InputJsonValue requires an index signature; los
+            // objetos tipados (`prizeRules: SpecialPrizeRulesMap`,
+            // `breakdown: { champion: number, ... }`) son JSON-
+            // serializables pero TS no se da cuenta. Cast explícito a la
+            // forma que Prisma espera.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            changes: {
+              results,
+              prizeRules,
+              evaluated,
+              totalPointsDistributed,
+              breakdown,
+            } as any,
+          },
+        });
+      },
+      { timeout: 60_000 },
+    );
+
+    // POST-COMMIT: refresh leaderboard MV. Los specials suman al
+    // ranking global vía `Entry.totalPoints` (cuando el join lo agrega)
+    // — la MV depende del query de leaderboard, no de un campo cacheado
+    // en SpecialPrediction; la refresh asegura que el ranking final se
+    // muestre con los puntos especiales aplicados.
+    await this.enqueueLeaderboardRefresh();
+
+    this.logger.log(
+      `Tournament specials scored by admin=${adminUserId}: ${evaluated} predictions, ${totalPointsDistributed} total points distributed`,
+    );
+
+    return { evaluated, totalPointsDistributed, breakdown };
+  }
+
+  /**
    * Internal helper: enqueues the dedup'd MV refresh. Extracted so the
    * recalculate path (Task 8.5) reuses the same call.
    */

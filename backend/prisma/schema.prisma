@@ -25,7 +25,13 @@ enum PaymentStatus {
   APPROVED
   REJECTED
   REFUNDED
+  OVER_CAP
   ORPHANED
+}
+
+enum EntryStatus {
+  ACTIVE
+  ANNULLED // reservado para v1.2 (chargeback handling)
 }
 
 enum PaymentMethod {
@@ -78,6 +84,7 @@ enum NotificationType {
   PHASE_WINNER
   PASSWORD_RESET
   ADMIN_BROADCAST
+  PAYMENT_OVER_CAP
 }
 
 enum NotificationChannel {
@@ -115,16 +122,13 @@ model User {
   updatedAt   DateTime  @updatedAt
   lastLoginAt DateTime?
 
-  predictions       Prediction[]
-  specialPrediction SpecialPrediction?
-  payments          Payment[]
-  refreshTokens     RefreshToken[]
-  passwordResets    PasswordReset[]
-  phaseWins         PhaseWinner[]
-  leaguesOwned      League[]           @relation("LeagueOwner")
-  leagueMemberships LeagueMembership[]
-  notifications     Notification[]
-  auditLogs         AuditLog[]
+  payments       Payment[]
+  refreshTokens  RefreshToken[]
+  passwordResets PasswordReset[]
+  leaguesOwned   League[]        @relation("LeagueOwner")
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+  entries        Entry[]
 
   @@index([dni])
   @@index([whatsapp])
@@ -187,11 +191,11 @@ model Team {
 }
 
 model Player {
-  id       String  @id @default(cuid())
-  fullName String
-  teamId   String?
-  team     Team?   @relation(fields: [teamId], references: [id])
-  position String?
+  id           String  @id @default(cuid())
+  fullName     String
+  teamId       String?
+  team         Team?   @relation(fields: [teamId], references: [id])
+  shirtNumber  Int?
 
   topScorerPicks SpecialPrediction[] @relation("TopScorerPick")
 
@@ -281,8 +285,8 @@ model SpecialPrizeRule {
 
 model Prediction {
   id      String @id @default(cuid())
-  userId  String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entryId String
+  entry   Entry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
   matchId String
   match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
@@ -298,16 +302,16 @@ model Prediction {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, matchId])
+  @@unique([entryId, matchId])
   @@index([matchId])
-  @@index([userId, evaluatedAt])
+  @@index([entryId, evaluatedAt])
   @@map("predictions")
 }
 
 model SpecialPrediction {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  entryId String @unique
+  entry   Entry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   championTeamId   String?
   championTeam     Team?   @relation("ChampionPick", fields: [championTeamId], references: [id])
@@ -346,8 +350,8 @@ model SpecialPrediction {
 model PhaseWinner {
   id           String      @id @default(cuid())
   phase        Phase       @unique
-  userId       String
-  user         User        @relation(fields: [userId], references: [id])
+  entryId      String
+  entry        Entry       @relation(fields: [entryId], references: [id], onDelete: Restrict)
   pointsEarned Int
   prizeAmount  Decimal?    @db.Decimal(10, 2)
   prizeStatus  PrizeStatus @default(PENDING)
@@ -355,8 +359,42 @@ model PhaseWinner {
   awardedAt    DateTime    @default(now())
   notes        String?
 
-  @@index([userId])
+  @@index([entryId])
   @@map("phase_winners")
+}
+
+// ─── ENTRADAS (Multi-prode) ───────────────────────────────
+
+model Entry {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Vinculo 1-1 al pago que originó esta entry. Nunca NULL en filas finales —
+  // las entries se crean post-pago aprobado, nunca antes.
+  paymentId String  @unique
+  payment   Payment @relation(fields: [paymentId], references: [id])
+
+  // Estado de la entry. Reservado para v1.2+ (chargeback handling).
+  status EntryStatus @default(ACTIVE)
+
+  // Alias opcional para distinguir entradas en la UI ("Mi prode optimista").
+  alias String?
+
+  // Posición numérica del entry dentro del usuario, 1-N. Inmutable y monotónica.
+  position Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  predictions       Prediction[]
+  specialPrediction SpecialPrediction?
+  phaseWins         PhaseWinner[]
+  leagueMemberships LeagueMembership[]
+
+  @@unique([userId, position])
+  @@index([userId])
+  @@map("entries")
 }
 
 // ─── PAGOS ────────────────────────────────────────────────
@@ -386,6 +424,14 @@ model Payment {
 
   receivedBy String?
   notes      String?
+
+  // Alias para el flow logueado "agregar otro prode" (POST /entries/init-payment).
+  // Se persiste en el Payment hasta que el webhook crea el Entry.
+  entryAlias String?
+
+  // 1-1 inverso: el Payment puede tener una Entry vinculada (post-webhook).
+  // NULL mientras Payment es PENDING o si nunca se promueve a Entry.
+  entry Entry?
 
   paidAt     DateTime?
   refundedAt DateTime?
@@ -422,12 +468,12 @@ model LeagueMembership {
   id       String   @id @default(cuid())
   leagueId String
   league   League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  userId   String
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entryId  String
+  entry    Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
   joinedAt DateTime @default(now())
 
-  @@unique([leagueId, userId])
-  @@index([userId])
+  @@unique([leagueId, entryId])
+  @@index([entryId])
   @@map("league_memberships")
 }
 

@@ -34,3 +34,9 @@ prisma/generated/
 # Misc
 *.pem
 .turbo/
+.superpowers/
+mockups/
+
+# DB backups
+backups/
+*.dump

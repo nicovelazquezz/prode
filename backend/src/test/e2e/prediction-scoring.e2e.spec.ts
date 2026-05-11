@@ -211,13 +211,17 @@ describe('E2E flow #2: prediction → admin finish → scoring → leaderboard',
     expect(afterRow!.outcomeType).toBe('EXACT');
 
     // ── 5. Wait for the BullMQ worker to refresh leaderboard_global +
-    //      drop the cache key. Poll the MV to detect the worker
-    //      completed (more deterministic than sleeping a fixed ms).
+    //      drop the cache key. Multi-prode: MV is keyed by entry_id.
+    //      Resolve the user's primary entry first.
+    const userEntry = await h.prisma.entry.findFirstOrThrow({
+      where: { userId, status: 'ACTIVE' },
+      orderBy: { position: 'asc' },
+    });
     const deadline = Date.now() + 10_000;
     let mvPoints = 0;
     while (Date.now() < deadline) {
       const rows = await h.prisma.$queryRaw<Array<{ total_points: bigint }>>`
-        SELECT total_points FROM leaderboard_global WHERE user_id = ${userId}
+        SELECT total_points FROM leaderboard_global WHERE entry_id = ${userEntry.id}
       `;
       mvPoints = Number(rows[0]?.total_points ?? 0n);
       if (mvPoints === 5) break;
@@ -225,14 +229,14 @@ describe('E2E flow #2: prediction → admin finish → scoring → leaderboard',
     }
     expect(mvPoints).toBe(5);
 
-    // ── 6. Public /leaderboard/global reflects the user's 5 pts.
+    // ── 6. Public /leaderboard/global reflects the entry's 5 pts.
     const lb = await request(h.app.getHttpServer()).get(
       '/leaderboard/global',
     );
     expect(lb.status).toBe(200);
     const me = (
-      lb.body.rows as Array<{ user_id: string; total_points: number }>
-    ).find((r) => r.user_id === userId);
+      lb.body.rows as Array<{ entry_id: string; total_points: number }>
+    ).find((r) => r.entry_id === userEntry.id);
     expect(me).toBeDefined();
     expect(me!.total_points).toBe(5);
   }, 30_000);

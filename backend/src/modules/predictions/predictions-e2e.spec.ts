@@ -56,15 +56,18 @@ describe('Predictions E2E (registration → predict → lock)', () => {
           })
           .catch(() => undefined);
       }
+      // Multi-prode: predictions cascade off entries, entries cascade
+      // off users. Delete users first; payments must come AFTER because
+      // Entry.paymentId is ON DELETE RESTRICT.
       if (createdUserIds.length > 0) {
-        await prisma.prediction.deleteMany({
-          where: { userId: { in: createdUserIds } },
-        });
         await prisma.refreshToken.deleteMany({
           where: { userId: { in: createdUserIds } },
         });
         await prisma.auditLog.deleteMany({
           where: { userId: { in: createdUserIds } },
+        });
+        await prisma.user.deleteMany({
+          where: { id: { in: createdUserIds } },
         });
       }
       if (createdPaymentIds.length > 0) {
@@ -75,11 +78,6 @@ describe('Predictions E2E (registration → predict → lock)', () => {
         });
         await prisma.payment.deleteMany({
           where: { id: { in: createdPaymentIds } },
-        });
-      }
-      if (createdUserIds.length > 0) {
-        await prisma.user.deleteMany({
-          where: { id: { in: createdUserIds } },
         });
       }
     }
@@ -215,9 +213,14 @@ describe('Predictions E2E (registration → predict → lock)', () => {
     expect(put.status).toBe(400);
     expect(put.body.code).toBe('PREDICTION_LOCKED');
 
-    // The original prediction is unchanged.
+    // The original prediction is unchanged. Multi-prode: query by the
+    // user's primary entry (created automatically at registration).
+    const entry = await prisma.entry.findFirstOrThrow({
+      where: { userId: created.id, status: 'ACTIVE' },
+      orderBy: { position: 'asc' },
+    });
     const inDb = await prisma.prediction.findUniqueOrThrow({
-      where: { userId_matchId: { userId: created.id, matchId: target.id } },
+      where: { entryId_matchId: { entryId: entry.id, matchId: target.id } },
     });
     expect(inDb.scoreHome).toBe(3);
     expect(inDb.scoreAway).toBe(2);

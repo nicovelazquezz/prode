@@ -13,7 +13,7 @@
 
 ## Overview
 
-Frontend mobile-first del Prode Mundial 2026. Implementa el sistema visual FIFA WC 2026 (DESIGN.md) sobre Next.js 15 App Router, conectado al backend NestJS ya construido. Local-testable end-to-end sin MercadoPago real (mock checkout). Deploy junto al backend en Dokploy con dominio `prode.tirofederal.com`.
+Frontend mobile-first del Prode Mundial 2026. Implementa el sistema visual FIFA WC 2026 (DESIGN.md) sobre Next.js 15 App Router, conectado al backend NestJS ya construido. Local-testable end-to-end sin MercadoPago real (mock checkout). Deploy junto al backend en Dokploy con dominio `prodeplus.com`.
 
 **Spec de referencia (autoridad):** `docs/superpowers/specs/2026-05-05-prode-frontend-design.md`
 
@@ -57,12 +57,12 @@ Validar que el entorno tiene:
 
 **Working dir para esta fase:** `backend/` (no `frontend/` todavía).
 
-## Task 0.1 — Cookie refresh: SameSite=Lax + Domain=.tirofederal.com
+## Task 0.1 — Cookie refresh: SameSite=Lax + Domain=.prodeplus.com
 
 **File:** `backend/src/modules/auth/auth.controller.ts` (y donde sea que se setea la cookie de refresh)
 
 **Acceptance:**
-- Cookie `refresh_token` se emite con `sameSite: 'lax'` y `domain: '.tirofederal.com'` en producción
+- Cookie `refresh_token` se emite con `sameSite: 'lax'` y `domain: '.prodeplus.com'` en producción
 - En desarrollo (NODE_ENV !== 'production'), `domain` es undefined (no agregarlo) y `sameSite: 'lax'` igualmente
 - Cookie `has_session=1` (no httpOnly) emitida junto con el refresh para que el frontend pueda detectar sesión sin pegar al backend en cada landing
 - En logout, ambas cookies se borran
@@ -74,14 +74,14 @@ res.cookie('refresh_token', refreshPlain, {
   httpOnly: true,
   secure: this.config.NODE_ENV === 'production',
   sameSite: 'lax',
-  domain: this.config.NODE_ENV === 'production' ? '.tirofederal.com' : undefined,
+  domain: this.config.NODE_ENV === 'production' ? '.prodeplus.com' : undefined,
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
 res.cookie('has_session', '1', {
   httpOnly: false,
   secure: this.config.NODE_ENV === 'production',
   sameSite: 'lax',
-  domain: this.config.NODE_ENV === 'production' ? '.tirofederal.com' : undefined,
+  domain: this.config.NODE_ENV === 'production' ? '.prodeplus.com' : undefined,
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
 
@@ -1508,11 +1508,11 @@ Agregar el service `prode-frontend` (spec §12.2).
 
 **File:** `docs/deployment.md` (ya existe del backend; agregar sección frontend)
 
-Pasos para configurar dominio `prode.tirofederal.com`, env vars del panel Dokploy, primer deploy, smoke test.
+Pasos para configurar dominio `prodeplus.com`, env vars del panel Dokploy, primer deploy, smoke test.
 
 **Verification (manual, post-deploy):**
 ```bash
-curl -s https://prode.tirofederal.com/api/health
+curl -s https://prodeplus.com/api/health
 # Expected: {"status":"ok","backend":true,...}
 ```
 
@@ -1531,7 +1531,7 @@ cd frontend && npx playwright test       # E2E (requires backend running)
 
 # Manual Verification (post-deploy)
 
-1. Visitar `https://prode.tirofederal.com` → ver landing con countdown live
+1. Visitar `https://prodeplus.com` → ver landing con countdown live
 2. Click "Pagar con MercadoPago" → flujo MP real (pago de prueba con TC test) → completar registro → login
 3. Cargar predicción de un match → admin marca FINISHED → verificar puntos en leaderboard
 4. Admin crea usuario manual → user logea con password generada → carga predicción
@@ -1560,4 +1560,4 @@ Para fallar gracefully:
 - **Mobile-first siempre:** desarrollar viewing mobile (Chrome DevTools 375px) primero. Ajustar a desktop después.
 - **Touch targets ≥44px** en todos los flujos user-facing. Size sm de Button SOLO en admin desktop.
 - **Local sin MercadoPago:** flujo completo via mock-checkout + simulate-webhook. NO probar el flujo MP real hasta deploy en staging con credenciales TEST.
-- **Cuando llegue el momento de probar MP real (post Phase 10):** crear cuenta MP de testing, configurar webhook URL `https://api.prode.tirofederal.com/payments/webhook` en panel MP, hacer pago de prueba con tarjeta de test (4509 9535 6623 3704, CVV 123, exp 11/25, titular APRO).
+- **Cuando llegue el momento de probar MP real (post Phase 10):** crear cuenta MP de testing, configurar webhook URL `https://api.prodeplus.com/payments/webhook` en panel MP, hacer pago de prueba con tarjeta de test (4509 9535 6623 3704, CVV 123, exp 11/25, titular APRO).

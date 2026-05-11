@@ -36,6 +36,7 @@ describe('E2E flow #5: admin recalculate match', () => {
   let adminToken: string;
   let adminUserId: string;
   let userId: string;
+  let entryId: string;
   let matchId: string;
   let matchSnapshot: {
     status:
@@ -99,8 +100,7 @@ describe('E2E flow #5: admin recalculate match', () => {
     await h.prisma.prediction.deleteMany({ where: { matchId } });
     await h.prisma.phaseWinner.deleteMany({ where: { phase: 'GROUPS' } });
 
-    // Spawn a user and seed a 2-1 prediction (will match the *original*
-    // 2-1 final score → EXACT, 5 × 1.0 = 5 pts).
+    // Spawn a user + entry and seed a 2-1 prediction.
     const u = await h.prisma.user.create({
       data: {
         dni: uniqueDni(),
@@ -111,8 +111,27 @@ describe('E2E flow #5: admin recalculate match', () => {
       },
     });
     userId = u.id;
+    const payment = await h.prisma.payment.create({
+      data: {
+        userId,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    const entry = await h.prisma.entry.create({
+      data: {
+        userId,
+        paymentId: payment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
+    entryId = entry.id;
     await h.prisma.prediction.create({
-      data: { userId, matchId, scoreHome: 2, scoreAway: 1 },
+      data: { entryId, matchId, scoreHome: 2, scoreAway: 1 },
     });
 
     // Use the service directly so the tests starts with a known FINISHED
@@ -142,7 +161,7 @@ describe('E2E flow #5: admin recalculate match', () => {
   it('admin recalculate → predictions re-scored, audit log records before/after', async () => {
     // Sanity: the prediction earned 5 pts (EXACT, 5 base × 1.0 GROUPS).
     const before = await h.prisma.prediction.findUniqueOrThrow({
-      where: { userId_matchId: { userId, matchId } },
+      where: { entryId_matchId: { entryId, matchId } },
     });
     expect(before.outcomeType).toBe('EXACT');
     expect(before.pointsEarned).toBe(5);
@@ -162,7 +181,7 @@ describe('E2E flow #5: admin recalculate match', () => {
 
     // ── 2. The prediction was re-evaluated.
     const after = await h.prisma.prediction.findUniqueOrThrow({
-      where: { userId_matchId: { userId, matchId } },
+      where: { entryId_matchId: { entryId, matchId } },
     });
     expect(after.outcomeType).toBe('WINNER_AND_DIFF');
     expect(after.pointsEarned).toBe(3);
@@ -189,7 +208,7 @@ describe('E2E flow #5: admin recalculate match', () => {
       where: { phase: 'GROUPS' },
       create: {
         phase: 'GROUPS',
-        userId,
+        entryId,
         pointsEarned: 3,
         prizeStatus: 'PAID',
       },
@@ -205,7 +224,7 @@ describe('E2E flow #5: admin recalculate match', () => {
 
     // Predictions stayed at 3 pts (the previous test's recalculate result).
     const inDb = await h.prisma.prediction.findUniqueOrThrow({
-      where: { userId_matchId: { userId, matchId } },
+      where: { entryId_matchId: { entryId, matchId } },
     });
     expect(inDb.pointsEarned).toBe(3);
   }, 30_000);

@@ -1,13 +1,11 @@
 import { jest } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
-import { getQueueToken } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { AppModule } from '../../app.module.js';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { PhaseService } from './phase.service.js';
 import { MatchProgressionService } from './match-progression.service.js';
-import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
 
 /**
  * Integration test for `PhaseService.maybeClosePhase`. We can't run the
@@ -38,6 +36,7 @@ describe('PhaseService.maybeClosePhase (integration)', () => {
   let matchId: string;
   let matchNumber = 62;
   let userIds: string[] = [];
+  let entryIds: string[] = [];
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
@@ -51,7 +50,15 @@ describe('PhaseService.maybeClosePhase (integration)', () => {
     phaseService = app.get(PhaseService);
     progression = app.get(MatchProgressionService);
 
-    const queue: Queue = app.get(getQueueToken(NOTIFICATIONS_QUEUE));
+    // Spy on the BullMQ queue actually used by the PhaseService — every
+    // module that registers `BullModule.registerQueue` for the same queue
+    // name produces a *different* Queue instance bound to the same Redis
+    // queue, so `app.get(getQueueToken(...))` would return the
+    // NotificationsModule producer (a sibling instance) rather than the
+    // one PhaseService injected. Reach into the service directly instead.
+    const queue: Queue = (
+      phaseService as unknown as { notificationsQueue: Queue }
+    ).notificationsQueue;
     queueAddSpy = jest.spyOn(queue, 'add');
 
     progressionSpies = {
@@ -97,9 +104,28 @@ describe('PhaseService.maybeClosePhase (integration)', () => {
         },
       });
       userIds.push(user.id);
-      await prisma.prediction.create({
+      const payment = await prisma.payment.create({
         data: {
           userId: user.id,
+          amount: 10_000,
+          method: 'CASH',
+          status: 'APPROVED',
+          paidAt: new Date(),
+          completedAt: new Date(),
+        },
+      });
+      const entry = await prisma.entry.create({
+        data: {
+          userId: user.id,
+          paymentId: payment.id,
+          position: 1,
+          status: 'ACTIVE',
+        },
+      });
+      entryIds.push(entry.id);
+      await prisma.prediction.create({
+        data: {
+          entryId: entry.id,
           matchId,
           // The actual scoreline doesn't matter — we override outcomeType
           // / pointsEarned directly to avoid having to drive scoring.
@@ -168,7 +194,8 @@ describe('PhaseService.maybeClosePhase (integration)', () => {
 
     const winner = await prisma.phaseWinner.findUnique({ where: { phase: 'GROUPS' } });
     expect(winner).not.toBeNull();
-    expect(winner!.userId).toBe(userIds[0]);
+    // Multi-prode: PhaseWinner anchors on the entry, not the user.
+    expect(winner!.entryId).toBe(entryIds[0]);
     expect(winner!.pointsEarned).toBe(5);
 
     // Audit row created.
@@ -177,19 +204,19 @@ describe('PhaseService.maybeClosePhase (integration)', () => {
     });
     expect(audits).toHaveLength(1);
     const changes = audits[0].changes as {
-      winner: { userId: string; points: number; exactCount: number };
+      winner: { entryId: string; points: number; exactCount: number };
     };
-    expect(changes.winner.userId).toBe(userIds[0]);
+    expect(changes.winner.entryId).toBe(entryIds[0]);
     expect(changes.winner.points).toBe(5);
     expect(changes.winner.exactCount).toBe(1);
 
     // GROUPS → ROUND_32 populator called.
     expect(progressionSpies.r32).toHaveBeenCalledTimes(1);
 
-    // Notification job enqueued.
+    // Notification job enqueued — payload now carries entryId.
     const notifCalls = queueAddSpy.mock.calls.filter((c) => c[0] === 'phase-winner');
     expect(notifCalls).toHaveLength(1);
-    expect(notifCalls[0][1]).toEqual({ phase: 'GROUPS', userId: userIds[0] });
+    expect(notifCalls[0][1]).toEqual({ phase: 'GROUPS', entryId: entryIds[0] });
   });
 
   it('is idempotent: a second call after closure no-ops', async () => {
@@ -204,10 +231,10 @@ describe('PhaseService.maybeClosePhase (integration)', () => {
   it('computePhaseWinner ranks by points, then exact_count, then hits_count', async () => {
     const w = await phaseService.computePhaseWinner('GROUPS');
     expect(w).not.toBeNull();
-    expect(w!.userId).toBe(userIds[0]);
+    expect(w!.entryId).toBe(entryIds[0]);
     expect(w!.points).toBe(5);
     expect(w!.exactCount).toBe(1);
-    // hitsCount = 1 (this user has one EXACT, which counts as a hit).
+    // hitsCount = 1 (this entry has one EXACT, which counts as a hit).
     expect(w!.hitsCount).toBe(1);
   });
 });

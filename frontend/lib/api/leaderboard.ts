@@ -7,9 +7,15 @@ import type {
 } from "./types";
 
 /**
- * Wire shape returned by every backend leaderboard endpoint
- * (`/leaderboard/global`, `/leaderboard/phase/:phase`, etc.). See
- * backend/src/modules/leaderboard/leaderboard.service.ts.
+ * Wire shape returned por todos los endpoints del backend de
+ * leaderboard (`/leaderboard/global`, `/leaderboard/phase/:phase`,
+ * etc.). Después de multi-prode v1.1, cada row es un Entry — no
+ * un User. La MV `leaderboard_global` agrupa por entry_id y agrega
+ * los campos `entry_id`, `entry_position`, `entry_alias` además
+ * del `user_id` del dueño humano (spec §2.5).
+ *
+ * Mantenemos los campos legacy también opcionales para no romper
+ * cuando el backend está mid-migración (M1 sin destructive M2).
  */
 interface LeaderboardWireRow {
   user_id: string;
@@ -19,6 +25,10 @@ interface LeaderboardWireRow {
   exact_count: number;
   hits_count: number;
   has_champion_pick: boolean;
+  // Campos multi-prode (post-M2)
+  entry_id?: string;
+  entry_position?: number;
+  entry_alias?: string | null;
 }
 
 interface LeaderboardWireResponse {
@@ -31,15 +41,20 @@ interface LeaderboardWireResponse {
 /**
  * Adapts the backend's snake_case `rows` payload to the camelCased
  * `entries` shape consumed by our UI components, and synthesizes the
- * 1-based `position` from the row index. Keeps the rest of the
- * frontend ignorant of the wire format.
+ * 1-based `position` from the row index.
+ *
+ * Multi-prode: si el backend manda `entry_id`, lo propagamos; si no,
+ * caemos a `user_id` como id (compat dev / pre-M2).
  */
 function adapt(res: LeaderboardWireResponse): PaginatedLeaderboard {
   const entries: LeaderboardEntry[] = res.rows.map((r, idx) => ({
     position: idx + 1,
+    entryId: r.entry_id ?? r.user_id,
     userId: r.user_id,
     firstName: r.first_name,
     lastName: r.last_name,
+    alias: r.entry_alias ?? null,
+    entryPosition: r.entry_position ?? 1,
     totalPoints: r.total_points,
   }));
   return {
@@ -72,33 +87,39 @@ export async function getByPhase(
   return adapt(res);
 }
 
-export async function getMyAround(): Promise<MeAroundResult> {
-  // Backend returns `{ rows: [{ user_id, ..., rank }, ...] }`. The
-  // current user is the row whose rank matches the page's pagination
-  // ordering — but the simpler invariant is the row whose user_id
-  // matches the JWT subject. We surface a flat shape with `position`,
-  // `totalPoints`, `totalUsers`, and the context rows for the UI.
+/**
+ * Multi-prode v1.1: el "alrededor de mí" ahora se calcula por
+ * entry específica. Backend: `GET /leaderboard/entry/:entryId/around`.
+ * El backend valida que el entry pertenezca al user autenticado.
+ *
+ * Devuelve la posición del entry, total de entries en el ranking
+ * y un context window de N rows alrededor (el meIndex marca cuál
+ * es el row del entry consultado).
+ */
+export async function getAroundEntry(
+  entryId: string,
+): Promise<MeAroundResult> {
   const wire = await api
-    .get("leaderboard/me/around")
+    .get(`leaderboard/entry/${entryId}/around`)
     .json<{
-      rows: Array<
-        LeaderboardWireRow & { rank: number }
-      >;
+      rows: Array<LeaderboardWireRow & { rank: number }>;
       meIndex?: number;
     }>();
 
   const context: LeaderboardEntry[] = wire.rows.map((r) => ({
     position: r.rank,
+    entryId: r.entry_id ?? r.user_id,
     userId: r.user_id,
     firstName: r.first_name,
     lastName: r.last_name,
+    alias: r.entry_alias ?? null,
+    entryPosition: r.entry_position ?? 1,
     totalPoints: r.total_points,
   }));
 
-  // The "me" row is whichever has the current user's id. We don't
-  // have access to it here, so fall back to the middle row (the
-  // backend centres the window around the user). If the array has
-  // an explicit `meIndex` we use it.
+  // El backend nos dice qué row es el "yo"; si no, asumimos el
+  // centro de la ventana (defensa: backend siempre debería mandar
+  // meIndex después de multi-prode, pero compat con respuestas viejas).
   const meIdx =
     wire.meIndex !== undefined
       ? wire.meIndex

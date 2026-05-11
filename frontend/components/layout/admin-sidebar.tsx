@@ -36,12 +36,13 @@ interface AdminSidebarProps {
 }
 
 /**
- * Sidebar fija izquierda para admin. 9 items. En mobile se colapsa
+ * Sidebar fija izquierda para admin. 8 items. En mobile se colapsa
  * a un drawer (no implementado en este skeleton — Phase 7 lo refina).
  * Por ahora oculta en mobile; AdminLayout debe ofrecer un toggle.
  *
- * Layout `(admin)` debe agregar `pl-64` al main en md+ para
- * reservar espacio para esta sidebar.
+ * Visual: dark editorial. Bg surface (un escalon mas oscuro que el
+ * main bg para distinguirla), texto cream, item activo con
+ * border-left verde + bg surface-2.
  */
 export function AdminSidebar({ className }: AdminSidebarProps) {
   const pathname = usePathname();
@@ -51,21 +52,23 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
       className={cn(
         "hidden md:flex md:flex-col",
         "fixed inset-y-0 left-0 z-30 w-64",
-        "bg-[var(--color-prode-near-black)] text-white",
-        "border-r border-[var(--color-prode-near-black)]",
+        "bg-[var(--color-landing-surface)] text-[var(--color-landing-text)]",
+        "border-r border-[var(--color-landing-line-strong)]",
         className,
       )}
       aria-label="Navegacion admin"
     >
-      <div className="flex h-16 items-center border-b border-white/10 px-6">
+      <div className="flex h-16 items-center border-b border-[var(--color-landing-line-strong)] px-6">
         <Link
           href="/admin"
-          className="font-display text-xl font-black uppercase tracking-wide"
+          className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight leading-none text-[var(--color-landing-text)]"
         >
-          Admin Prode
+          <span className="border-b-[4px] border-[var(--color-landing-green)] pb-0.5">
+            Admin
+          </span>
         </Link>
       </div>
-      <ul className="flex-1 overflow-y-auto py-4 space-y-1">
+      <ul className="flex-1 overflow-y-auto py-4">
         {ITEMS.map(({ href, label, Icon }) => {
           const isActive =
             href === "/admin"
@@ -77,11 +80,12 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
                 href={href}
                 className={cn(
                   "flex items-center gap-3 px-6 py-3",
-                  "font-sans text-sm font-medium",
-                  "transition-colors duration-300",
+                  "font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em]",
+                  "transition-colors duration-200",
+                  "border-l-[3px]",
                   isActive
-                    ? "bg-white/10 text-white border-l-4 border-[var(--color-prode-accent)]"
-                    : "text-white/70 hover:bg-white/5 hover:text-white",
+                    ? "bg-[var(--color-landing-surface-2)] text-[var(--color-landing-text)] border-[var(--color-landing-green)]"
+                    : "border-transparent text-[var(--color-landing-text-muted)] hover:bg-[var(--color-landing-surface-2)] hover:text-[var(--color-landing-text)]",
                 )}
                 aria-current={isActive ? "page" : undefined}
               >

@@ -13,8 +13,8 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex items-center gap-2",
-      "border-b border-[var(--color-prode-border)]",
+      "inline-flex items-center gap-1",
+      "border-b border-[var(--color-landing-line)]",
       className,
     )}
     {...props}
@@ -30,17 +30,17 @@ const TabsTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       "inline-flex items-center justify-center whitespace-nowrap",
-      "px-4 py-3",
-      "font-sans text-sm font-medium",
-      "text-[var(--color-prode-text-secondary)]",
+      "px-4 py-3.5",
+      "font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em]",
+      "text-[var(--color-landing-text-muted)]",
       "border-b-2 border-transparent -mb-px",
-      "transition-colors duration-300 ease-out",
-      "hover:text-[var(--color-prode-near-black)]",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)] focus-visible:ring-offset-2",
+      "transition-colors duration-200",
+      "hover:text-[var(--color-landing-text)]",
+      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--color-landing-gold)]",
       "disabled:pointer-events-none disabled:opacity-50",
-      "data-[state=active]:text-[var(--color-prode-near-black)]",
-      "data-[state=active]:border-[var(--color-prode-near-black)]",
-      "data-[state=active]:font-bold",
+      "data-[state=active]:text-[var(--color-landing-text)]",
+      "data-[state=active]:border-[var(--color-landing-green)]",
+      "cursor-pointer",
       className,
     )}
     {...props}
@@ -55,8 +55,8 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      "mt-4",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)] focus-visible:ring-offset-2",
+      "mt-6",
+      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]",
       className,
     )}
     {...props}

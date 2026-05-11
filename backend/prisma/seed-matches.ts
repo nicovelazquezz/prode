@@ -34,14 +34,25 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  // Lookup fifaCode → teamId. Si un label es un fifaCode válido (3 letras
+  // mayúsculas) se asocia con el Team para que el frontend renderice
+  // team.name ("México") y team.flagUrl en lugar del label crudo.
+  const teams = await prisma.team.findMany({ select: { id: true, fifaCode: true } });
+  const fifaToId = new Map(teams.map((t) => [t.fifaCode, t.id]));
+  const isFifaCode = (s: string) => /^[A-Z]{3}$/.test(s);
+
   let inserted = 0;
   let updated = 0;
 
   for (const m of matches as SeedMatch[]) {
     const existing = await prisma.match.findUnique({ where: { matchNumber: m.matchNumber } });
+    const homeTeamId = isFifaCode(m.homeTeamLabel) ? fifaToId.get(m.homeTeamLabel) ?? null : null;
+    const awayTeamId = isFifaCode(m.awayTeamLabel) ? fifaToId.get(m.awayTeamLabel) ?? null : null;
     const data = {
       phase: m.phase,
       groupCode: m.groupCode,
+      homeTeamId,
+      awayTeamId,
       homeTeamLabel: m.homeTeamLabel,
       awayTeamLabel: m.awayTeamLabel,
       kickoffAt: new Date(m.kickoffAt),

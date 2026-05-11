@@ -19,17 +19,23 @@ describe('Notifications pipeline (integration)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let notifications: NotificationsService;
-  let waSendMock: jest.Mock;
+  let waSendMock: jest.Mock<(to: string, message: string) => Promise<void>>;
 
   const TEST_DEDUP_PREFIX = 'integration-test:';
 
   beforeAll(async () => {
-    waSendMock = jest.fn() as unknown as jest.Mock;
+    waSendMock = jest.fn<(to: string, message: string) => Promise<void>>();
+    // The shim is a thin closure around the typed jest.fn() — we hand
+    // Nest a plain function so the DI container's type checks don't
+    // care that jest.Mock is a callable + decorated object. Calls and
+    // implementation flow through `waSendMock` exactly the same.
+    const sendShim = (to: string, message: string): Promise<void> =>
+      waSendMock(to, message);
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(WhatsappService)
-      .useValue({ send: waSendMock })
+      .useValue({ send: sendShim })
       .compile();
 
     app = moduleRef.createNestApplication();
@@ -74,7 +80,7 @@ describe('Notifications pipeline (integration)', () => {
   }
 
   it('processes a WhatsApp Notification end-to-end and marks it SENT', async () => {
-    waSendMock.mockResolvedValue(undefined);
+    waSendMock.mockImplementation(async () => undefined);
 
     const dedupKey = `${TEST_DEDUP_PREFIX}sent:${Date.now()}`;
     const notif = await notifications.enqueue({
@@ -97,7 +103,9 @@ describe('Notifications pipeline (integration)', () => {
   }, 30_000);
 
   it('marks the row FAILED after the WhatsappService throws on every retry', async () => {
-    waSendMock.mockRejectedValue(new Error('upstream 503'));
+    waSendMock.mockImplementation(async () => {
+      throw new Error('upstream 503');
+    });
 
     const dedupKey = `${TEST_DEDUP_PREFIX}failed:${Date.now()}`;
     const notif = await notifications.enqueue({
@@ -109,25 +117,22 @@ describe('Notifications pipeline (integration)', () => {
       dedupKey,
     });
 
-    // 3 attempts × 5s exponential backoff is too slow for a test budget,
-    // but BullMQ's exponential backoff seeds at delay=5000 only on the
-    // SECOND attempt — the first retry fires immediately. So ~5–25s is
-    // realistic for FAILED to land. Use a 60s timeout to stay safe.
-    const final = await waitForNotif(
+    // 3 attempts × 5s exponential backoff means ~15s upper bound to
+    // reach FAILED — give 30s headroom for cold-start jitter. We poll
+    // the row instead of leaning on a fixed sleep so a fast machine
+    // exits early.
+    const truly = await waitForNotif(
       notif.id,
-      (n) => n?.status === 'FAILED' || (n?.attempts ?? 0) >= 3,
-      60_000,
+      (n) => n?.status === 'FAILED',
+      30_000,
     );
     expect(waSendMock.mock.calls.length).toBeGreaterThanOrEqual(1);
-    // Either we already saw FAILED, or attempts maxed out and the next
-    // status update will land FAILED — assert end state explicitly.
-    const truly = await waitForNotif(notif.id, (n) => n?.status === 'FAILED', 30_000);
     expect(truly?.status).toBe('FAILED');
     expect(truly?.failureReason).toContain('503');
-  }, 90_000);
+  }, 60_000);
 
   it('dedupKey prevents duplicate Notification rows on repeated enqueue calls', async () => {
-    waSendMock.mockResolvedValue(undefined);
+    waSendMock.mockImplementation(async () => undefined);
 
     const dedupKey = `${TEST_DEDUP_PREFIX}dedup:${Date.now()}`;
     const a = await notifications.enqueue({

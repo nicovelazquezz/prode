@@ -39,7 +39,7 @@ export function ScoreDisplay({
     <div
       className={cn(
         "inline-flex items-center gap-3 font-display font-black",
-        "text-[var(--color-prode-near-black)]",
+        "text-[var(--color-landing-text)]",
         "tabular-nums tracking-tight leading-none",
         sizeClasses[size],
         isPrediction && "opacity-70",
@@ -53,7 +53,7 @@ export function ScoreDisplay({
       }
     >
       <span className="min-w-[1.2em] text-right">{scoreHome}</span>
-      <span className="text-[var(--color-prode-text-secondary)]" aria-hidden>
+      <span className="text-[var(--color-landing-text-muted)]" aria-hidden>
         -
       </span>
       <span className="min-w-[1.2em] text-left">{scoreAway}</span>

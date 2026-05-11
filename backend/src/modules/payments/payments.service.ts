@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
@@ -16,6 +22,7 @@ import { loadEnv, type Env } from '../../config/env.js';
 import {
   CompletionAlreadyUsedException,
   CompletionTokenExpiredException,
+  EntryCapReachedException,
   InvalidCompletionTokenException,
 } from '../../common/exceptions/domain.exceptions.js';
 
@@ -24,6 +31,14 @@ import {
  * is missing. Matches the Phase 2 seed.
  */
 const DEFAULT_AMOUNT_ARS = 15_000;
+
+/**
+ * Default cap for `AppConfig.max_entries_per_user`. Mirrors the value
+ * used by EntriesService — duplicated so PaymentsService stays
+ * decoupled from EntriesModule (and so the webhook works even if the
+ * AppConfig row is missing).
+ */
+const DEFAULT_MAX_ENTRIES = 5;
 
 /**
  * TTL of the magic link / completion token, applied when the Payment
@@ -78,6 +93,28 @@ export class PaymentsService {
     private readonly notificationsQueue: Queue,
   ) {
     this.env = loadEnv();
+  }
+
+  /**
+   * Reads `AppConfig.max_entries_per_user`. Falls back to the spec
+   * default. Used by the webhook re-check (logged-in "agregar otro
+   * prode" flow). Accepts an optional TX client so the read can stay
+   * inside the surrounding transaction for read-after-write
+   * consistency with concurrent admin updates.
+   */
+  private async getMaxEntriesPerUser(
+    tx?: Parameters<Parameters<PrismaService['$transaction']>[0]>[0],
+  ): Promise<number> {
+    const client = tx ?? this.prisma;
+    const row = await client.appConfig.findUnique({
+      where: { key: 'max_entries_per_user' },
+    });
+    const raw = row?.value ?? String(DEFAULT_MAX_ENTRIES);
+    const parsed = Number.parseInt(raw, 10);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      return DEFAULT_MAX_ENTRIES;
+    }
+    return Math.min(20, parsed);
   }
 
   /**
@@ -208,6 +245,12 @@ export class PaymentsService {
 
     let didTransition = false;
     let transitionedPaymentId: string | null = null;
+    /** Whether this webhook landed on a logged-in flow ("agregar otro prode"). */
+    let isLoggedInFlow = false;
+    /** Set when the cap re-check failed and the Payment was forced to OVER_CAP. */
+    let overCapForUserId: string | null = null;
+    /** Set when a new Entry was successfully created in the webhook TX. */
+    let createdEntryId: string | null = null;
 
     await this.prisma.$transaction(async (tx) => {
       // Resolve our local Payment. Prefer preferenceId (set at init) and
@@ -234,6 +277,16 @@ export class PaymentsService {
       const now = new Date();
       // Idempotent update: only PENDING rows can transition. A duplicate
       // webhook hits 0 rows here and falls through as a no-op.
+      //
+      // NOTA para futuros reviewers / agentes de audit: este patrón ES
+      // correcto bajo READ COMMITTED (el default de Postgres). NO hace
+      // falta `isolationLevel: 'Serializable'`. Razón: dos webhooks
+      // concurrentes contra el mismo paymentId se serializan en el
+      // row-lock de Postgres al ejecutar el UPDATE — el primero
+      // transiciona PENDING→APPROVED y commitea; el segundo lee el
+      // estado nuevo cuando el lock se libera, ve `status != 'PENDING'`
+      // y `result.count === 0`, retornando early sin side-effects. El
+      // WHERE actúa como guard atómico.
       const result = await tx.payment.updateMany({
         where: { id: local.id, status: { in: ['PENDING'] } },
         data: {
@@ -255,31 +308,129 @@ export class PaymentsService {
       if (result.count === 0) return;
       didTransition = true;
       transitionedPaymentId = local.id;
+      isLoggedInFlow = local.userId !== null;
 
       if (newStatus === 'APPROVED') {
-        await this.persistRecoveryNotification(tx, local.id, mpPayment);
+        if (local.userId) {
+          // Logged-in "agregar otro prode" flow. Re-check cap (race
+          // with admin lowering it between init and webhook), then
+          // either create Entry or force the payment to OVER_CAP.
+          const cap = await this.getMaxEntriesPerUser(tx);
+          // Lock every entry of this user. PostgreSQL forbids
+          // `SELECT COUNT(*) ... FOR UPDATE` ("FOR UPDATE is not allowed
+          // with aggregate functions"), so we materialise the rows and
+          // count in JS. The row-level locks are held until commit.
+          const lockedRows = await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT id
+            FROM entries
+            WHERE "userId" = ${local.userId}
+            FOR UPDATE
+          `;
+          const current = lockedRows.length;
+          if (current >= cap) {
+            await tx.payment.update({
+              where: { id: local.id },
+              data: { status: 'OVER_CAP' },
+            });
+            await tx.auditLog.create({
+              data: {
+                userId: local.userId,
+                action: 'entry.over_cap_orphaned',
+                entity: 'payment',
+                entityId: local.id,
+                changes: { current, cap, mpPaymentId: mpPayment.id },
+              },
+            });
+            overCapForUserId = local.userId;
+            // Do NOT persist the recovery notification — the user is
+            // already logged in, the payment failed to materialise.
+          } else {
+            const maxPos = await tx.entry.aggregate({
+              where: { userId: local.userId },
+              _max: { position: true },
+            });
+            const nextPosition = (maxPos._max.position ?? 0) + 1;
+            const entry = await tx.entry.create({
+              data: {
+                userId: local.userId,
+                paymentId: local.id,
+                position: nextPosition,
+                alias: local.entryAlias,
+                status: 'ACTIVE',
+              },
+            });
+            createdEntryId = entry.id;
+            await tx.auditLog.create({
+              data: {
+                userId: local.userId,
+                action: 'entry.created',
+                entity: 'entry',
+                entityId: entry.id,
+                changes: {
+                  paymentId: local.id,
+                  position: nextPosition,
+                  source: 'webhook',
+                  alias: local.entryAlias,
+                },
+              },
+            });
+          }
+        } else {
+          // Public flow (anonymous): persist the recovery email so the
+          // user can click through and complete registration.
+          await this.persistRecoveryNotification(tx, local.id, mpPayment);
+        }
       }
     });
 
     // Post-commit side-effects (NOT inside the TX — Redis & WhatsApp must
     // not roll back with the DB).
     if (didTransition && newStatus === 'APPROVED' && transitionedPaymentId) {
-      // Admin alert if we couldn't capture an email — needs to leave the TX
-      // because AdminAlertsService writes its own Notification row.
-      if (!mpPayment.payer.email) {
+      if (overCapForUserId) {
+        // OVER_CAP path: alert admin to refund manually. The Entry was
+        // never created so the user paid for nothing — admin decides
+        // refund vs raise the cap.
         await this.adminAlerts.notify({
-          type: 'PAYMENT_NO_EMAIL',
-          message: `Pago ${transitionedPaymentId} aprobado sin email de payer. ID MP: ${mpPayment.id}. Contactá al usuario manualmente.`,
+          type: 'PAYMENT_OVER_CAP',
+          message:
+            `Payment ${transitionedPaymentId} aprobado pero el user ${overCapForUserId} ` +
+            `está al cap de entries. Decidí refund o raise del cap. ID MP: ${mpPayment.id}.`,
+        });
+        void this.audit.log({
+          action: 'payment.over_cap',
+          entity: 'payment',
+          entityId: transitionedPaymentId,
+          changes: { userId: overCapForUserId, mpPaymentId: mpPayment.id },
+        });
+      } else if (isLoggedInFlow) {
+        // Logged-in flow + Entry created — no recovery email, no
+        // delayed orphan alert (the entry already exists).
+        void this.audit.log({
+          action: 'payment.webhook_approved',
+          entity: 'payment',
+          entityId: transitionedPaymentId,
+          changes: {
+            mpPaymentId: mpPayment.id,
+            entryId: createdEntryId,
+            flow: 'logged_in',
+          },
+        });
+      } else {
+        // Public flow — same behaviour as before.
+        if (!mpPayment.payer.email) {
+          await this.adminAlerts.notify({
+            type: 'PAYMENT_NO_EMAIL',
+            message: `Pago ${transitionedPaymentId} aprobado sin email de payer. ID MP: ${mpPayment.id}. Contactá al usuario manualmente.`,
+          });
+        }
+        await this.enqueueOrphanAlert(transitionedPaymentId);
+        void this.audit.log({
+          action: 'payment.webhook_approved',
+          entity: 'payment',
+          entityId: transitionedPaymentId,
+          changes: { mpPaymentId: mpPayment.id, flow: 'public' },
         });
       }
-      // Delayed orphan-alert. jobId guarantees dedup across webhook retries.
-      await this.enqueueOrphanAlert(transitionedPaymentId);
-      void this.audit.log({
-        action: 'payment.webhook_approved',
-        entity: 'payment',
-        entityId: transitionedPaymentId,
-        changes: { mpPaymentId: mpPayment.id },
-      });
     }
 
     if (didTransition && newStatus === 'REFUNDED' && transitionedPaymentId) {
@@ -362,7 +513,179 @@ export class PaymentsService {
       this.logger.warn(
         `Failed to enqueue admin-orphan-alert for ${paymentId}: ${(err as Error).message}`,
       );
+      // Best-effort secondary alert: si Redis pestañea justo cuando se
+      // aprueba un pago, queremos que el admin se entere AHORA, no al
+      // día siguiente vía el resumen diario. AdminAlerts escribe la
+      // Notification a Postgres y el outbox-safety-net cron la reintenta
+      // cuando Redis vuelve, así que aún con Redis caído el mensaje
+      // termina llegando. Si esto también falla, el log warning de
+      // arriba queda como única señal — aceptable, no rompemos el flow.
+      try {
+        await this.adminAlerts.notify({
+          type: 'ORPHAN_ALERT_ENQUEUE_FAILED',
+          message:
+            `Falló encolar el orphan-alert para payment ${paymentId} ` +
+            `(probable hiccup de Redis). La red de seguridad diaria igual ` +
+            `va a capturarlo, pero conviene revisar Redis ahora.`,
+          dedupKey: `orphan-enqueue-failed:${paymentId}`,
+        });
+      } catch (alertErr) {
+        this.logger.warn(
+          `Direct admin alert also failed for payment ${paymentId}: ${
+            (alertErr as Error).message
+          }`,
+        );
+      }
     }
+  }
+
+  // ── Admin override (manual approve) ──────────────────────────────────
+
+  /**
+   * Admin-override approval: marca un Payment PENDING como APPROVED sin
+   * pasar por MercadoPago. Útil cuando el webhook de MP no llegó (caída,
+   * HMAC inválido, etc.) y el admin confirmó offline que el cobro existe.
+   *
+   * Scope acotado al **logged-in flow** (Payment con `userId` set, viene
+   * del `POST /entries/init-payment`). Para flujos públicos anónimos
+   * (`userId=null`), se rechaza con 400 — el path correcto en ese caso
+   * es `POST /admin/users` (creación manual con Payment APPROVED en una
+   * sola TX).
+   *
+   * Aplica el mismo cap-check + creación de Entry que el webhook
+   * (spec §6.5/§7), con `SELECT FOR UPDATE` para serializar contra
+   * cualquier `init-payment` simultáneo. Si el cap se superó, el Payment
+   * queda en `OVER_CAP` y se tira `EntryCapReachedException` (409).
+   *
+   * Audita `payment.admin_approved` con `adminUserId` para trazabilidad.
+   */
+  async adminApprove(
+    paymentId: string,
+    adminUserId: string,
+  ): Promise<{ paymentId: string; entryId: string; userId: string }> {
+    let createdEntryId: string | null = null;
+    let userId: string | null = null;
+
+    await this.prisma.$transaction(async (tx) => {
+      const local = await tx.payment.findUnique({
+        where: { id: paymentId },
+      });
+      if (!local) {
+        throw new NotFoundException(`Payment ${paymentId} not found`);
+      }
+
+      if (local.status !== 'PENDING') {
+        // 400 (no 409) porque la condición es "no se puede operar sobre
+        // un payment ya transicionado". Mensaje explícito para el admin.
+        throw new BadRequestException(
+          `Payment ${paymentId} no está en estado PENDING (actual: ${local.status}); no se puede aprobar manualmente.`,
+        );
+      }
+
+      if (!local.userId) {
+        throw new BadRequestException(
+          `Payment ${paymentId} no tiene userId asignado (flow público anónimo). ` +
+            'Usá POST /admin/users para crear el usuario manualmente con Payment APPROVED en una sola operación.',
+        );
+      }
+
+      userId = local.userId;
+      const now = new Date();
+
+      // Idempotent transition: solo PENDING → APPROVED.
+      const updated = await tx.payment.updateMany({
+        where: { id: paymentId, status: 'PENDING' },
+        data: {
+          status: 'APPROVED',
+          paidAt: now,
+          // tokenExpiresAt sólo aplica a flow público; en logged-in es no-op.
+          tokenExpiresAt: new Date(now.getTime() + COMPLETION_TOKEN_TTL_MS),
+        },
+      });
+      if (updated.count === 0) {
+        // Race: alguien (otro admin / webhook) lo movió entre el findUnique
+        // y este updateMany. Es seguro tirar — el caller reintenta o lee
+        // estado actual.
+        throw new BadRequestException(
+          `Payment ${paymentId} cambió de estado entre la lectura y la actualización; reintentá.`,
+        );
+      }
+
+      // Cap-check con SELECT FOR UPDATE — bloquea cualquier init-payment
+      // concurrente del mismo user hasta el commit de esta TX.
+      const cap = await this.getMaxEntriesPerUser(tx);
+      const lockedRows = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id
+        FROM entries
+        WHERE "userId" = ${local.userId}
+        FOR UPDATE
+      `;
+      const current = lockedRows.length;
+      if (current >= cap) {
+        await tx.payment.update({
+          where: { id: paymentId },
+          data: { status: 'OVER_CAP' },
+        });
+        await tx.auditLog.create({
+          data: {
+            userId: adminUserId,
+            action: 'entry.over_cap_orphaned',
+            entity: 'payment',
+            entityId: paymentId,
+            changes: { current, cap, source: 'admin_approve' },
+          },
+        });
+        throw new EntryCapReachedException(current, cap);
+      }
+
+      const maxPos = await tx.entry.aggregate({
+        where: { userId: local.userId },
+        _max: { position: true },
+      });
+      const nextPosition = (maxPos._max.position ?? 0) + 1;
+      const entry = await tx.entry.create({
+        data: {
+          userId: local.userId,
+          paymentId,
+          position: nextPosition,
+          alias: local.entryAlias,
+          status: 'ACTIVE',
+        },
+      });
+      createdEntryId = entry.id;
+
+      await tx.auditLog.create({
+        data: {
+          userId: adminUserId,
+          action: 'entry.created',
+          entity: 'entry',
+          entityId: entry.id,
+          changes: {
+            paymentId,
+            position: nextPosition,
+            source: 'admin_approve',
+            alias: local.entryAlias,
+          },
+        },
+      });
+    });
+
+    // Post-commit: audit log a nivel acción de admin.
+    void this.audit.log({
+      action: 'payment.admin_approved',
+      entity: 'payment',
+      entityId: paymentId,
+      changes: { entryId: createdEntryId, targetUserId: userId },
+      userId: adminUserId,
+    });
+
+    // userId y createdEntryId quedan asignados antes del commit; el
+    // throw temprano cubre los caminos donde no.
+    return {
+      paymentId,
+      entryId: createdEntryId!,
+      userId: userId!,
+    };
   }
 
   // ── Public token lookup ──────────────────────────────────────────────

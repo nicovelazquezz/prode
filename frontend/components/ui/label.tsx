@@ -2,10 +2,10 @@ import { forwardRef, type LabelHTMLAttributes } from "react";
 import { cn } from "@/lib/utils/cn";
 
 /**
- * Label uppercase tracked, estilo "H4 / Label" del DESIGN.md.
+ * Label dark editorial.
  *
- * 14px / 700 / uppercase / tracked, color text-secondary.
- * Usado encima de inputs para mantener jerarquia visual.
+ * Mono uppercase tracked (10px / 0.22em) en text-muted; misma gramática
+ * tipografica de los eyebrows del sistema landing.
  */
 export const Label = forwardRef<
   HTMLLabelElement,
@@ -14,8 +14,8 @@ export const Label = forwardRef<
   <label
     ref={ref}
     className={cn(
-      "font-sans text-xs font-bold uppercase tracking-wider",
-      "text-[var(--color-prode-text-secondary)]",
+      "font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.22em]",
+      "text-[var(--color-landing-text-muted)]",
       className,
     )}
     {...props}

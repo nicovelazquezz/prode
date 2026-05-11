@@ -35,6 +35,8 @@ describe('E2E flow #3: phase close (FINAL)', () => {
   let adminToken: string;
   let winnerUserId: string;
   let runnerUpUserId: string;
+  let winnerEntryId: string;
+  let runnerUpEntryId: string;
   let finalMatchId: string;
   let matchSnapshot: {
     status:
@@ -82,46 +84,64 @@ describe('E2E flow #3: phase close (FINAL)', () => {
       },
     });
 
-    // Inline-create two USER rows (skip the public registration flow —
-    // the prior suite already covers that, and what we care about here
-    // is the phase-close behaviour). Same pattern as
-    // `leaderboard.refresh-e2e.spec.ts`.
-    const winner = await h.prisma.user.create({
-      data: {
-        dni: uniqueDni(),
-        firstName: 'Winner',
-        lastName: 'Final',
-        whatsapp: uniqueWhatsapp(),
-        passwordHash: 'unused',
-        whatsappOptIn: true,
-      },
-    });
-    winnerUserId = winner.id;
+    // Inline-create two USER + Entry rows. Multi-prode: predictions
+    // live on entries.
+    async function makeUserWithEntry(
+      firstName: string,
+      lastName: string,
+      whatsappOptIn = true,
+    ) {
+      const u = await h.prisma.user.create({
+        data: {
+          dni: uniqueDni(),
+          firstName,
+          lastName,
+          whatsapp: uniqueWhatsapp(),
+          passwordHash: 'unused',
+          whatsappOptIn,
+        },
+      });
+      const pmt = await h.prisma.payment.create({
+        data: {
+          userId: u.id,
+          amount: 10_000,
+          method: 'CASH',
+          status: 'APPROVED',
+          paidAt: new Date(),
+          completedAt: new Date(),
+        },
+      });
+      const entry = await h.prisma.entry.create({
+        data: {
+          userId: u.id,
+          paymentId: pmt.id,
+          position: 1,
+          status: 'ACTIVE',
+        },
+      });
+      return { user: u, entry };
+    }
 
-    const runnerUp = await h.prisma.user.create({
-      data: {
-        dni: uniqueDni(),
-        firstName: 'Runner',
-        lastName: 'Up',
-        whatsapp: uniqueWhatsapp(),
-        passwordHash: 'unused',
-      },
-    });
-    runnerUpUserId = runnerUp.id;
+    const winner = await makeUserWithEntry('Winner', 'Final', true);
+    winnerUserId = winner.user.id;
+    winnerEntryId = winner.entry.id;
 
-    // Predictions: winner picks 2-1 (will match the final score → EXACT,
-    // 5 base × 5.0 multiplier = 25 pts). Runner-up picks 3-1 (winner
-    // correct, different diff → WINNER_ONLY, 1 × 5.0 = 5 pts).
+    const runnerUp = await makeUserWithEntry('Runner', 'Up');
+    runnerUpUserId = runnerUp.user.id;
+    runnerUpEntryId = runnerUp.entry.id;
+
+    // Predictions: winner entry picks 2-1 → EXACT, 5 × 5.0 = 25 pts.
+    // Runner-up entry picks 3-1 → WINNER_ONLY, 1 × 5.0 = 5 pts.
     await h.prisma.prediction.createMany({
       data: [
         {
-          userId: winnerUserId,
+          entryId: winnerEntryId,
           matchId: finalMatchId,
           scoreHome: 2,
           scoreAway: 1,
         },
         {
-          userId: runnerUpUserId,
+          entryId: runnerUpEntryId,
           matchId: finalMatchId,
           scoreHome: 3,
           scoreAway: 1,
@@ -140,6 +160,8 @@ describe('E2E flow #3: phase close (FINAL)', () => {
 
     // Drain any leftover phase-winner / leaderboard.refresh jobs from
     // earlier suites so the queue snapshot we take below is meaningful.
+    // BullMQ can return undefined entries when jobs transition states
+    // mid-iteration, so guard explicitly.
     const stale = await queue.getJobs([
       'waiting',
       'delayed',
@@ -147,6 +169,7 @@ describe('E2E flow #3: phase close (FINAL)', () => {
       'failed',
     ]);
     for (const j of stale) {
+      if (!j) continue;
       if (j.name === 'phase-winner' || j.name === 'leaderboard.refresh') {
         await j.remove().catch(() => undefined);
       }
@@ -196,13 +219,13 @@ describe('E2E flow #3: phase close (FINAL)', () => {
       .send({ scoreHome: 2, scoreAway: 1 });
     expect(finish.status).toBe(201);
 
-    // ── 2. PhaseWinner exists for FINAL with the EXACT user winning.
+    // ── 2. PhaseWinner exists for FINAL with the EXACT entry winning.
     //      maybeClosePhase ran inside finishMatchAndScore — synchronous.
     const winner = await h.prisma.phaseWinner.findUnique({
       where: { phase: 'FINAL' },
     });
     expect(winner).not.toBeNull();
-    expect(winner!.userId).toBe(winnerUserId);
+    expect(winner!.entryId).toBe(winnerEntryId);
     expect(winner!.pointsEarned).toBe(25);
     expect(winner!.prizeStatus).toBe('PENDING');
 
@@ -212,9 +235,9 @@ describe('E2E flow #3: phase close (FINAL)', () => {
     });
     expect(auditRow).not.toBeNull();
     const changes = auditRow!.changes as {
-      winner: { userId: string; points: number };
+      winner: { entryId: string; points: number };
     };
-    expect(changes.winner.userId).toBe(winnerUserId);
+    expect(changes.winner.entryId).toBe(winnerEntryId);
     expect(changes.winner.points).toBe(25);
 
     // ── 4. The `phase-winner` BullMQ job was enqueued. We can't easily
@@ -227,7 +250,7 @@ describe('E2E flow #3: phase close (FINAL)', () => {
     let saw = false;
     while (Date.now() < deadline) {
       const notif = await h.prisma.notification.findUnique({
-        where: { dedupKey: `phase-winner:FINAL:${winnerUserId}` },
+        where: { dedupKey: `phase-winner:FINAL:${winnerEntryId}` },
       });
       if (notif) {
         saw = true;
@@ -239,7 +262,7 @@ describe('E2E flow #3: phase close (FINAL)', () => {
         'delayed',
         'completed',
       ]);
-      if (jobs.some((j) => j.name === 'phase-winner')) {
+      if (jobs.some((j) => j && j.name === 'phase-winner')) {
         saw = true;
         break;
       }

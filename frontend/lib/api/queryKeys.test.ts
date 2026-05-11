@@ -46,4 +46,55 @@ describe("queryKeys", () => {
       { status: "ACTIVE" },
     ]);
   });
+
+  // ── Multi-prode: entries.* keys ─────────────────────────────────
+  it("entries.me returns a stable key", () => {
+    expect(queryKeys.entries.me()).toEqual(["entries", "me"]);
+  });
+
+  it("entries.detail composes entryId at the end", () => {
+    expect(queryKeys.entries.detail("e-1")).toEqual(["entries", "e-1"]);
+  });
+
+  it("entries.predictions namespaces under entry+predictions with filters", () => {
+    expect(queryKeys.entries.predictions("e-1")).toEqual([
+      "entries",
+      "e-1",
+      "predictions",
+      {},
+    ]);
+    expect(queryKeys.entries.predictions("e-1", { pageSize: 50 })).toEqual([
+      "entries",
+      "e-1",
+      "predictions",
+      { pageSize: 50 },
+    ]);
+  });
+
+  it("entries.predictionForMatch nests match id under the entry", () => {
+    expect(queryKeys.entries.predictionForMatch("e-1", "m-9")).toEqual([
+      "entries",
+      "e-1",
+      "predictions",
+      "match",
+      "m-9",
+    ]);
+  });
+
+  it("entries.special is per-entry", () => {
+    expect(queryKeys.entries.special("e-2")).toEqual([
+      "entries",
+      "e-2",
+      "special",
+    ]);
+  });
+
+  it("leaderboard.aroundEntry composes entryId in the middle for invalidation", () => {
+    expect(queryKeys.leaderboard.aroundEntry("e-3")).toEqual([
+      "leaderboard",
+      "entry",
+      "e-3",
+      "around",
+    ]);
+  });
 });

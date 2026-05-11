@@ -4,31 +4,43 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 
+/**
+ * Button base, paleta dark editorial (landing).
+ *
+ * - primary: bg-red, hover red-hover (CTA principal)
+ * - ghost: bg transparente, hover surface (texto cream)
+ * - outlined: border line-strong sobre surface, hover border cream
+ * - accent: alias de primary (legacy, no usar en codigo nuevo)
+ * - destructive: bg-red, alias semantico de primary
+ *
+ * Focus ring siempre en gold (editorial).
+ */
 const buttonVariants = cva(
   [
-    "inline-flex items-center justify-center font-sans font-medium text-sm",
-    "transition-colors duration-300 ease-out",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)] focus-visible:ring-offset-2",
-    "disabled:pointer-events-none disabled:opacity-50",
-    "cursor-pointer",
+    "inline-flex items-center justify-center font-[family-name:var(--font-landing-mono)] font-bold uppercase tracking-[0.18em] text-[11px]",
+    "transition-colors duration-200 ease-out",
+    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]",
+    "disabled:pointer-events-none disabled:opacity-40",
+    "rounded-sm cursor-pointer",
   ].join(" "),
   {
     variants: {
       variant: {
         primary:
-          "bg-[var(--color-prode-near-black)] text-white hover:opacity-90",
+          "bg-[var(--color-landing-red)] text-[var(--color-landing-text)] hover:bg-[var(--color-landing-red-hover)]",
         ghost:
-          "bg-transparent text-[var(--color-prode-near-black)] hover:bg-[var(--color-prode-surface)]",
+          "bg-transparent text-[var(--color-landing-text)] hover:bg-[var(--color-landing-surface)]",
         outlined:
-          "bg-white text-[var(--color-prode-near-black)] border-2 border-[var(--color-prode-border)] rounded-2xl hover:border-[var(--color-prode-near-black)]",
-        accent: "bg-[var(--color-prode-accent)] text-white hover:opacity-90",
+          "bg-transparent text-[var(--color-landing-text)] border border-[var(--color-landing-line-strong)] hover:border-[var(--color-landing-text)]",
+        accent:
+          "bg-[var(--color-landing-red)] text-[var(--color-landing-text)] hover:bg-[var(--color-landing-red-hover)]",
         destructive:
-          "bg-[var(--color-prode-accent)] text-white hover:opacity-90",
+          "bg-[var(--color-landing-red)] text-[var(--color-landing-text)] hover:bg-[var(--color-landing-red-hover)]",
       },
       size: {
-        default: "h-12 px-8",
-        sm: "h-10 px-6",
-        lg: "h-14 px-10 text-base",
+        default: "h-12 px-6",
+        sm: "h-10 px-4",
+        lg: "h-14 px-8",
       },
     },
     defaultVariants: { variant: "primary", size: "default" },

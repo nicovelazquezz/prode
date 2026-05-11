@@ -40,6 +40,16 @@ describe('GET /users/:id/public-profile (integration)', () => {
     prisma = app.get(PrismaService);
     authService = app.get(AuthService);
 
+    // Belt-and-suspenders cleanup: the seed owns matchNumber 1..104;
+    // anything above that range is leftover from a prior run whose
+    // afterAll didn't complete. Drop it before we start so the count
+    // assertions in sibling specs (matches.controller.spec) stay
+    // deterministic when this suite runs first.
+    await prisma.prediction.deleteMany({
+      where: { match: { matchNumber: { gt: 104 } } },
+    });
+    await prisma.match.deleteMany({ where: { matchNumber: { gt: 104 } } });
+
     const dniSuffix = Date.now().toString().slice(-7);
     const passwordHash = await authService.hashPassword('whatever1');
 
@@ -116,6 +126,25 @@ describe('GET /users/:id/public-profile (integration)', () => {
       },
     });
     userId = user.id;
+    // Multi-prode: user has Entry #1 backed by an APPROVED Payment.
+    const userPayment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    const userEntry = await prisma.entry.create({
+      data: {
+        userId: user.id,
+        paymentId: userPayment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
 
     const banned = await prisma.user.create({
       data: {
@@ -133,7 +162,7 @@ describe('GET /users/:id/public-profile (integration)', () => {
     // One prediction against the FINISHED match (must appear).
     await prisma.prediction.create({
       data: {
-        userId,
+        entryId: userEntry.id,
         matchId: finishedMatchId,
         scoreHome: 2,
         scoreAway: 1,
@@ -147,7 +176,7 @@ describe('GET /users/:id/public-profile (integration)', () => {
     // One prediction against the SCHEDULED match (must NOT appear).
     await prisma.prediction.create({
       data: {
-        userId,
+        entryId: userEntry.id,
         matchId: scheduledMatchId,
         scoreHome: 1,
         scoreAway: 0,
@@ -157,11 +186,7 @@ describe('GET /users/:id/public-profile (integration)', () => {
 
   afterAll(async () => {
     if (prisma) {
-      await prisma.prediction.deleteMany({
-        where: {
-          userId: { in: [userId, bannedUserId].filter(Boolean) as string[] },
-        },
-      });
+      // Predictions cascade off entries; deleting users wipes the tree.
       await prisma.user.deleteMany({
         where: {
           id: { in: [userId, bannedUserId].filter(Boolean) as string[] },
@@ -185,17 +210,19 @@ describe('GET /users/:id/public-profile (integration)', () => {
       firstName: 'Public',
       lastName: 'Profile',
     });
-    expect(Array.isArray(res.body.predictionsFinished)).toBe(true);
+    // Multi-prode: response now has entries[] each with predictionsFinished.
+    expect(Array.isArray(res.body.entries)).toBe(true);
+    expect(res.body.entries.length).toBe(1);
+    const entry = res.body.entries[0];
+    expect(Array.isArray(entry.predictionsFinished)).toBe(true);
 
-    // The SCHEDULED-match prediction must be filtered out.
-    const matchIds: string[] = res.body.predictionsFinished.map(
+    const matchIds: string[] = entry.predictionsFinished.map(
       (p: { matchId: string }) => p.matchId,
     );
     expect(matchIds).toContain(finishedMatchId);
     expect(matchIds).not.toContain(scheduledMatchId);
 
-    // FINISHED-match row carries all expected fields.
-    const fin = res.body.predictionsFinished.find(
+    const fin = entry.predictionsFinished.find(
       (p: { matchId: string }) => p.matchId === finishedMatchId,
     );
     expect(fin).toEqual(
@@ -215,6 +242,9 @@ describe('GET /users/:id/public-profile (integration)', () => {
       }),
     );
     expect(fin.match.homeTeam).toMatchObject({ fifaCode: expect.any(String) });
+    expect(typeof entry.totalPoints).toBe('number');
+    expect(entry.totalPoints).toBe(5);
+    expect(res.body.totalPoints).toBe(5);
   });
 
   it('NEVER leaks dni, whatsapp, role, status, or other sensitive User fields', async () => {

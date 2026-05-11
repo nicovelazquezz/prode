@@ -1,57 +1,434 @@
 [
-  { "fifaCode": "USA", "name": "Estados Unidos", "shortName": "USA", "flagUrl": "https://flagcdn.com/us.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": 16 },
-  { "fifaCode": "MEX", "name": "México", "shortName": "MEX", "flagUrl": "https://flagcdn.com/mx.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": 19 },
-  { "fifaCode": "CAN", "name": "Canadá", "shortName": "CAN", "flagUrl": "https://flagcdn.com/ca.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": 31 },
-
-  { "fifaCode": "ARG", "name": "Argentina", "shortName": "ARG", "flagUrl": "https://flagcdn.com/ar.svg", "confederation": "CONMEBOL", "groupCode": null, "fifaRanking": 1 },
-  { "fifaCode": "BRA", "name": "Brasil", "shortName": "BRA", "flagUrl": "https://flagcdn.com/br.svg", "confederation": "CONMEBOL", "groupCode": null, "fifaRanking": 5 },
-  { "fifaCode": "URU", "name": "Uruguay", "shortName": "URU", "flagUrl": "https://flagcdn.com/uy.svg", "confederation": "CONMEBOL", "groupCode": null, "fifaRanking": 11 },
-  { "fifaCode": "COL", "name": "Colombia", "shortName": "COL", "flagUrl": "https://flagcdn.com/co.svg", "confederation": "CONMEBOL", "groupCode": null, "fifaRanking": 14 },
-  { "fifaCode": "ECU", "name": "Ecuador", "shortName": "ECU", "flagUrl": "https://flagcdn.com/ec.svg", "confederation": "CONMEBOL", "groupCode": null, "fifaRanking": 23 },
-  { "fifaCode": "PAR", "name": "Paraguay", "shortName": "PAR", "flagUrl": "https://flagcdn.com/py.svg", "confederation": "CONMEBOL", "groupCode": null, "fifaRanking": 41 },
-
-  { "fifaCode": "FRA", "name": "Francia", "shortName": "FRA", "flagUrl": "https://flagcdn.com/fr.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 2 },
-  { "fifaCode": "ESP", "name": "España", "shortName": "ESP", "flagUrl": "https://flagcdn.com/es.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 3 },
-  { "fifaCode": "ENG", "name": "Inglaterra", "shortName": "ENG", "flagUrl": "https://flagcdn.com/gb-eng.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 4 },
-  { "fifaCode": "POR", "name": "Portugal", "shortName": "POR", "flagUrl": "https://flagcdn.com/pt.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 6 },
-  { "fifaCode": "NED", "name": "Países Bajos", "shortName": "NED", "flagUrl": "https://flagcdn.com/nl.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 7 },
-  { "fifaCode": "BEL", "name": "Bélgica", "shortName": "BEL", "flagUrl": "https://flagcdn.com/be.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 8 },
-  { "fifaCode": "GER", "name": "Alemania", "shortName": "GER", "flagUrl": "https://flagcdn.com/de.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 9 },
-  { "fifaCode": "CRO", "name": "Croacia", "shortName": "CRO", "flagUrl": "https://flagcdn.com/hr.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 10 },
-  { "fifaCode": "ITA", "name": "Italia", "shortName": "ITA", "flagUrl": "https://flagcdn.com/it.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 12 },
-  { "fifaCode": "SUI", "name": "Suiza", "shortName": "SUI", "flagUrl": "https://flagcdn.com/ch.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 17 },
-  { "fifaCode": "DEN", "name": "Dinamarca", "shortName": "DEN", "flagUrl": "https://flagcdn.com/dk.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 21 },
-  { "fifaCode": "AUT", "name": "Austria", "shortName": "AUT", "flagUrl": "https://flagcdn.com/at.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 25 },
-  { "fifaCode": "UKR", "name": "Ucrania", "shortName": "UKR", "flagUrl": "https://flagcdn.com/ua.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 27 },
-  { "fifaCode": "TUR", "name": "Turquía", "shortName": "TUR", "flagUrl": "https://flagcdn.com/tr.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 28 },
-  { "fifaCode": "SRB", "name": "Serbia", "shortName": "SRB", "flagUrl": "https://flagcdn.com/rs.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 33 },
-  { "fifaCode": "POL", "name": "Polonia", "shortName": "POL", "flagUrl": "https://flagcdn.com/pl.svg", "confederation": "UEFA", "groupCode": null, "fifaRanking": 34 },
-
-  { "fifaCode": "JPN", "name": "Japón", "shortName": "JPN", "flagUrl": "https://flagcdn.com/jp.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 15 },
-  { "fifaCode": "IRN", "name": "Irán", "shortName": "IRN", "flagUrl": "https://flagcdn.com/ir.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 18 },
-  { "fifaCode": "KOR", "name": "Corea del Sur", "shortName": "KOR", "flagUrl": "https://flagcdn.com/kr.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 22 },
-  { "fifaCode": "AUS", "name": "Australia", "shortName": "AUS", "flagUrl": "https://flagcdn.com/au.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 26 },
-  { "fifaCode": "KSA", "name": "Arabia Saudita", "shortName": "KSA", "flagUrl": "https://flagcdn.com/sa.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 56 },
-  { "fifaCode": "QAT", "name": "Qatar", "shortName": "QAT", "flagUrl": "https://flagcdn.com/qa.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 58 },
-  { "fifaCode": "UZB", "name": "Uzbekistán", "shortName": "UZB", "flagUrl": "https://flagcdn.com/uz.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 57 },
-  { "fifaCode": "JOR", "name": "Jordania", "shortName": "JOR", "flagUrl": "https://flagcdn.com/jo.svg", "confederation": "AFC", "groupCode": null, "fifaRanking": 70 },
-
-  { "fifaCode": "MAR", "name": "Marruecos", "shortName": "MAR", "flagUrl": "https://flagcdn.com/ma.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 13 },
-  { "fifaCode": "SEN", "name": "Senegal", "shortName": "SEN", "flagUrl": "https://flagcdn.com/sn.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 20 },
-  { "fifaCode": "EGY", "name": "Egipto", "shortName": "EGY", "flagUrl": "https://flagcdn.com/eg.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 32 },
-  { "fifaCode": "NGA", "name": "Nigeria", "shortName": "NGA", "flagUrl": "https://flagcdn.com/ng.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 35 },
-  { "fifaCode": "ALG", "name": "Argelia", "shortName": "ALG", "flagUrl": "https://flagcdn.com/dz.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 36 },
-  { "fifaCode": "CIV", "name": "Costa de Marfil", "shortName": "CIV", "flagUrl": "https://flagcdn.com/ci.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 38 },
-  { "fifaCode": "TUN", "name": "Túnez", "shortName": "TUN", "flagUrl": "https://flagcdn.com/tn.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 42 },
-  { "fifaCode": "CMR", "name": "Camerún", "shortName": "CMR", "flagUrl": "https://flagcdn.com/cm.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 44 },
-  { "fifaCode": "GHA", "name": "Ghana", "shortName": "GHA", "flagUrl": "https://flagcdn.com/gh.svg", "confederation": "CAF", "groupCode": null, "fifaRanking": 70 },
-
-  { "fifaCode": "PAN", "name": "Panamá", "shortName": "PAN", "flagUrl": "https://flagcdn.com/pa.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": 39 },
-  { "fifaCode": "CRC", "name": "Costa Rica", "shortName": "CRC", "flagUrl": "https://flagcdn.com/cr.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": 47 },
-  { "fifaCode": "JAM", "name": "Jamaica", "shortName": "JAM", "flagUrl": "https://flagcdn.com/jm.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": 52 },
-
-  { "fifaCode": "NZL", "name": "Nueva Zelanda", "shortName": "NZL", "flagUrl": "https://flagcdn.com/nz.svg", "confederation": "OFC", "groupCode": null, "fifaRanking": 89 },
-
-  { "fifaCode": "PLA", "name": "Repechaje 1 (CONMEBOL/CONCACAF/AFC/OFC/CAF)", "shortName": "PL1", "flagUrl": "https://flagcdn.com/un.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": null },
-  { "fifaCode": "PLB", "name": "Repechaje 2 (CONMEBOL/CONCACAF/AFC/OFC/CAF)", "shortName": "PL2", "flagUrl": "https://flagcdn.com/un.svg", "confederation": "CONCACAF", "groupCode": null, "fifaRanking": null }
+  {
+    "fifaCode": "CZE",
+    "name": "República Checa",
+    "shortName": "CZE",
+    "flagUrl": "https://static.flashscore.com/res/image/data/GAWR2Tme-b1xaMyVe.png",
+    "confederation": "UEFA",
+    "groupCode": "A",
+    "fifaRanking": null
+  },
+  {
+    "fifaCode": "MEX",
+    "name": "México",
+    "shortName": "MEX",
+    "flagUrl": "https://static.flashscore.com/res/image/data/hv6zUUPq-IPF97VQ3.png",
+    "confederation": "CONCACAF",
+    "groupCode": "A",
+    "fifaRanking": 19
+  },
+  {
+    "fifaCode": "RSA",
+    "name": "Sudáfrica",
+    "shortName": "RSA",
+    "flagUrl": "https://static.flashscore.com/res/image/data/rVRaM7A6-xQxQqqtQ.png",
+    "confederation": "CAF",
+    "groupCode": "A",
+    "fifaRanking": null
+  },
+  {
+    "fifaCode": "KOR",
+    "name": "Corea del Sur",
+    "shortName": "KOR",
+    "flagUrl": "https://static.flashscore.com/res/image/data/G6sdC2S0-63aNArwB.png",
+    "confederation": "AFC",
+    "groupCode": "A",
+    "fifaRanking": 22
+  },
+  {
+    "fifaCode": "SUI",
+    "name": "Suiza",
+    "shortName": "SUI",
+    "flagUrl": "https://static.flashscore.com/res/image/data/buRKTH76-88LAtdNt.png",
+    "confederation": "UEFA",
+    "groupCode": "B",
+    "fifaRanking": 17
+  },
+  {
+    "fifaCode": "BIH",
+    "name": "Bosnia-Herzegovina",
+    "shortName": "BIH",
+    "flagUrl": "https://static.flashscore.com/res/image/data/fgkmOTPq-Cfuwb3yH.png",
+    "confederation": "UEFA",
+    "groupCode": "B",
+    "fifaRanking": null
+  },
+  {
+    "fifaCode": "CAN",
+    "name": "Canadá",
+    "shortName": "CAN",
+    "flagUrl": "https://static.flashscore.com/res/image/data/bymI0wAN-EqLGVN18.png",
+    "confederation": "CONCACAF",
+    "groupCode": "B",
+    "fifaRanking": 31
+  },
+  {
+    "fifaCode": "QAT",
+    "name": "Catar",
+    "shortName": "QAT",
+    "flagUrl": "https://static.flashscore.com/res/image/data/WEb3WvAN-UPMdbcD9.png",
+    "confederation": "AFC",
+    "groupCode": "B",
+    "fifaRanking": 58
+  },
+  {
+    "fifaCode": "SCO",
+    "name": "Escocia",
+    "shortName": "SCO",
+    "flagUrl": "https://static.flashscore.com/res/image/data/zknbF9U0-lfZlm1uk.png",
+    "confederation": "UEFA",
+    "groupCode": "C",
+    "fifaRanking": null
+  },
+  {
+    "fifaCode": "BRA",
+    "name": "Brasil",
+    "shortName": "BRA",
+    "flagUrl": "https://static.flashscore.com/res/image/data/S4Kz1kjC-88LAtdNt.png",
+    "confederation": "CONMEBOL",
+    "groupCode": "C",
+    "fifaRanking": 5
+  },
+  {
+    "fifaCode": "HAI",
+    "name": "Haití",
+    "shortName": "HAI",
+    "flagUrl": "https://static.flashscore.com/res/image/data/d2aGgEQq-GY05WHbt.png",
+    "confederation": "CONCACAF",
+    "groupCode": "C",
+    "fifaRanking": null
+  },
+  {
+    "fifaCode": "MAR",
+    "name": "Marruecos",
+    "shortName": "MAR",
+    "flagUrl": "https://static.flashscore.com/res/image/data/r18xjQkC-hOurGDLS.png",
+    "confederation": "CAF",
+    "groupCode": "C",
+    "fifaRanking": 13
+  },
+  {
+    "fifaCode": "TUR",
+    "name": "Turquía",
+    "shortName": "TUR",
+    "flagUrl": "https://static.flashscore.com/res/image/data/OIr3e18k-Cfuwb3yH.png",
+    "confederation": "UEFA",
+    "groupCode": "D",
+    "fifaRanking": 28
+  },
+  {
+    "fifaCode": "PAR",
+    "name": "Paraguay",
+    "shortName": "PAR",
+    "flagUrl": "https://static.flashscore.com/res/image/data/OMtYzrU0-I5qbBI7s.png",
+    "confederation": "CONMEBOL",
+    "groupCode": "D",
+    "fifaRanking": 41
+  },
+  {
+    "fifaCode": "USA",
+    "name": "EE. UU.",
+    "shortName": "USA",
+    "flagUrl": "https://static.flashscore.com/res/image/data/xfxMId8k-MPdHoKT3.png",
+    "confederation": "CONCACAF",
+    "groupCode": "D",
+    "fifaRanking": 16
+  },
+  {
+    "fifaCode": "AUS",
+    "name": "Australia",
+    "shortName": "AUS",
+    "flagUrl": "https://static.flashscore.com/res/image/data/fJEGt1U0-YNb3oHYR.png",
+    "confederation": "AFC",
+    "groupCode": "D",
+    "fifaRanking": 26
+  },
+  {
+    "fifaCode": "GER",
+    "name": "Alemania",
+    "shortName": "GER",
+    "flagUrl": "https://static.flashscore.com/res/image/data/0SofTgVH-fB4vYUZp.png",
+    "confederation": "UEFA",
+    "groupCode": "E",
+    "fifaRanking": 9
+  },
+  {
+    "fifaCode": "ECU",
+    "name": "Ecuador",
+    "shortName": "ECU",
+    "flagUrl": "https://static.flashscore.com/res/image/data/nun1o8jC-IPF97VQ3.png",
+    "confederation": "CONMEBOL",
+    "groupCode": "E",
+    "fifaRanking": 23
+  },
+  {
+    "fifaCode": "CIV",
+    "name": "Costa de Marfil",
+    "shortName": "CIV",
+    "flagUrl": "https://static.flashscore.com/res/image/data/dbwcq8A6-zTSy144G.png",
+    "confederation": "CAF",
+    "groupCode": "E",
+    "fifaRanking": 38
+  },
+  {
+    "fifaCode": "CUW",
+    "name": "Curazao",
+    "shortName": "CUW",
+    "flagUrl": "https://static.flashscore.com/res/image/data/KSAOfD7k-dERAD3h1.png",
+    "confederation": "CONCACAF",
+    "groupCode": "E",
+    "fifaRanking": null
+  },
+  {
+    "fifaCode": "SWE",
+    "name": "Suecia",
+    "shortName": "SWE",
+    "flagUrl": "https://static.flashscore.com/res/image/data/rXAnIK96-Uywods6T.png",
+    "confederation": "UEFA",
+    "groupCode": "F",
+    "fifaRanking": null
+  },
+  {
+    "fifaCode": "NED",
+    "name": "Países Bajos",
+    "shortName": "NED",
+    "flagUrl": "https://static.flashscore.com/res/image/data/MkxaoTAN-fazrR153.png",
+    "confederation": "UEFA",
+    "groupCode": "F",
+    "fifaRanking": 7
+  },
+  {
+    "fifaCode": "TUN",
+    "name": "Túnez",
+    "shortName": "TUN",
+    "flagUrl": "https://static.flashscore.com/res/image/data/rZRftulC-67eTsYY5.png",
+    "confederation": "CAF",
+    "groupCode": "F",
+    "fifaRanking": 42
+  },
+  {
+    "fifaCode": "JPN",
+    "name": "Japón",
+    "shortName": "JPN",
+    "flagUrl": "https://static.flashscore.com/res/image/data/Y7SDT7T0-8toS1iya.png",
+    "confederation": "AFC",
+    "groupCode": "F",
+    "fifaRanking": 15
+  },
+  {
+    "fifaCode": "BEL",
+    "name": "Bélgica",
+    "shortName": "BEL",
+    "flagUrl": "https://static.flashscore.com/res/image/data/AqUnTDAN-dtrVaP64.png",
+    "confederation": "UEFA",
+    "groupCode": "G",
+    "fifaRanking": 8
+  },
+  {
+    "fifaCode": "EGY",
+    "name": "Egipto",
+    "shortName": "EGY",
+    "flagUrl": "https://static.flashscore.com/res/image/data/SKagcEU0-j9fRtEHh.png",
+    "confederation": "CAF",
+    "groupCode": "G",
+    "fifaRanking": 32
+  },
+  {
+    "fifaCode": "IRN",
+    "name": "Irán",
+    "shortName": "IRN",
+    "flagUrl": "https://static.flashscore.com/res/image/data/0OVmBa6k-h2ICxBRT.png",
+    "confederation": "AFC",
+    "groupCode": "G",
+    "fifaRanking": 18
+  },
+  {
+    "fifaCode": "NZL",
+    "name": "Nueva Zelanda",
+    "shortName": "NZL",
+    "flagUrl": "https://static.flashscore.com/res/image/data/jJWwg8S0-zmDbXBOa.png",
+    "confederation": "OFC",
+    "groupCode": "G",
+    "fifaRanking": 89
+  },
+  {
+    "fifaCode": "ESP",
+    "name": "España",
+    "shortName": "ESP",
+    "flagUrl": "https://static.flashscore.com/res/image/data/6eDtOume-0E8Iihe1.png",
+    "confederation": "UEFA",
+    "groupCode": "H",
+    "fifaRanking": 3
+  },
+  {
+    "fifaCode": "URU",
+    "name": "Uruguay",
+    "shortName": "URU",
+    "flagUrl": "https://static.flashscore.com/res/image/data/pvtmslhT-WdZ4jMrq.png",
+    "confederation": "CONMEBOL",
+    "groupCode": "H",
+    "fifaRanking": 11
+  },
+  {
+    "fifaCode": "CPV",
+    "name": "Cabo Verde",
+    "shortName": "CPV",
+    "flagUrl": "https://static.flashscore.com/res/image/data/vRSce5lC-GvK8wiCN.png",
+    "confederation": "CAF",
+    "groupCode": "H",
+    "fifaRanking": null
+  },
+  {
+    "fifaCode": "KSA",
+    "name": "Arabia Saudí",
+    "shortName": "KSA",
+    "flagUrl": "https://static.flashscore.com/res/image/data/xIdEGDme-KtpTLRpL.png",
+    "confederation": "AFC",
+    "groupCode": "H",
+    "fifaRanking": 56
+  },
+  {
+    "fifaCode": "FRA",
+    "name": "Francia",
+    "shortName": "FRA",
+    "flagUrl": "https://static.flashscore.com/res/image/data/04V6zbA6-U3HPIwDq.png",
+    "confederation": "UEFA",
+    "groupCode": "I",
+    "fifaRanking": 2
+  },
+  {
+    "fifaCode": "NOR",
+    "name": "Noruega",
+    "shortName": "NOR",
+    "flagUrl": "https://static.flashscore.com/res/image/data/vDNLLPme-8doAmYTm.png",
+    "confederation": "UEFA",
+    "groupCode": "I",
+    "fifaRanking": null
+  },
+  {
+    "fifaCode": "SEN",
+    "name": "Senegal",
+    "shortName": "SEN",
+    "flagUrl": "https://static.flashscore.com/res/image/data/xORbTVT0-lQcLqf4g.png",
+    "confederation": "CAF",
+    "groupCode": "I",
+    "fifaRanking": 20
+  },
+  {
+    "fifaCode": "IRQ",
+    "name": "Irak",
+    "shortName": "IRQ",
+    "flagUrl": "https://static.flashscore.com/res/image/data/bXGnzmPq-4EsvakLH.png",
+    "confederation": "AFC",
+    "groupCode": "I",
+    "fifaRanking": null
+  },
+  {
+    "fifaCode": "AUT",
+    "name": "Austria",
+    "shortName": "AUT",
+    "flagUrl": "https://static.flashscore.com/res/image/data/hO1wW196-6cnthjRG.png",
+    "confederation": "UEFA",
+    "groupCode": "J",
+    "fifaRanking": 25
+  },
+  {
+    "fifaCode": "ARG",
+    "name": "Argentina",
+    "shortName": "ARG",
+    "flagUrl": "https://static.flashscore.com/res/image/data/ObxjG3Rq-nBWCl0De.png",
+    "confederation": "CONMEBOL",
+    "groupCode": "J",
+    "fifaRanking": 1
+  },
+  {
+    "fifaCode": "ALG",
+    "name": "Argelia",
+    "shortName": "ALG",
+    "flagUrl": "https://static.flashscore.com/res/image/data/A9ccQtU0-YFbDUeTh.png",
+    "confederation": "CAF",
+    "groupCode": "J",
+    "fifaRanking": 36
+  },
+  {
+    "fifaCode": "JOR",
+    "name": "Jordania",
+    "shortName": "JOR",
+    "flagUrl": "https://static.flashscore.com/res/image/data/lC24EqiT-r5trb9zO.png",
+    "confederation": "AFC",
+    "groupCode": "J",
+    "fifaRanking": 70
+  },
+  {
+    "fifaCode": "POR",
+    "name": "Portugal",
+    "shortName": "POR",
+    "flagUrl": "https://static.flashscore.com/res/image/data/Grhsr8gT-vZG58BBc.png",
+    "confederation": "UEFA",
+    "groupCode": "K",
+    "fifaRanking": 6
+  },
+  {
+    "fifaCode": "COL",
+    "name": "Colombia",
+    "shortName": "COL",
+    "flagUrl": "https://static.flashscore.com/res/image/data/Y70aXOTH-C6kVdO5F.png",
+    "confederation": "CONMEBOL",
+    "groupCode": "K",
+    "fifaRanking": 14
+  },
+  {
+    "fifaCode": "COD",
+    "name": "RD Congo",
+    "shortName": "COD",
+    "flagUrl": "https://static.flashscore.com/res/image/data/ILTHkp96-YFbDUeTh.png",
+    "confederation": "CAF",
+    "groupCode": "K",
+    "fifaRanking": null
+  },
+  {
+    "fifaCode": "UZB",
+    "name": "Uzbekistán",
+    "shortName": "UZB",
+    "flagUrl": "https://static.flashscore.com/res/image/data/najJX2oe-MeuncTkU.png",
+    "confederation": "AFC",
+    "groupCode": "K",
+    "fifaRanking": 57
+  },
+  {
+    "fifaCode": "CRO",
+    "name": "Croacia",
+    "shortName": "CRO",
+    "flagUrl": "https://static.flashscore.com/res/image/data/GAQDu7jC-zXtZbqMA.png",
+    "confederation": "UEFA",
+    "groupCode": "L",
+    "fifaRanking": 10
+  },
+  {
+    "fifaCode": "ENG",
+    "name": "Inglaterra",
+    "shortName": "ENG",
+    "flagUrl": "https://static.flashscore.com/res/image/data/lfoVvLPq-Iyld3bDd.png",
+    "confederation": "UEFA",
+    "groupCode": "L",
+    "fifaRanking": 4
+  },
+  {
+    "fifaCode": "GHA",
+    "name": "Ghana",
+    "shortName": "GHA",
+    "flagUrl": "https://static.flashscore.com/res/image/data/OzvG52Rq-8vfTQDSH.png",
+    "confederation": "CAF",
+    "groupCode": "L",
+    "fifaRanking": 70
+  },
+  {
+    "fifaCode": "PAN",
+    "name": "Panamá",
+    "shortName": "PAN",
+    "flagUrl": "https://static.flashscore.com/res/image/data/WYjftaA6-6yXdouA1.png",
+    "confederation": "CONCACAF",
+    "groupCode": "L",
+    "fifaRanking": 39
+  }
 ]

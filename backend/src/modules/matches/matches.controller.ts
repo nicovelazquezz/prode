@@ -150,4 +150,23 @@ export class AdminMatchesController {
       userAgent: ctx.userAgent,
     });
   }
+
+  /**
+   * Marca un partido como CANCELLED. Pensado para cuando la FIFA o el
+   * organizador decide no jugar el partido (no se reprograma). Sin body —
+   * la razón es externa al sistema, solo registramos la transición.
+   */
+  @Post(':id/cancel')
+  async cancel(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Req() req: Request,
+  ) {
+    const ctx = getRequestContext(req);
+    return this.matchesService.cancel(id, {
+      userId: user?.id ?? null,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+    });
+  }
 }

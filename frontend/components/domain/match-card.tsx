@@ -1,9 +1,9 @@
 "use client";
 
-import { Lock, Loader2, RefreshCw } from "lucide-react";
-import type { Match, Prediction } from "@/lib/api/types";
+import { useEffect, useState } from "react";
+import { Lock, Loader2 } from "lucide-react";
+import type { Match, OutcomeType, Prediction } from "@/lib/api/types";
 import { TeamFlag } from "@/components/domain/team-flag";
-import { ScoreDisplay } from "@/components/domain/score-display";
 import { PredictionInput } from "@/components/domain/prediction-input";
 import { PointsCelebration } from "@/components/domain/points-celebration";
 import { useCountdown } from "@/lib/hooks/use-countdown";
@@ -22,6 +22,20 @@ export type MatchCardState =
   | "retrying" // sin conexion / reintentando
   | "locked" // locked sin resultado (CERRADO)
   | "finished"; // resultado oficial cargado
+
+/**
+ * Sub-estado que se usa SOLO cuando `state === "finished"`. Se mapea
+ * desde `prediction.outcomeType` (o "miss" si no hay prediction). Lo
+ * exponemos en `data-outcome` para tests + selectors CSS y para
+ * elegir el tratamiento visual del card (gold celebración para
+ * EXACT, green fuerte para WINNER+DIFF, etc.).
+ */
+export type FinishedOutcome =
+  | "exact"
+  | "winner-diff"
+  | "winner-only"
+  | "draw-different"
+  | "miss";
 
 interface MatchCardProps {
   match: Match;
@@ -63,13 +77,16 @@ const PHASE_LABELS: Record<string, string> = {
 };
 
 /**
- * Match card con los 5 estados visuales del spec §6.4. Sin opacity
- * en el locked state — preservar contraste WCAG AA es prioridad.
- *
- * El card es informativo (no clickable globalmente). Los inputs de
- * la prediccion son los puntos de interaccion. La pagina detalle
- * (`/predicciones/[matchId]`) se navega via boton dedicado o
- * Link wrapper — esto evita gestos accidentales en mobile.
+ * Match card "Editorial Scoreboard" v4 — DNA del landing aplicado:
+ *  - Top band con `match #` + group chip + meta (kickoff · venue)
+ *  - Body crosshair (flag/fifa/name a los lados, prediction o resultado al medio)
+ *  - Foot con state badge + pts badge tipográfico
+ *  - Cada estado tiene tratamiento visual notorio: border-top color +
+ *    grosor + bg gradient o pattern. 4 sub-estados de finished
+ *    (exact, winner-diff, winner-only/draw-different, miss).
+ *  - Animaciones puntuales: input-pulse en empty, match-shake al entrar
+ *    en retrying, pulse-dot en pendiente / live-blink en IN_PROGRESS.
+ *  - reduced-motion respetado via globals.css.
  */
 export function MatchCard({
   match,
@@ -80,97 +97,236 @@ export function MatchCard({
   error = false,
 }: MatchCardProps) {
   const state = computeState({ match, prediction, loading, error });
+  const finishedOutcome: FinishedOutcome | null =
+    state === "finished" ? computeFinishedOutcome(prediction) : null;
+
+  // Shake one-shot al pasar a retrying. useEffect mete la clase y la
+  // saca a los 400ms para que la animación no se reproduzca en cada
+  // re-render mientras `error` sigue true.
+  const [shake, setShake] = useState(false);
+  useEffect(() => {
+    if (state === "retrying") {
+      setShake(true);
+      const id = window.setTimeout(() => setShake(false), 400);
+      return () => window.clearTimeout(id);
+    }
+  }, [state]);
+
   const home = match.homeTeam;
   const away = match.awayTeam;
   const homeName = home?.name ?? match.homeTeamLabel ?? "Por definir";
   const awayName = away?.name ?? match.awayTeamLabel ?? "Por definir";
 
-  const inputDisabled = state === "locked" || state === "finished";
+  // CANCELLED se mapea a state="locked" para deshabilitar inputs igual que
+  // un partido cerrado, pero queremos comunicar visualmente que el partido
+  // NO se juega (no es lo mismo que "ya empezó / cerrado por kickoff").
+  const isCancelled = match.status === "CANCELLED";
+  // Partidos de fase knockout cuyos equipos todavía no fueron asignados
+  // por el admin (hasta que terminen los grupos previos). El form no debe
+  // aceptar predicciones contra placeholders — el user no sabe contra
+  // quién está apostando realmente.
+  const isKnockoutPlaceholder =
+    match.phase !== "GROUPS" && (!match.homeTeam || !match.awayTeam);
+  const inputDisabled =
+    state === "locked" || state === "finished" || isKnockoutPlaceholder;
+  const matchNumberPadded = String(match.matchNumber).padStart(2, "0");
+  const isInProgress = match.status === "IN_PROGRESS";
+
+  // Sub-estado tone para los inputs del PredictionInput (color de border).
+  // Solo aplica en estados open; locked/finished usan disabled tone propio.
+  const inputTone: "default" | "saved" | "retrying" | "empty" =
+    state === "saved"
+      ? "saved"
+      : state === "retrying"
+        ? "retrying"
+        : state === "empty"
+          ? "empty"
+          : "default";
 
   return (
     <article
       className={cn(
-        "rounded-md p-4 transition-colors",
-        state === "empty" && "border border-[var(--color-prode-border)] bg-white",
-        state === "saved" &&
-          "border-2 border-[var(--color-prode-near-black)] bg-white",
-        state === "retrying" &&
-          "border-2 border-[var(--color-prode-accent)] bg-white",
-        state === "locked" && "bg-[color-mix(in_srgb,var(--color-prode-surface)_60%,white)] border border-[var(--color-prode-border)]",
-        state === "finished" &&
-          (prediction && prediction.pointsEarned > 0
-            ? "border-2 border-[var(--color-prode-accent)] bg-white"
-            : "border border-[var(--color-prode-border)] bg-white"),
+        // Base
+        "relative overflow-hidden rounded-sm transition-colors duration-200",
+        "border border-[var(--color-landing-line-strong)]",
+        "bg-[var(--color-landing-surface)]",
+        // Border-top tinted by state (más grueso = más urgencia)
+        state === "empty" && "border-t-[4px] border-t-[var(--color-landing-gold)]",
+        state === "saved" && "border-t-[4px] border-t-[var(--color-landing-green)]",
+        state === "retrying" && "border-t-[4px] border-t-[var(--color-landing-red)]",
+        state === "locked" && !isCancelled && "border-t-[2px] border-t-[var(--color-landing-line-strong)] opacity-[0.85]",
+        isCancelled && "border-t-[3px] border-t-[var(--color-landing-red)] opacity-[0.7]",
+        // Finished sub-states
+        finishedOutcome === "exact" &&
+          "border-[rgba(200,160,83,0.5)] border-t-[4px] border-t-[var(--color-landing-gold)] shadow-[0_0_0_1px_rgba(200,160,83,0.1)]",
+        finishedOutcome === "winner-diff" &&
+          "border-t-[4px] border-t-[var(--color-landing-green)]",
+        (finishedOutcome === "winner-only" ||
+          finishedOutcome === "draw-different") &&
+          "border-t-[3px] border-t-[rgba(92,120,71,0.6)]",
+        finishedOutcome === "miss" &&
+          "border-t-[2px] border-t-[var(--color-landing-line)] opacity-[0.62]",
+        shake && "match-shake",
       )}
+      style={
+        // Background gradient/pattern por estado (más expresivo que solid)
+        state === "empty"
+          ? {
+              backgroundImage:
+                "linear-gradient(180deg, rgba(200, 160, 83, 0.08) 0%, transparent 35%)",
+            }
+          : state === "saved"
+            ? {
+                backgroundImage:
+                  "linear-gradient(180deg, rgba(92, 120, 71, 0.08) 0%, transparent 35%)",
+              }
+            : state === "retrying"
+              ? {
+                  backgroundImage:
+                    "linear-gradient(180deg, rgba(163, 61, 61, 0.10) 0%, transparent 35%)",
+                }
+              : state === "locked"
+                ? {
+                    backgroundImage:
+                      "repeating-linear-gradient(135deg, transparent 0, transparent 16px, rgba(241,236,224,0.015) 16px, rgba(241,236,224,0.015) 17px)",
+                  }
+                : finishedOutcome === "exact"
+                  ? {
+                      backgroundImage:
+                        "linear-gradient(180deg, rgba(200, 160, 83, 0.10) 0%, transparent 50%)",
+                    }
+                  : finishedOutcome === "winner-diff"
+                    ? {
+                        backgroundImage:
+                          "linear-gradient(180deg, rgba(92, 120, 71, 0.08) 0%, transparent 40%)",
+                      }
+                    : finishedOutcome === "miss"
+                      ? {
+                          backgroundImage:
+                            "repeating-linear-gradient(135deg, transparent 0, transparent 12px, rgba(0,0,0,0.08) 12px, rgba(0,0,0,0.08) 13px)",
+                        }
+                      : undefined
+      }
       aria-label={`${homeName} vs ${awayName}`}
       data-state={state}
+      data-outcome={finishedOutcome ?? undefined}
     >
-      {/* Header meta */}
+      {/* TOP BAND — match # + group chip + meta */}
       <header
         className={cn(
-          "flex items-center justify-between gap-2 mb-3",
-          "font-sans text-[11px] font-bold uppercase tracking-wider",
-          state === "locked"
-            ? "text-[var(--color-prode-text-muted)]"
-            : "text-[var(--color-prode-text-secondary)]",
+          "flex items-center justify-between gap-3 px-4 py-2",
+          "border-b border-[var(--color-landing-line)]",
+          "bg-[var(--color-landing-surface-2)]",
+          state === "locked" && "bg-black/30",
+          "font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em]",
+          "text-[var(--color-landing-text-muted)]",
         )}
       >
-        <span>
-          {match.groupCode
-            ? `GRUPO ${match.groupCode}`
-            : PHASE_LABELS[match.phase] ?? match.phase}
-          {" • "}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span
+            className={cn(
+              "font-[family-name:var(--font-landing-display)] text-[14px] leading-none tracking-wider",
+              "transition-colors duration-200",
+              state === "empty" && "text-[var(--color-landing-gold)]",
+              state === "saved" && "text-[var(--color-landing-green)]",
+              state === "retrying" && "text-[var(--color-landing-red)]",
+              state === "locked" && "text-[var(--color-landing-text-muted)]",
+              finishedOutcome === "exact" && "text-[var(--color-landing-gold)]",
+              finishedOutcome === "winner-diff" && "text-[var(--color-landing-green)]",
+              (finishedOutcome === "winner-only" ||
+                finishedOutcome === "draw-different") &&
+                "text-[rgba(92,120,71,0.85)]",
+              finishedOutcome === "miss" && "text-[var(--color-landing-text-muted)]",
+            )}
+          >
+            {matchNumberPadded}
+          </span>
+          {match.groupCode ? (
+            <span
+              className={cn(
+                "inline-flex px-1.5 py-0.5 rounded-sm",
+                "font-[family-name:var(--font-landing-mono)] text-[9px] tracking-[0.16em]",
+                "border border-[rgba(62,84,137,0.4)] bg-[rgba(62,84,137,0.18)] text-[#95a8d4]",
+              )}
+            >
+              GRUPO {match.groupCode}
+            </span>
+          ) : (
+            <span className="text-[var(--color-landing-text-muted)]">
+              {PHASE_LABELS[match.phase] ?? match.phase}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 min-w-0 truncate">
           <KickoffTime iso={match.kickoffAt} />
-          {match.venue ? <> {" • "}{match.venue}</> : null}
-        </span>
+          {match.venue ? (
+            <>
+              <span className="opacity-50">·</span>
+              <span className="truncate">{match.venue.toUpperCase()}</span>
+            </>
+          ) : null}
+        </div>
       </header>
 
-      {/* Body: 2 rows */}
-      <div className="flex flex-col gap-3">
-        <TeamRow
+      {/* SCOREBOARD — crosshair body */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-4 md:px-4 md:py-5">
+        <TeamSide
           name={homeName}
           fifaCode={home?.fifaCode}
-          predictionScore={prediction?.scoreHome ?? null}
-          finalScore={state === "finished" ? match.scoreHome : null}
-          disabled={inputDisabled}
-          onOpenSheet={() => onOpenSheet?.(match.id)}
-          onChange={(score) => {
-            if (score === null) return;
-            const otherScore = prediction?.scoreAway ?? null;
-            if (otherScore === null) return;
-            onPredict?.(match.id, { scoreHome: score, scoreAway: otherScore });
-          }}
-          ariaLabel={`Prediccion ${homeName}`}
+          flagUrl={home?.flagUrl}
         />
-        <TeamRow
+        <CenterCol
+          state={state}
+          finishedOutcome={finishedOutcome}
+          match={match}
+          prediction={prediction}
+          inputDisabled={inputDisabled}
+          inputTone={inputTone}
+          isInProgress={isInProgress}
+          isKnockoutPlaceholder={isKnockoutPlaceholder}
+          onOpenSheet={() => onOpenSheet?.(match.id)}
+          onPredict={onPredict}
+          homeName={homeName}
+          awayName={awayName}
+        />
+        <TeamSide
           name={awayName}
           fifaCode={away?.fifaCode}
-          predictionScore={prediction?.scoreAway ?? null}
-          finalScore={state === "finished" ? match.scoreAway : null}
-          disabled={inputDisabled}
-          onOpenSheet={() => onOpenSheet?.(match.id)}
-          onChange={(score) => {
-            if (score === null) return;
-            const otherScore = prediction?.scoreHome ?? null;
-            if (otherScore === null) return;
-            onPredict?.(match.id, { scoreHome: otherScore, scoreAway: score });
-          }}
-          ariaLabel={`Prediccion ${awayName}`}
+          flagUrl={away?.flagUrl}
         />
       </div>
 
-      {/* Footer: countdown + state badge */}
-      <footer className="mt-4 flex items-center justify-between gap-3">
-        <Countdown match={match} state={state} />
-        <StateBadge state={state} prediction={prediction} />
+      {/* FOOT — state badge + pts badge */}
+      <footer
+        className={cn(
+          "flex items-center justify-between gap-3 px-4 py-2.5",
+          "border-t border-[var(--color-landing-line)]",
+          "bg-[var(--color-landing-surface-2)]",
+          state === "locked" && "bg-black/30",
+          "font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.18em]",
+        )}
+      >
+        <FootLeft
+          state={state}
+          finishedOutcome={finishedOutcome}
+          match={match}
+          isInProgress={isInProgress}
+          isKnockoutPlaceholder={isKnockoutPlaceholder}
+        />
+        <FootRight
+          state={state}
+          finishedOutcome={finishedOutcome}
+          prediction={prediction}
+          match={match}
+          isKnockoutPlaceholder={isKnockoutPlaceholder}
+        />
       </footer>
 
-      {/* Finished — show points + breakdown when prediction exists */}
-      {state === "finished" && prediction ? (
-        <FinishedSummary
-          match={match}
-          prediction={prediction}
-        />
+      {/* Celebración de puntos — solo eval reciente + pts > 0 */}
+      {state === "finished" && prediction && shouldCelebrate(prediction) ? (
+        <div className="px-4 pb-3 -mt-1">
+          <PointsCelebration points={prediction.pointsEarned} />
+        </div>
       ) : null}
     </article>
   );
@@ -201,240 +357,517 @@ function computeState({
   return "empty";
 }
 
-interface TeamRowProps {
-  name: string;
-  fifaCode?: string;
-  predictionScore: number | null;
-  finalScore: number | null;
-  disabled: boolean;
-  onOpenSheet: () => void;
-  onChange: (score: number | null) => void;
-  ariaLabel: string;
+function computeFinishedOutcome(
+  prediction: Prediction | null | undefined,
+): FinishedOutcome {
+  // Sin prediction o sin outcomeType evaluado todavía → tratar como miss.
+  // (Si el match ya está FINISHED y la evaluación llegó, outcomeType
+  // estará seteado.)
+  if (!prediction || !prediction.outcomeType) return "miss";
+  return outcomeToSubtype(prediction.outcomeType);
 }
 
-function TeamRow({
-  name,
-  fifaCode,
-  predictionScore,
-  finalScore,
-  disabled,
-  onOpenSheet,
-  onChange,
-  ariaLabel,
-}: TeamRowProps) {
+function outcomeToSubtype(o: OutcomeType): FinishedOutcome {
+  switch (o) {
+    case "EXACT":
+      return "exact";
+    case "WINNER_AND_DIFF":
+      return "winner-diff";
+    case "WINNER_ONLY":
+      return "winner-only";
+    case "DRAW_DIFFERENT":
+      return "draw-different";
+    case "MISS":
+      return "miss";
+  }
+}
+
+function shouldCelebrate(prediction: Prediction): boolean {
+  if (!prediction.evaluatedAt) return false;
+  if (prediction.pointsEarned <= 0) return false;
+  const elapsed = Date.now() - new Date(prediction.evaluatedAt).getTime();
+  return elapsed < RECENT_EVAL_WINDOW_MS;
+}
+
+interface TeamSideProps {
+  name: string;
+  fifaCode?: string;
+  flagUrl?: string;
+}
+
+function TeamSide({ name, fifaCode, flagUrl }: TeamSideProps) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-3 min-w-0">
-        {fifaCode ? <TeamFlag fifaCode={fifaCode} size={32} /> : null}
-        <span className="font-display text-lg font-black uppercase tracking-wide truncate text-[var(--color-prode-near-black)]">
-          {name}
+    <div className="flex flex-col items-center gap-2 text-center min-w-0">
+      {fifaCode ? (
+        <TeamFlag fifaCode={fifaCode} src={flagUrl} size={56} />
+      ) : (
+        <div className="w-14 h-14 rounded-sm bg-[var(--color-landing-surface-2)] border border-[var(--color-landing-line)]" />
+      )}
+      {fifaCode ? (
+        <span className="font-[family-name:var(--font-landing-mono)] text-[10px] tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+          {fifaCode}
         </span>
-      </div>
-      <div className="flex items-center gap-2">
-        {finalScore !== null ? (
-          <span
-            className="font-display text-3xl font-black tabular-nums leading-none text-[var(--color-prode-near-black)]"
-            aria-label={`Resultado ${name}: ${finalScore}`}
-          >
-            {finalScore}
-          </span>
-        ) : null}
-        <PredictionInput
-          value={predictionScore}
-          disabled={disabled}
-          onOpenSheet={onOpenSheet}
-          onChange={onChange}
-          ariaLabel={ariaLabel}
-        />
-      </div>
+      ) : null}
+      <span
+        className={cn(
+          "font-[family-name:var(--font-landing-display)] text-[18px] md:text-[22px]",
+          "uppercase tracking-[0.01em] leading-[0.95]",
+          "text-[var(--color-landing-text)] max-w-[110px] md:max-w-[160px] line-clamp-2",
+        )}
+      >
+        {name}
+      </span>
     </div>
   );
 }
 
-function KickoffTime({ iso }: { iso: string }) {
-  // Visualizamos hora ART (UTC-3). Mas detallado en spec §6.4
-  // (formatos de fecha completos lo maneja la pagina, no la card).
-  try {
-    const d = new Date(iso);
-    const formatter = new Intl.DateTimeFormat("es-AR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "America/Argentina/Buenos_Aires",
-      hour12: false,
-    });
-    return <>{formatter.format(d)} ART</>;
-  } catch {
-    return <>--:--</>;
-  }
+interface CenterColProps {
+  state: MatchCardState;
+  finishedOutcome: FinishedOutcome | null;
+  match: Match;
+  prediction: Prediction | null | undefined;
+  inputDisabled: boolean;
+  inputTone: "default" | "saved" | "retrying" | "empty";
+  isInProgress: boolean;
+  isKnockoutPlaceholder: boolean;
+  onOpenSheet: () => void;
+  onPredict?: (
+    matchId: string,
+    dto: { scoreHome: number; scoreAway: number },
+  ) => void;
+  homeName: string;
+  awayName: string;
 }
 
-function Countdown({
-  match,
+function CenterCol({
   state,
-}: {
-  match: Match;
-  state: MatchCardState;
-}) {
-  const parts = useCountdown(match.predictionsLockAt);
+  finishedOutcome,
+  match,
+  prediction,
+  inputDisabled,
+  inputTone,
+  isInProgress,
+  isKnockoutPlaceholder,
+  onOpenSheet,
+  onPredict,
+  homeName,
+  awayName,
+}: CenterColProps) {
+  // Eyebrow encima del input/score
+  const eyebrowText =
+    state === "finished"
+      ? "Resultado"
+      : state === "saved"
+        ? "✓ Tu pronóstico"
+        : state === "retrying"
+          ? "⚠ No guardado"
+          : state === "locked"
+            ? "Pronóstico"
+            : "Tu pronóstico";
+
+  const eyebrowColor =
+    state === "saved"
+      ? "text-[var(--color-landing-green)]"
+      : state === "retrying"
+        ? "text-[var(--color-landing-red)]"
+        : state === "empty"
+          ? "text-[var(--color-landing-gold)]"
+          : finishedOutcome === "exact"
+            ? "text-[var(--color-landing-gold)]"
+            : "text-[var(--color-landing-text-muted)]";
+
+  // VS / EN VIVO / CANCELADO / EN JUEGO / FINALIZADO / TBD under the inputs
+  const isCancelled = match.status === "CANCELLED";
+  const subText = isKnockoutPlaceholder
+    ? "TBD"
+    : state === "locked"
+      ? isCancelled
+        ? "CANCELADO"
+        : isInProgress
+          ? "EN VIVO"
+          : "EN JUEGO"
+      : state === "finished"
+        ? null
+        : "VS";
+
+  const inputClassName = cn(
+    state === "empty" && "input-pulse",
+    state === "saved" &&
+      "border-[var(--color-landing-green)] focus:border-[var(--color-landing-green)]",
+    state === "retrying" && "border-[var(--color-landing-red)]",
+  );
+
   if (state === "finished") {
     return (
-      <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-        FINALIZADO
-      </span>
+      <div className="flex flex-col items-center gap-1.5 min-w-[120px] md:min-w-[140px]">
+        <span
+          className={cn(
+            "font-[family-name:var(--font-landing-mono)] text-[9px] uppercase tracking-[0.22em]",
+            eyebrowColor,
+          )}
+        >
+          {eyebrowText}
+        </span>
+        <OfficialBlock
+          scoreHome={match.scoreHome}
+          scoreAway={match.scoreAway}
+          highlight={finishedOutcome === "exact"}
+        />
+        <YourPrediction
+          prediction={prediction}
+          finishedOutcome={finishedOutcome}
+        />
+      </div>
     );
   }
-  if (state === "locked") {
-    return (
-      <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-muted)]">
-        CERRADO
-      </span>
-    );
-  }
-  if (!parts) {
-    return (
-      <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-        ⏱ Cierra pronto
-      </span>
-    );
-  }
-  if (parts.finished) {
-    return (
-      <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-accent)]">
-        Cerrado
-      </span>
-    );
-  }
-  const label =
-    parts.days > 0
-      ? `${parts.days}d ${parts.hours}h`
-      : parts.hours > 0
-        ? `${parts.hours}h ${parts.minutes}m`
-        : `${parts.minutes}m ${parts.seconds.toString().padStart(2, "0")}s`;
+
   return (
-    <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-      ⏱ Cierra en {label}
+    <div className="flex flex-col items-center gap-1.5 min-w-[120px] md:min-w-[140px]">
+      <span
+        className={cn(
+          "font-[family-name:var(--font-landing-mono)] text-[9px] uppercase tracking-[0.22em]",
+          eyebrowColor,
+        )}
+      >
+        {eyebrowText}
+      </span>
+      <div className="flex items-center gap-1">
+        <PredictionInput
+          value={prediction?.scoreHome ?? null}
+          disabled={inputDisabled}
+          tone={inputTone}
+          onOpenSheet={onOpenSheet}
+          onChange={(score) => {
+            if (score === null) return;
+            const otherScore = prediction?.scoreAway ?? null;
+            if (otherScore === null) return;
+            onPredict?.(match.id, { scoreHome: score, scoreAway: otherScore });
+          }}
+          ariaLabel={`Prediccion ${homeName}`}
+          className={inputClassName}
+        />
+        <span className="font-[family-name:var(--font-landing-display)] text-[20px] leading-none text-[var(--color-landing-gold)]">
+          :
+        </span>
+        <PredictionInput
+          value={prediction?.scoreAway ?? null}
+          disabled={inputDisabled}
+          tone={inputTone}
+          onOpenSheet={onOpenSheet}
+          onChange={(score) => {
+            if (score === null) return;
+            const otherScore = prediction?.scoreHome ?? null;
+            if (otherScore === null) return;
+            onPredict?.(match.id, { scoreHome: otherScore, scoreAway: score });
+          }}
+          ariaLabel={`Prediccion ${awayName}`}
+          className={inputClassName}
+        />
+      </div>
+      {subText ? (
+        <span className="font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.22em] text-[var(--color-landing-gold)]">
+          {subText}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function OfficialBlock({
+  scoreHome,
+  scoreAway,
+  highlight,
+}: {
+  scoreHome: number | null;
+  scoreAway: number | null;
+  highlight: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "inline-flex items-center gap-2 px-3 py-1.5 rounded-sm",
+        "bg-black/25 border border-[var(--color-landing-line-strong)]",
+        highlight && "border-[var(--color-landing-gold)] bg-[rgba(200,160,83,0.08)]",
+      )}
+    >
+      <span
+        className={cn(
+          "font-[family-name:var(--font-landing-display)] text-[28px] leading-none tabular-nums",
+          highlight
+            ? "text-[var(--color-landing-gold)]"
+            : "text-[var(--color-landing-text)]",
+        )}
+      >
+        {scoreHome ?? "—"}
+      </span>
+      <span className="text-[var(--color-landing-text-muted)] text-[20px] leading-none">
+        :
+      </span>
+      <span
+        className={cn(
+          "font-[family-name:var(--font-landing-display)] text-[28px] leading-none tabular-nums",
+          highlight
+            ? "text-[var(--color-landing-gold)]"
+            : "text-[var(--color-landing-text)]",
+        )}
+      >
+        {scoreAway ?? "—"}
+      </span>
+    </div>
+  );
+}
+
+function YourPrediction({
+  prediction,
+  finishedOutcome,
+}: {
+  prediction: Prediction | null | undefined;
+  finishedOutcome: FinishedOutcome | null;
+}) {
+  if (!prediction) {
+    return (
+      <span className="font-[family-name:var(--font-landing-mono)] text-[9px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
+        SIN PRONÓSTICO
+      </span>
+    );
+  }
+  const tone =
+    finishedOutcome === "exact"
+      ? "text-[var(--color-landing-gold)]"
+      : finishedOutcome === "winner-diff" ||
+          finishedOutcome === "winner-only" ||
+          finishedOutcome === "draw-different"
+        ? "text-[var(--color-landing-green)]"
+        : "text-[var(--color-landing-text-muted)]";
+  return (
+    <span className="font-[family-name:var(--font-landing-mono)] text-[9px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)] leading-tight">
+      TU{" "}
+      <span
+        className={cn(
+          "font-[family-name:var(--font-landing-display)] text-[14px] tracking-[0.04em] tabular-nums ml-1",
+          tone,
+        )}
+      >
+        {prediction.scoreHome} : {prediction.scoreAway}
+      </span>
     </span>
   );
 }
 
-function StateBadge({
+function FootLeft({
   state,
-  prediction,
+  finishedOutcome,
+  match,
+  isInProgress,
+  isKnockoutPlaceholder,
 }: {
   state: MatchCardState;
-  prediction: Prediction | null | undefined;
+  finishedOutcome: FinishedOutcome | null;
+  match: Match;
+  isInProgress: boolean;
+  isKnockoutPlaceholder: boolean;
 }) {
+  if (isKnockoutPlaceholder) {
+    return (
+      <span className="text-[var(--color-landing-text-muted)]">
+        ESPERANDO EQUIPOS
+      </span>
+    );
+  }
+  if (state === "finished") {
+    return <FinishedFootLabel finishedOutcome={finishedOutcome} />;
+  }
+  if (state === "locked") {
+    if (match.status === "CANCELLED") {
+      return (
+        <span className="inline-flex items-center gap-2 text-[var(--color-landing-red)]">
+          <span className="inline-block w-2 h-2 rounded-full bg-[var(--color-landing-red)]" />
+          CANCELADO
+        </span>
+      );
+    }
+    if (isInProgress) {
+      return (
+        <span className="inline-flex items-center gap-2 text-[var(--color-landing-red)]">
+          <span className="inline-block w-2 h-2 rounded-full bg-[var(--color-landing-red)] match-blink" />
+          EN VIVO
+        </span>
+      );
+    }
+    return (
+      <span className="text-[var(--color-landing-text-muted)]">CERRADO</span>
+    );
+  }
+  return <CountdownLabel match={match} />;
+}
+
+function FootRight({
+  state,
+  finishedOutcome,
+  prediction,
+  match,
+  isKnockoutPlaceholder,
+}: {
+  state: MatchCardState;
+  finishedOutcome: FinishedOutcome | null;
+  prediction: Prediction | null | undefined;
+  match: Match;
+  isKnockoutPlaceholder: boolean;
+}) {
+  if (isKnockoutPlaceholder) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[var(--color-landing-text-muted)]">
+        <Lock className="h-3 w-3" aria-hidden />
+        TBD
+      </span>
+    );
+  }
   if (state === "empty") {
     return (
-      <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-        PENDIENTE
+      <span className="inline-flex items-center gap-2 text-[var(--color-landing-gold)]">
+        <span className="inline-block w-2 h-2 rounded-full bg-[var(--color-landing-gold)] pulse-dot-gold" />
+        FALTA TU PRONÓSTICO
       </span>
     );
   }
   if (state === "saved") {
     return (
-      <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-near-black)]">
-        ✓ GUARDADO
-      </span>
+      <span className="text-[var(--color-landing-green)]">✓ GUARDADO</span>
     );
   }
   if (state === "retrying") {
     return (
-      <span className="inline-flex items-center gap-1 font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-accent)]">
+      <span className="inline-flex items-center gap-2 text-[var(--color-landing-red)]">
         <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
         REINTENTANDO...
       </span>
     );
   }
   if (state === "locked") {
+    if (match.status === "CANCELLED") {
+      return (
+        <span className="inline-flex items-center gap-1 text-[var(--color-landing-red)]">
+          <Lock className="h-3 w-3" aria-hidden />
+          CANCELADO
+        </span>
+      );
+    }
     return (
-      <span className="inline-flex items-center gap-1 font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-muted)]">
+      <span className="inline-flex items-center gap-1 text-[var(--color-landing-text-muted)]">
         <Lock className="h-3 w-3" aria-hidden />
         CERRADO
       </span>
     );
   }
-  // finished
-  if (prediction) {
+  // finished — pts badge tipográfico
+  return <PtsBadge prediction={prediction} finishedOutcome={finishedOutcome} />;
+}
+
+function FinishedFootLabel({
+  finishedOutcome,
+}: {
+  finishedOutcome: FinishedOutcome | null;
+}) {
+  switch (finishedOutcome) {
+    case "exact":
+      return (
+        <span className="text-[var(--color-landing-gold)]">★ EXACTO</span>
+      );
+    case "winner-diff":
+      return (
+        <span className="text-[var(--color-landing-green)]">
+          ✓ GANADOR + DIFERENCIA
+        </span>
+      );
+    case "winner-only":
+      return (
+        <span className="text-[var(--color-landing-green)]">✓ GANADOR</span>
+      );
+    case "draw-different":
+      return (
+        <span className="text-[var(--color-landing-green)]">✓ EMPATE</span>
+      );
+    case "miss":
+    default:
+      return (
+        <span className="text-[var(--color-landing-text-muted)]">✗ MISS</span>
+      );
+  }
+}
+
+function PtsBadge({
+  prediction,
+  finishedOutcome,
+}: {
+  prediction: Prediction | null | undefined;
+  finishedOutcome: FinishedOutcome | null;
+}) {
+  const pts = prediction?.pointsEarned ?? 0;
+  const label = pts > 0 ? `+${pts} PTS` : "0 PTS";
+
+  const cls = cn(
+    "inline-flex items-center px-2.5 py-1 rounded-sm",
+    "font-[family-name:var(--font-landing-display)] text-[14px] tracking-[0.04em] leading-none",
+    finishedOutcome === "exact" &&
+      "bg-[rgba(200,160,83,0.18)] border border-[var(--color-landing-gold)] text-[var(--color-landing-gold)]",
+    finishedOutcome === "winner-diff" &&
+      "bg-[rgba(92,120,71,0.18)] border border-[var(--color-landing-green)] text-[var(--color-landing-green)]",
+    (finishedOutcome === "winner-only" ||
+      finishedOutcome === "draw-different") &&
+      "border border-[rgba(92,120,71,0.5)] text-[var(--color-landing-green)]",
+    finishedOutcome === "miss" &&
+      "border border-[var(--color-landing-line-strong)] text-[var(--color-landing-text-muted)]",
+  );
+  return <span className={cls}>{label}</span>;
+}
+
+function KickoffTime({ iso }: { iso: string }) {
+  // kickoffAt llega en UTC; renderizamos en la TZ del browser del
+  // usuario (Intl sin timeZone explícito).
+  try {
+    const d = new Date(iso);
+    const formatter = new Intl.DateTimeFormat("es-AR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    const tzShort = new Intl.DateTimeFormat("es-AR", {
+      timeZoneName: "short",
+    })
+      .formatToParts(d)
+      .find((p) => p.type === "timeZoneName")?.value;
     return (
-      <span
-        className={cn(
-          "font-sans text-[11px] font-bold uppercase tracking-wider",
-          prediction.pointsEarned > 0
-            ? "text-[var(--color-prode-accent)]"
-            : "text-[var(--color-prode-text-secondary)]",
-        )}
-      >
-        {prediction.pointsEarned > 0
-          ? `+${prediction.pointsEarned} PTS`
-          : "0 PTS"}
+      <span className="whitespace-nowrap">
+        {formatter.format(d)}
+        {tzShort ? ` ${tzShort}` : ""}
+      </span>
+    );
+  } catch {
+    return <span>--:--</span>;
+  }
+}
+
+function CountdownLabel({ match }: { match: Match }) {
+  const parts = useCountdown(match.predictionsLockAt);
+  if (!parts) {
+    return (
+      <span className="text-[var(--color-landing-text-muted)]">
+        Cierra pronto
       </span>
     );
   }
+  if (parts.finished) {
+    return <span className="text-[var(--color-landing-red)]">CERRADO</span>;
+  }
+  const label =
+    parts.days > 0
+      ? `${parts.days}D ${parts.hours}H`
+      : parts.hours > 0
+        ? `${parts.hours}H ${parts.minutes}M`
+        : `${parts.minutes}M ${parts.seconds.toString().padStart(2, "0")}S`;
   return (
-    <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-      SIN PREDICCION
+    <span className="text-[var(--color-landing-text-muted)]">
+      Cierra en {label}
     </span>
-  );
-}
-
-function FinishedSummary({
-  match,
-  prediction,
-}: {
-  match: Match;
-  prediction: Prediction;
-}) {
-  const recentlyEvaluated =
-    prediction.evaluatedAt !== null &&
-    Date.now() - new Date(prediction.evaluatedAt).getTime() <
-      RECENT_EVAL_WINDOW_MS;
-  const showCelebration = recentlyEvaluated && prediction.pointsEarned > 0;
-
-  return (
-    <div className="mt-4 pt-4 border-t border-[var(--color-prode-border)]">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex flex-col gap-1">
-          <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-            Resultado
-          </span>
-          {match.scoreHome !== null && match.scoreAway !== null ? (
-            <ScoreDisplay
-              scoreHome={match.scoreHome}
-              scoreAway={match.scoreAway}
-              size="sm"
-            />
-          ) : null}
-        </div>
-        <div className="flex flex-col gap-1 text-right">
-          <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
-            Tu prediccion
-          </span>
-          <ScoreDisplay
-            scoreHome={prediction.scoreHome}
-            scoreAway={prediction.scoreAway}
-            size="sm"
-            isPrediction
-          />
-        </div>
-      </div>
-      {showCelebration ? (
-        <div className="mt-3 flex justify-end">
-          <PointsCelebration points={prediction.pointsEarned} />
-        </div>
-      ) : null}
-      {/* Hint para reintentar carga si aplicable (NO mostramos si match
-          ya fue evaluado). Para retries fallidos en estado open, badge
-          arriba muestra "REINTENTANDO". */}
-      <button
-        type="button"
-        className="mt-2 inline-flex items-center gap-1 font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-muted)] cursor-default"
-        disabled
-        aria-hidden
-      >
-        <RefreshCw className="h-3 w-3" />
-        Evaluado
-      </button>
-    </div>
   );
 }

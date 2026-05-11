@@ -10,14 +10,9 @@ import {
 } from './phase-winner.processor.js';
 
 /**
- * Integration test for `PhaseWinnerProcessor.handle`. The handler is
- * fed by `PhaseService.maybeClosePhase` in production; here we drive
- * it directly with a synthesised job so we can pin the exact branch
- * coverage without spinning up the whole scoring pipeline.
- *
- * We use a phase that the seed doesn't normally close (THIRD_PLACE) so
- * we don't collide with whatever `phase.service.integration.spec.ts`
- * sets up for GROUPS.
+ * Integration test for `PhaseWinnerProcessor.handle`. Multi-prode era:
+ * the job payload carries entryId, the dedup key is keyed by entry, and
+ * the processor resolves the human user via Entry.userId.
  */
 describe('PhaseWinnerProcessor.handle (integration)', () => {
   let app: INestApplication;
@@ -30,6 +25,8 @@ describe('PhaseWinnerProcessor.handle (integration)', () => {
 
   let winnerId: string;
   let optedOutId: string;
+  let winnerEntryId: string;
+  let optedOutEntryId: string;
 
   const PHASE = 'THIRD_PLACE' as const;
   const POINTS = 137;
@@ -46,36 +43,67 @@ describe('PhaseWinnerProcessor.handle (integration)', () => {
     const bcrypt = await import('bcrypt');
     const passwordHash = await bcrypt.hash('SeedPass123', 10);
 
-    const winner = await prisma.user.create({
-      data: {
-        dni: winnerDni,
-        firstName: 'Phase',
-        lastName: 'Winner',
-        whatsapp: `549${String(8_700_000_000 + stamp).slice(-9)}`.slice(0, 13),
-        passwordHash,
-        whatsappOptIn: true,
-      },
-    });
-    winnerId = winner.id;
+    async function makeUserWithEntry(args: {
+      dni: string;
+      lastName: string;
+      whatsapp: string;
+      whatsappOptIn: boolean;
+    }): Promise<{ userId: string; entryId: string }> {
+      const u = await prisma.user.create({
+        data: {
+          dni: args.dni,
+          firstName: 'Phase',
+          lastName: args.lastName,
+          whatsapp: args.whatsapp,
+          passwordHash,
+          whatsappOptIn: args.whatsappOptIn,
+        },
+      });
+      const pmt = await prisma.payment.create({
+        data: {
+          userId: u.id,
+          amount: 10_000,
+          method: 'CASH',
+          status: 'APPROVED',
+          paidAt: new Date(),
+          completedAt: new Date(),
+        },
+      });
+      const entry = await prisma.entry.create({
+        data: {
+          userId: u.id,
+          paymentId: pmt.id,
+          position: 1,
+          status: 'ACTIVE',
+        },
+      });
+      return { userId: u.id, entryId: entry.id };
+    }
 
-    const optedOut = await prisma.user.create({
-      data: {
-        dni: optedOutDni,
-        firstName: 'Phase',
-        lastName: 'OptOut',
-        whatsapp: `549${String(8_800_000_000 + stamp).slice(-9)}`.slice(0, 13),
-        passwordHash,
-        whatsappOptIn: false,
-      },
+    const winner = await makeUserWithEntry({
+      dni: winnerDni,
+      lastName: 'Winner',
+      whatsapp: `549${String(8_700_000_000 + stamp).slice(-9)}`.slice(0, 13),
+      whatsappOptIn: true,
     });
-    optedOutId = optedOut.id;
+    winnerId = winner.userId;
+    winnerEntryId = winner.entryId;
 
-    // Seed PhaseWinner row for THIRD_PLACE pointing at the winner.
+    const optedOut = await makeUserWithEntry({
+      dni: optedOutDni,
+      lastName: 'OptOut',
+      whatsapp: `549${String(8_800_000_000 + stamp).slice(-9)}`.slice(0, 13),
+      whatsappOptIn: false,
+    });
+    optedOutId = optedOut.userId;
+    optedOutEntryId = optedOut.entryId;
+
+    // Seed PhaseWinner row for THIRD_PLACE pointing at the winner's entry.
     // `phase` is unique → upsert so reruns survive.
     await prisma.phaseWinner.upsert({
       where: { phase: PHASE },
-      create: { phase: PHASE, userId: winnerId, pointsEarned: POINTS },
-      update: { userId: winnerId, pointsEarned: POINTS },
+      create: { phase: PHASE, entryId: winnerEntryId, pointsEarned: POINTS },
+      update: { entryId: winnerEntryId, pointsEarned: POINTS },
     });
   }, 30_000);
 
@@ -85,8 +113,8 @@ describe('PhaseWinnerProcessor.handle (integration)', () => {
         where: {
           dedupKey: {
             in: [
-              `phase-winner:${PHASE}:${winnerId}`,
-              `phase-winner:${PHASE}:${optedOutId}`,
+              `phase-winner:${PHASE}:${winnerEntryId}`,
+              `phase-winner:${PHASE}:${optedOutEntryId}`,
             ],
           },
         },
@@ -109,13 +137,13 @@ describe('PhaseWinnerProcessor.handle (integration)', () => {
     } as unknown as Job<PhaseWinnerJobData>;
   }
 
-  it('enqueues a WhatsApp Notification for an opted-in winner', async () => {
+  it('enqueues a WhatsApp Notification for an opted-in winner entry', async () => {
     const sent = await processor.handle(
-      makeJob({ phase: PHASE, userId: winnerId }),
+      makeJob({ phase: PHASE, entryId: winnerEntryId }),
     );
     expect(sent).toBe(true);
 
-    const dedupKey = `phase-winner:${PHASE}:${winnerId}`;
+    const dedupKey = `phase-winner:${PHASE}:${winnerEntryId}`;
     const row = await prisma.notification.findUnique({ where: { dedupKey } });
     expect(row).not.toBeNull();
     expect(row?.channel).toBe('WHATSAPP');
@@ -129,49 +157,47 @@ describe('PhaseWinnerProcessor.handle (integration)', () => {
   });
 
   it('is idempotent: re-running the same job does not produce a duplicate row', async () => {
-    await processor.handle(makeJob({ phase: PHASE, userId: winnerId }));
-    await processor.handle(makeJob({ phase: PHASE, userId: winnerId }));
+    await processor.handle(makeJob({ phase: PHASE, entryId: winnerEntryId }));
+    await processor.handle(makeJob({ phase: PHASE, entryId: winnerEntryId }));
 
-    const dedupKey = `phase-winner:${PHASE}:${winnerId}`;
+    const dedupKey = `phase-winner:${PHASE}:${winnerEntryId}`;
     const rows = await prisma.notification.findMany({ where: { dedupKey } });
     expect(rows).toHaveLength(1);
   });
 
-  it('skips when the user opted out of WhatsApp', async () => {
-    // Repoint the PhaseWinner row at the opted-out user for this assertion.
+  it('skips when the entry owner opted out of WhatsApp', async () => {
     await prisma.phaseWinner.update({
       where: { phase: PHASE },
-      data: { userId: optedOutId },
+      data: { entryId: optedOutEntryId },
     });
 
     const sent = await processor.handle(
-      makeJob({ phase: PHASE, userId: optedOutId }),
+      makeJob({ phase: PHASE, entryId: optedOutEntryId }),
     );
     expect(sent).toBe(false);
 
-    const optedOutKey = `phase-winner:${PHASE}:${optedOutId}`;
+    const optedOutKey = `phase-winner:${PHASE}:${optedOutEntryId}`;
     const row = await prisma.notification.findUnique({
       where: { dedupKey: optedOutKey },
     });
     expect(row).toBeNull();
 
-    // Restore for the next assertion.
     await prisma.phaseWinner.update({
       where: { phase: PHASE },
-      data: { userId: winnerId },
+      data: { entryId: winnerEntryId },
     });
   });
 
-  it('skips on a stale job whose userId no longer matches the PhaseWinner row', async () => {
+  it('skips on a stale job whose entryId no longer matches the PhaseWinner row', async () => {
     const sent = await processor.handle(
-      makeJob({ phase: PHASE, userId: optedOutId }), // mismatched
+      makeJob({ phase: PHASE, entryId: optedOutEntryId }), // mismatched
     );
     expect(sent).toBe(false);
   });
 
-  it('skips when the user does not exist', async () => {
+  it('skips when the entry does not exist', async () => {
     const sent = await processor.handle(
-      makeJob({ phase: PHASE, userId: 'nonexistent_user_id' }),
+      makeJob({ phase: PHASE, entryId: 'nonexistent_entry_id' }),
     );
     expect(sent).toBe(false);
   });

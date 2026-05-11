@@ -43,8 +43,8 @@ export function CountdownTimer({
     return (
       <div
         className={cn(
-          "font-display text-4xl md:text-5xl font-black uppercase tracking-wide",
-          "text-[var(--color-prode-accent)]",
+          "font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight",
+          "text-[var(--color-landing-red)]",
           className,
         )}
       >
@@ -97,10 +97,10 @@ export function CountdownTimer({
         .filter((u) => u.show)
         .map((unit, idx) => (
           <div key={unit.label} className="flex flex-col items-center gap-1">
-            <span className="font-display text-4xl md:text-6xl font-black leading-none text-[var(--color-prode-near-black)]">
+            <span className="font-[family-name:var(--font-landing-display)] text-4xl md:text-6xl tabular-nums leading-none text-[var(--color-landing-text)]">
               {unit.value}
             </span>
-            <span className="font-sans text-[10px] md:text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+            <span className="font-[family-name:var(--font-landing-mono)] text-[10px] md:text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
               {unit.label}
             </span>
             {idx === 0 && (

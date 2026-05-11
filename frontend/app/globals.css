@@ -9,18 +9,23 @@
   --font-fwc: "Arial Narrow Black", "Arial Narrow", "Arial", sans-serif;
 }
 
-/* Tokens del DESIGN.md (FIFA WC 2026 Hospitality) */
+/* Tokens unificados — la estética stadium de la landing es ahora el
+ * mantra del proyecto entero. Los nombres `--color-prode-*` se mantienen
+ * para no romper consumos existentes (ui, layout, domain), pero apuntan
+ * a equivalentes landing (paleta apagada WC2026). Componentes nuevos
+ * deberían usar directamente `--color-landing-*`.
+ */
 @theme {
-  --color-prode-near-black: #05090e;
-  --color-prode-deep-navy: #0c1521;
-  --color-prode-accent: #fe1743;
-  --color-prode-bg: #ffffff;
-  --color-prode-surface: #f9fbff;
-  --color-prode-text-secondary: #4b5667;
-  --color-prode-text-muted: #bc8fd1;
-  --color-prode-border: #d0d5df;
+  --color-prode-bg: #0e1426;             /* navy profundo (bg principal) */
+  --color-prode-surface: #161d32;        /* surface elevada */
+  --color-prode-near-black: #f1ece0;     /* texto principal (cream cálido) */
+  --color-prode-deep-navy: #0a0f1c;      /* surface aún más oscura */
+  --color-prode-text-secondary: #8a92a8; /* texto secundario muteado */
+  --color-prode-text-muted: #8a92a8;     /* texto muteado (alias) */
+  --color-prode-border: rgba(241, 236, 224, 0.14); /* bordes line-strong */
+  --color-prode-accent: #a33d3d;         /* rojo apagado (CTAs / énfasis) */
 
-  --font-display: var(--font-fwc), "Arial Narrow Black", "Arial Narrow", sans-serif;
+  --font-display: var(--font-display-condensed), var(--font-fwc), "Arial Narrow Black", "Arial Narrow", sans-serif;
   --font-sans: var(--font-noto-sans), system-ui, sans-serif;
 
   --radius-sm: 4px;
@@ -35,4 +40,197 @@ html {
 }
 body {
   background: var(--color-prode-bg);
+}
+
+/* Animaciones de la landing — declaradas globalmente para que las
+ * utilities `motion-safe:animate-fade-in-up` y `motion-safe:animate-marquee`
+ * resuelvan a estas keyframes. Tailwind v4 inyecta `motion-safe:` envolviendo
+ * en `@media (prefers-reduced-motion: no-preference)`, asi que estas
+ * animaciones se desactivan automaticamente para usuarios que asi lo pidan.
+ */
+@theme {
+  --animate-fade-in-up: fade-in-up 0.6s ease-out;
+  --animate-marquee: marquee 40s linear infinite;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ============================================== */
+/* LANDING — Mundial 2026                          */
+/* Tokens y atmósfera scoped al árbol .landing-root */
+/* ============================================== */
+@theme {
+  --color-landing-bg: #0e1426;
+  --color-landing-surface: #161d32;
+  --color-landing-surface-2: #1b2238;
+  --color-landing-text: #f1ece0;
+  --color-landing-text-muted: #8a92a8;
+  --color-landing-blue: #3e5489;
+  --color-landing-red: #a33d3d;
+  --color-landing-red-hover: #b74545;
+  --color-landing-green: #5c7847;
+  --color-landing-gold: #c8a053;
+  --color-landing-line: rgba(241, 236, 224, 0.08);
+  --color-landing-line-strong: rgba(241, 236, 224, 0.14);
+
+  --font-landing-display: var(--font-display-condensed), "Arial Narrow Black", sans-serif;
+  --font-landing-mono: var(--font-mono-data), "Menlo", monospace;
+}
+
+/* Grain texture overlay sobre toda la landing */
+.landing-root {
+  position: relative;
+  isolation: isolate;
+}
+.landing-root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.32;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.landing-root > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Pulse del dot live */
+@keyframes landing-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+.landing-pulse {
+  animation: landing-pulse 1.4s infinite;
+}
+
+/* Pulse del input vacío en estado pendiente — atrae la atención hacia
+ * los inputs que el usuario aún no completó. Cicla 2s. */
+@keyframes input-pulse {
+  0%,
+  100% {
+    border-color: rgba(200, 160, 83, 0.4);
+    box-shadow: 0 0 0 0 rgba(200, 160, 83, 0);
+  }
+  50% {
+    border-color: var(--color-landing-gold);
+    box-shadow: 0 0 0 3px rgba(200, 160, 83, 0.15);
+  }
+}
+.input-pulse {
+  animation: input-pulse 2s ease-in-out infinite;
+}
+
+/* Shake one-shot — feedback al entrar en estado de retry tras error
+ * de red. Solo se dispara una vez (animación corta). */
+@keyframes match-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+.match-shake {
+  animation: match-shake 0.4s ease-in-out;
+}
+
+/* Pulse rojo concéntrico — dot del badge "FALTA TU PRONÓSTICO" o
+ * "EN VIVO" según contexto. Onda expansiva sin desplazar layout. */
+@keyframes pulse-ring-gold {
+  0% {
+    box-shadow: 0 0 0 0 rgba(200, 160, 83, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(200, 160, 83, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(200, 160, 83, 0);
+  }
+}
+.pulse-dot-gold {
+  animation: pulse-ring-gold 1.6s infinite;
+}
+
+@keyframes pulse-ring-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(163, 61, 61, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(163, 61, 61, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(163, 61, 61, 0);
+  }
+}
+.pulse-dot-red {
+  animation: pulse-ring-red 1.2s infinite;
+}
+
+/* Blink simple — usado en el dot live de partidos IN_PROGRESS. */
+@keyframes match-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+.match-blink {
+  animation: match-blink 1.4s ease-in-out infinite;
+}
+
+/* Spinner — borde superior gira; usado en estado retrying. */
+@keyframes match-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.match-spin {
+  animation: match-spin 0.8s linear infinite;
+}
+
+/* Reduced motion — respeta preferencia del usuario */
+@media (prefers-reduced-motion: reduce) {
+  .landing-pulse,
+  .input-pulse,
+  .match-shake,
+  .pulse-dot-gold,
+  .pulse-dot-red,
+  .match-blink,
+  .match-spin {
+    animation: none !important;
+  }
+  .landing-root *,
+  .landing-root *::before,
+  .landing-root *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

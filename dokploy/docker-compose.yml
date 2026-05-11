@@ -21,16 +21,74 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '5'
     restart: unless-stopped
 
   prode-redis:
     image: redis:7-alpine
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
     volumes:
       - prode-redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '5'
+    restart: unless-stopped
+
+  prode-wa-backend:
+    image: prode-wa-backend:${IMAGE_TAG:-latest}
+    build:
+      context: ./wa-backend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      WA_API_TOKEN: ${WHATSAPP_API_TOKEN}
+      WA_AUTH_DIR: /app/data/auth
+      WA_SEND_DELAY_MS: '500'
+      WA_VERIFY_RECIPIENT: 'false'
+      WA_RECONNECT_MAX_BACKOFF_MS: '60000'
+      LOG_LEVEL: info
+      TZ: America/Argentina/Buenos_Aires
+      # Watchdog: pingea el /health del backend principal y avisa al admin
+      # por WhatsApp si lo detecta caído (3 fallas consecutivas = ~3 min).
+      WATCHDOG_ENABLED: 'true'
+      BACKEND_HEALTH_URL: http://prode-backend:3001/health
+      WATCHDOG_INTERVAL_MS: '60000'
+      WATCHDOG_FAILURE_THRESHOLD: '3'
+      WATCHDOG_FETCH_TIMEOUT_MS: '5000'
+      ADMIN_WHATSAPP_NUMBER: ${ADMIN_WHATSAPP_NUMBER}
+    volumes:
+      - prode-wa-data:/app/data
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3001/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '5'
     restart: unless-stopped
 
   prode-backend:
-    image: prode-backend:latest
+    image: prode-backend:${IMAGE_TAG:-latest}
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -61,11 +119,18 @@ services:
       prode-postgres:
         condition: service_healthy
       prode-redis:
-        condition: service_started
+        condition: service_healthy
+      prode-wa-backend:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '5'
     restart: unless-stopped
 
   prode-frontend:
-    image: prode-frontend:latest
+    image: prode-frontend:${IMAGE_TAG:-latest}
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -99,8 +164,14 @@ services:
       NEXT_PUBLIC_SENTRY_DSN: ${SENTRY_DSN_FRONTEND}
     depends_on:
       - prode-backend
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '5'
     restart: unless-stopped
 
 volumes:
   prode-pg-data:
   prode-redis-data:
+  prode-wa-data:

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+data/auth/
+*.log
+.env
+.env.local
+coverage/

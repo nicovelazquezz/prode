@@ -18,9 +18,10 @@ describe('PredictionsService.upsertMatchPrediction (integration)', () => {
   let prisma: PrismaService;
   let service: PredictionsService;
 
-  // The user we create for this suite. Keeps the seeded admin / e2e user
-  // pool clean and untouched.
+  // Multi-prode: predictions live on entries; the user is the entry's
+  // human owner used for audit anchoring.
   let userId: string;
+  let entryId: string;
   // We need two matches: one with a future lock (happy path) and one with
   // its lock pushed into the past (lock-window check).
   let openMatchId: string;
@@ -38,8 +39,8 @@ describe('PredictionsService.upsertMatchPrediction (integration)', () => {
     prisma = app.get(PrismaService);
     service = app.get(PredictionsService);
 
-    // Make a throwaway USER. The DNI/whatsapp need to be unique even if the
-    // suite re-runs, so we anchor them on `Date.now()`.
+    // Make a throwaway USER + Payment + Entry. DNI/whatsapp anchored on
+    // Date.now() so re-runs against a sticky DB stay deterministic.
     const stamp = Date.now() % 90_000_000;
     const user = await prisma.user.create({
       data: {
@@ -51,6 +52,25 @@ describe('PredictionsService.upsertMatchPrediction (integration)', () => {
       },
     });
     userId = user.id;
+    const payment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    const entry = await prisma.entry.create({
+      data: {
+        userId: user.id,
+        paymentId: payment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
+    entryId = entry.id;
 
     // Pick two matches deterministically. matchNumber=70 / 71 are both in
     // the GROUPS phase per the seed and far enough from the matches that
@@ -74,7 +94,8 @@ describe('PredictionsService.upsertMatchPrediction (integration)', () => {
 
   afterAll(async () => {
     if (prisma) {
-      await prisma.prediction.deleteMany({ where: { userId } });
+      // Predictions cascade from Entry; deleting the user handles the
+      // entry → prediction tree via the FK cascade.
       await prisma.auditLog.deleteMany({ where: { userId } });
       await prisma.user.delete({ where: { id: userId } }).catch(() => undefined);
       // Restore the lock we pushed into the past.
@@ -89,11 +110,13 @@ describe('PredictionsService.upsertMatchPrediction (integration)', () => {
   }, 30_000);
 
   it('creates a prediction when called for the first time pre-lock', async () => {
-    const result = await service.upsertMatchPrediction(userId, openMatchId, {
-      scoreHome: 2,
-      scoreAway: 1,
-    });
-    expect(result.userId).toBe(userId);
+    const result = await service.upsertMatchPrediction(
+      entryId,
+      openMatchId,
+      { scoreHome: 2, scoreAway: 1 },
+      { userId },
+    );
+    expect(result.entryId).toBe(entryId);
     expect(result.matchId).toBe(openMatchId);
     expect(result.scoreHome).toBe(2);
     expect(result.scoreAway).toBe(1);
@@ -112,11 +135,13 @@ describe('PredictionsService.upsertMatchPrediction (integration)', () => {
   });
 
   it('updates an existing prediction (idempotent upsert)', async () => {
-    // Second call for the same (userId, openMatchId) — should overwrite.
-    const updated = await service.upsertMatchPrediction(userId, openMatchId, {
-      scoreHome: 4,
-      scoreAway: 0,
-    });
+    // Second call for the same (entryId, openMatchId) — should overwrite.
+    const updated = await service.upsertMatchPrediction(
+      entryId,
+      openMatchId,
+      { scoreHome: 4, scoreAway: 0 },
+      { userId },
+    );
     expect(updated.scoreHome).toBe(4);
     expect(updated.scoreAway).toBe(0);
 
@@ -137,7 +162,7 @@ describe('PredictionsService.upsertMatchPrediction (integration)', () => {
 
   it('throws PredictionLockedException when the match is past lock', async () => {
     await expect(
-      service.upsertMatchPrediction(userId, lockedMatchId, {
+      service.upsertMatchPrediction(entryId, lockedMatchId, {
         scoreHome: 1,
         scoreAway: 1,
       }),

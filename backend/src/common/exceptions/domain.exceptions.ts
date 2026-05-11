@@ -134,3 +134,38 @@ export class AlreadyLeagueMemberException extends ConflictException {
     super({ statusCode: 409, code: 'ALREADY_LEAGUE_MEMBER', message });
   }
 }
+
+/**
+ * Thrown when a logged-in user tries to add another prode but already
+ * reached the configured `max_entries_per_user` cap. Spec multi-prode §3.2.
+ * 409 Conflict — request is well-formed, server-side state has no room.
+ * Body carries `current` and `cap` so the UI can render an exact message.
+ */
+export class EntryCapReachedException extends ConflictException {
+  constructor(current: number, cap: number) {
+    super({
+      statusCode: 409,
+      code: 'ENTRY_CAP_REACHED',
+      message: `Llegaste al máximo de ${cap} entradas`,
+      current,
+      cap,
+    });
+  }
+}
+
+/**
+ * El sistema llegó al cap global de usuarios (`AppConfig.max_users`).
+ * 409 Conflict — la request es válida pero no hay slots libres.
+ * Aplica tanto al `/auth/complete-registration` (flow público MP)
+ * como al `POST /admin/users` (flow manual).
+ */
+export class MaxUsersReachedException extends ConflictException {
+  constructor(cap: number) {
+    super({
+      statusCode: 409,
+      code: 'MAX_USERS_REACHED',
+      message: `El cupo de inscripciones se llenó (${cap}). Contactá al admin del club.`,
+      cap,
+    });
+  }
+}

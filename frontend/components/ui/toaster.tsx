@@ -14,14 +14,14 @@ export function Toaster() {
       toastOptions={{
         classNames: {
           toast:
-            "bg-white border border-[var(--color-prode-border)] text-[var(--color-prode-near-black)] rounded-md font-sans",
+            "bg-[var(--color-landing-surface)] border border-[var(--color-landing-line-strong)] text-[var(--color-landing-text)] rounded-md font-sans",
           title: "font-medium text-sm",
-          description: "text-sm text-[var(--color-prode-text-secondary)]",
+          description: "text-sm text-[var(--color-landing-text-muted)]",
           actionButton:
-            "bg-[var(--color-prode-near-black)] text-white rounded-sm",
+            "bg-[var(--color-landing-red)] text-[var(--color-landing-text)] rounded-sm",
           cancelButton:
-            "bg-transparent text-[var(--color-prode-text-secondary)]",
-          error: "border-[var(--color-prode-accent)]",
+            "bg-transparent text-[var(--color-landing-text-muted)]",
+          error: "border-[var(--color-landing-red)]",
         },
       }}
     />

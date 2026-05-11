@@ -32,6 +32,18 @@ interface PredictionInputProps {
    * si no se provee.
    */
   ariaLabel?: string;
+  /**
+   * Tinte por estado del match card padre. Ajusta el border color
+   * para reforzar la lectura "saved" (green) / "retrying" (red) /
+   * "empty" (gold tenue) sin replicar la logica del MatchCard.
+   *
+   * - default: border line-strong (sin tinte)
+   * - saved: border green
+   * - retrying: border red
+   * - empty: border gold tenue (el MatchCard puede sumar `input-pulse`
+   *   via className para animar el border)
+   */
+  tone?: "default" | "saved" | "retrying" | "empty";
   className?: string;
 }
 
@@ -39,13 +51,16 @@ const MAX_SCORE = 99;
 
 /**
  * Componente para cargar el score de una prediccion. Spec §6.5.
+ * Repintado con la paleta dark editorial (`--color-landing-*`).
  *
- *  - **Mobile (`max-width: 767px`)**: render como boton 56x56 que
- *    muestra el score ("—" si null) en font-display 32px. Tap dispara
- *    `onOpenSheet()` para abrir el `<NumberPadSheet>` compartido.
+ *  - **Mobile (`max-width: 767px`)**: render como boton 56x56 con
+ *    bg surface-2 y border line-strong. Display Oswald 32px en cream
+ *    ("—" muted si null). Tap dispara `onOpenSheet()` para abrir el
+ *    `<NumberPadSheet>` compartido.
  *  - **Desktop**: render como `<input type="text" inputmode="numeric">`
- *    nativo, validacion 0-99 (clamp on blur), `onChange` propaga el
- *    valor cuando cambia. El padre maneja debounce si quiere.
+ *    nativo, sin background, con border-bottom 1px line-strong. Focus
+ *    cambia el border-bottom a green 2px y el caret a cream. Display
+ *    Oswald 24px tabular-nums.
  *
  * SSR-safe: en el primer render usamos el variant desktop (input)
  * porque `useMediaQuery` devuelve false en SSR. Despues del mount
@@ -57,6 +72,7 @@ export function PredictionInput({
   onOpenSheet,
   onChange,
   ariaLabel = "Prediccion",
+  tone = "default",
   className,
 }: PredictionInputProps) {
   const isMobile = useMediaQuery("(max-width: 767px)");
@@ -71,6 +87,20 @@ export function PredictionInput({
     setLocalValue(value === null ? "" : String(value));
   }, [value]);
 
+  // Border color por tono — solo aplica a estados open (no disabled).
+  // El MatchCard padre setea el tono según `state`. La altura/ancho/
+  // tipografía no cambian para no romper rítmica del card.
+  const toneBorder =
+    tone === "saved"
+      ? "border-[var(--color-landing-green)]"
+      : tone === "retrying"
+        ? "border-[var(--color-landing-red)]"
+        : tone === "empty"
+          ? "border-[rgba(200,160,83,0.5)]"
+          : value === null
+            ? "border-[var(--color-landing-line-strong)]"
+            : "border-[var(--color-landing-text)]";
+
   if (isMobile) {
     return (
       <button
@@ -79,16 +109,20 @@ export function PredictionInput({
         disabled={disabled}
         aria-label={ariaLabel}
         className={cn(
-          "w-14 h-14 min-w-14 rounded-md",
-          "font-display text-3xl font-black tabular-nums leading-none",
+          "w-12 h-14 min-w-12 rounded-sm",
+          "font-[family-name:var(--font-landing-display)] text-[28px] tabular-nums leading-none",
           "flex items-center justify-center",
-          "transition-colors duration-200",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-prode-near-black)] focus-visible:ring-offset-1",
+          "border-2 transition-colors duration-200",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-landing-gold)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-landing-surface)]",
           disabled
-            ? "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-muted)] cursor-not-allowed"
-            : value === null
-              ? "bg-white border-2 border-dashed border-[var(--color-prode-border)] text-[var(--color-prode-text-muted)] hover:border-[var(--color-prode-near-black)]"
-              : "bg-white border-2 border-[var(--color-prode-near-black)] text-[var(--color-prode-near-black)]",
+            ? "bg-black/20 border-[var(--color-landing-line)] border-dashed text-[var(--color-landing-text-muted)] cursor-not-allowed"
+            : cn(
+                "bg-[rgba(241,236,224,0.04)] hover:border-[var(--color-landing-gold)]",
+                toneBorder,
+                value === null
+                  ? "text-[var(--color-landing-text-muted)]"
+                  : "text-[var(--color-landing-text)]",
+              ),
           className,
         )}
       >
@@ -97,7 +131,7 @@ export function PredictionInput({
     );
   }
 
-  // Desktop: input nativo.
+  // Desktop: bordered box (no underline) para matchear V4 scoreboard look.
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
     setLocalValue(raw);
@@ -123,17 +157,18 @@ export function PredictionInput({
       maxLength={2}
       placeholder="—"
       className={cn(
-        "w-14 h-14 rounded-md text-center",
-        "font-display text-3xl font-black tabular-nums leading-none",
-        "border-2 outline-none",
-        "transition-colors duration-200",
-        "focus:border-[var(--color-prode-near-black)]",
-        "placeholder:text-[var(--color-prode-text-muted)]",
+        "w-11 h-12 md:h-[50px] rounded-sm text-center",
+        "font-[family-name:var(--font-landing-display)] text-[26px] md:text-[28px] tabular-nums leading-none",
+        "border-2 outline-none transition-colors duration-200",
+        "placeholder:text-[var(--color-landing-text-muted)]",
+        "focus:border-[var(--color-landing-gold)]",
         disabled
-          ? "bg-[var(--color-prode-surface)] text-[var(--color-prode-text-muted)] border-[var(--color-prode-border)] cursor-not-allowed"
-          : value === null
-            ? "bg-white border-dashed border-[var(--color-prode-border)] text-[var(--color-prode-near-black)]"
-            : "bg-white border-[var(--color-prode-near-black)] text-[var(--color-prode-near-black)]",
+          ? "bg-black/20 border-[var(--color-landing-line)] border-dashed text-[var(--color-landing-text-muted)] cursor-not-allowed"
+          : cn(
+              "bg-[rgba(241,236,224,0.04)] hover:border-[var(--color-landing-gold)]",
+              toneBorder,
+              "text-[var(--color-landing-text)]",
+            ),
         className,
       )}
     />

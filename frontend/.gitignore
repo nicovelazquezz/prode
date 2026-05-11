@@ -34,6 +34,11 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Dev-only pages (mock checkout, etc.) — quedan locales, NO se deployan
+# a producción. Mantiene la app de prod libre de superficies de bypass
+# que puedan activarse por error.
+/app/dev/
+
 # vercel
 .vercel
 

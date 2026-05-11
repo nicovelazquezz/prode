@@ -1,13 +1,11 @@
 import { jest } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
-import { getQueueToken } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { AppModule } from '../../app.module.js';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { ScoringService } from './scoring.service.js';
 import { PhaseService } from './phase.service.js';
-import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
 import {
   MatchAlreadyFinishedException,
   MatchNotFinishedException,
@@ -41,10 +39,18 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
   const RESULT_HOME = 3;
   const RESULT_AWAY = 1;
 
-  // userId → expected outcome / pointsEarned for the GROUPS multiplier 1.0
+  // entryId → expected outcome / pointsEarned for the GROUPS multiplier 1.0
+  // Multi-prode: predictions live on entries; we still create one user per
+  // entry for symmetry with the original test, but the keying is by entry.
   const expectations: Record<
     string,
-    { scoreHome: number; scoreAway: number; outcome: string; points: number }
+    {
+      userId: string;
+      scoreHome: number;
+      scoreAway: number;
+      outcome: string;
+      points: number;
+    }
   > = {};
 
   beforeAll(async () => {
@@ -59,8 +65,15 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
     scoring = app.get(ScoringService);
 
     // Spy on the BullMQ queue so we can assert post-commit enqueues
-    // without driving the workers.
-    const queue: Queue = app.get(getQueueToken(NOTIFICATIONS_QUEUE));
+    // without driving the workers. We pull the queue *off the service
+    // itself* — `app.get(getQueueToken(...))` returns the global producer
+    // registered by NotificationsModule, but `ScoringService` (and
+    // `PhaseService`) inject the queue from their own
+    // `BullModule.registerQueue` call, which produces a different Queue
+    // instance bound to the same Redis-side queue. Spying on the producer
+    // we actually use is what makes assertions reliable.
+    const queue: Queue = (scoring as unknown as { notificationsQueue: Queue })
+      .notificationsQueue;
     queueAddSpy = jest.spyOn(queue, 'add');
 
     const phaseService = app.get(PhaseService);
@@ -136,16 +149,35 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
           passwordHash: 'unused-hash',
         },
       });
-      await prisma.prediction.create({
+      const payment = await prisma.payment.create({
         data: {
           userId: user.id,
+          amount: 10_000,
+          method: 'CASH',
+          status: 'APPROVED',
+          paidAt: new Date(),
+          completedAt: new Date(),
+        },
+      });
+      const entry = await prisma.entry.create({
+        data: {
+          userId: user.id,
+          paymentId: payment.id,
+          position: 1,
+          status: 'ACTIVE',
+        },
+      });
+      await prisma.prediction.create({
+        data: {
+          entryId: entry.id,
           matchId,
           scoreHome: plan.scoreHome,
           scoreAway: plan.scoreAway,
         },
       });
       // GROUPS multiplier is 1.0 — points = basePoints.
-      expectations[user.id] = {
+      expectations[entry.id] = {
+        userId: user.id,
         scoreHome: plan.scoreHome,
         scoreAway: plan.scoreAway,
         outcome: plan.outcome,
@@ -157,9 +189,9 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
   afterAll(async () => {
     if (prisma) {
       // Clean predictions, audit, users, phaseWinner — leave the match
-      // around but reset to SCHEDULED for re-runnability.
-      const userIds = Object.keys(expectations);
-      await prisma.prediction.deleteMany({ where: { userId: { in: userIds } } });
+      // around but reset to SCHEDULED for re-runnability. Predictions
+      // cascade off entries; deleting the user wipes the tree.
+      const userIds = Object.values(expectations).map((e) => e.userId);
       await prisma.prediction.deleteMany({ where: { matchId } });
       await prisma.auditLog.deleteMany({
         where: {
@@ -208,9 +240,9 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
     expect(result.finishedAt).toBeInstanceOf(Date);
 
     // Each prediction was scored according to its expected outcome.
-    for (const [userId, exp] of Object.entries(expectations)) {
+    for (const [entryId, exp] of Object.entries(expectations)) {
       const pred = await prisma.prediction.findUniqueOrThrow({
-        where: { userId_matchId: { userId, matchId } },
+        where: { entryId_matchId: { entryId, matchId } },
       });
       expect(pred.outcomeType).toBe(exp.outcome);
       expect(pred.basePoints).toBe(
@@ -278,11 +310,11 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
       },
     });
 
-    const winnerUserId = Object.keys(expectations)[0];
+    const winnerEntryId = Object.keys(expectations)[0];
     await prisma.phaseWinner.create({
       data: {
         phase: 'GROUPS',
-        userId: winnerUserId,
+        entryId: winnerEntryId,
         pointsEarned: 99,
         prizeStatus: 'PAID',
       },
@@ -334,11 +366,11 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
     });
 
     it('refuses to recalculate when the phase prize is already paid', async () => {
-      const winnerUserId = Object.keys(expectations)[0];
+      const winnerEntryId = Object.keys(expectations)[0];
       await prisma.phaseWinner.create({
         data: {
           phase: 'GROUPS',
-          userId: winnerUserId,
+          entryId: winnerEntryId,
           pointsEarned: 99,
           prizeStatus: 'PAID',
         },
@@ -368,25 +400,25 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
       expect(updated.scoreAway).toBe(NEW_AWAY);
       expect(updated.status).toBe('FINISHED');
 
-      // Find the user who originally predicted (1,1) and is now DRAW_DIFFERENT.
-      const drawUserId = Object.entries(expectations).find(
+      // Find the entry that originally predicted (1,1) and is now DRAW_DIFFERENT.
+      const drawEntryId = Object.entries(expectations).find(
         ([, e]) => e.scoreHome === 1 && e.scoreAway === 1,
       )?.[0];
-      expect(drawUserId).toBeDefined();
+      expect(drawEntryId).toBeDefined();
       const drawPred = await prisma.prediction.findUniqueOrThrow({
-        where: { userId_matchId: { userId: drawUserId!, matchId } },
+        where: { entryId_matchId: { entryId: drawEntryId!, matchId } },
       });
       expect(drawPred.outcomeType).toBe('DRAW_DIFFERENT');
       expect(drawPred.basePoints).toBe(2);
       expect(drawPred.pointsEarned).toBe(2);
 
       // The previously-EXACT prediction (3,1) is now a MISS.
-      const exactUserId = Object.entries(expectations).find(
+      const exactEntryId = Object.entries(expectations).find(
         ([, e]) => e.scoreHome === 3 && e.scoreAway === 1,
       )?.[0];
-      expect(exactUserId).toBeDefined();
+      expect(exactEntryId).toBeDefined();
       const exPred = await prisma.prediction.findUniqueOrThrow({
-        where: { userId_matchId: { userId: exactUserId!, matchId } },
+        where: { entryId_matchId: { entryId: exactEntryId!, matchId } },
       });
       expect(exPred.outcomeType).toBe('MISS');
       expect(exPred.pointsEarned).toBe(0);

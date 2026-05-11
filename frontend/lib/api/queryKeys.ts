@@ -29,19 +29,54 @@ export const queryKeys = {
     predictionCount: (matchId: string) =>
       ["matches", matchId, "predictionCount"] as const,
   },
+  players: {
+    all: () => ["players"] as const,
+    byTeam: (teamId: string) => ["players", "team", teamId] as const,
+  },
+  /**
+   * Multi-prode (v1.1+): predicciones y special prediction se asocian
+   * al `entryId`, no al `userId`. Cada entry del user tiene su propio
+   * cache. Cambiar el activeEntry invalida `entries.*` (ver
+   * `ActiveEntryProvider`).
+   *
+   * Las keys legacy (`me`, `forMatch`, `special`) quedan deprecated y
+   * se eliminan cuando Phase 9 termina la migración de páginas.
+   */
   predictions: {
     all: () => ["predictions"] as const,
+    /** @deprecated usar `queryKeys.entries.predictions(entryId, filters)` */
     me: (filters?: Record<string, unknown>) =>
       ["predictions", "me", filters ?? {}] as const,
+    /** @deprecated usar `queryKeys.entries.predictionForMatch(entryId, matchId)` */
     forMatch: (matchId: string) =>
       ["predictions", "me", "match", matchId] as const,
+    /** @deprecated usar `queryKeys.entries.special(entryId)` */
     special: () => ["predictions", "special", "me"] as const,
+  },
+  entries: {
+    all: () => ["entries"] as const,
+    me: () => ["entries", "me"] as const,
+    detail: (id: string) => ["entries", id] as const,
+    predictions: (entryId: string, filters?: Record<string, unknown>) =>
+      ["entries", entryId, "predictions", filters ?? {}] as const,
+    predictionForMatch: (entryId: string, matchId: string) =>
+      ["entries", entryId, "predictions", "match", matchId] as const,
+    special: (entryId: string) =>
+      ["entries", entryId, "special"] as const,
   },
   leaderboard: {
     all: () => ["leaderboard"] as const,
     global: (page: number) => ["leaderboard", "global", page] as const,
     phase: (phase: Phase, page: number) =>
       ["leaderboard", "phase", phase, page] as const,
+    /**
+     * Reemplaza el viejo `leaderboard.around()` (user-keyed). Ahora el
+     * "alrededor de mí" se calcula por entry específica — un user con
+     * 2 entries ve dos contextos distintos según cuál esté activa.
+     */
+    aroundEntry: (entryId: string) =>
+      ["leaderboard", "entry", entryId, "around"] as const,
+    /** @deprecated usar `queryKeys.leaderboard.aroundEntry(entryId)` */
     around: () => ["leaderboard", "me", "around"] as const,
     league: (id: string, page: number) =>
       ["leaderboard", "league", id, page] as const,

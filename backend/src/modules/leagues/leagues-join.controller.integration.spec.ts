@@ -30,7 +30,7 @@ describe('LeaguesController join (integration)', () => {
   async function createUser(dni: string, suffix: string, waPrefix: number) {
     const bcrypt = await import('bcrypt');
     const passwordHash = await bcrypt.hash(password, 10);
-    return prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         dni,
         firstName: `Lg-${suffix}`,
@@ -39,6 +39,26 @@ describe('LeaguesController join (integration)', () => {
         passwordHash,
       },
     });
+    // Multi-prode: create Entry #1 so the user can create / join leagues.
+    const payment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    await prisma.entry.create({
+      data: {
+        userId: user.id,
+        paymentId: payment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
+    return user;
   }
 
   async function loginAccessToken(dni: string): Promise<string> {
@@ -141,8 +161,8 @@ describe('LeaguesController join (integration)', () => {
     expect(res.body.id).toBe(id);
     expect(res.body.inviteCode).toBe(inviteCode);
 
-    const membership = await prisma.leagueMembership.findUnique({
-      where: { leagueId_userId: { leagueId: id, userId: joinerId } },
+    const membership = await prisma.leagueMembership.findFirst({
+      where: { leagueId: id, entry: { userId: joinerId } },
     });
     expect(membership).not.toBeNull();
   });

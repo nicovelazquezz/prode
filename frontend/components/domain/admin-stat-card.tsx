@@ -25,9 +25,11 @@ interface AdminStatCardProps {
 }
 
 /**
- * Stat card para el dashboard admin (spec §6.11). Numero gigante en
- * font-display 48px, label arriba en uppercase tracked, hint debajo.
- * Si se pasa `sparkline`, lo renderiza en la esquina inferior derecha.
+ * Stat card para el dashboard admin (spec §6.11).
+ *
+ * Visual: dark editorial. Card con bg surface y border line-strong.
+ * Numero gigante en display Oswald, label arriba en mono uppercase
+ * tracked. Tone alert pone border y numero en rojo.
  */
 export function AdminStatCard({
   label,
@@ -41,14 +43,14 @@ export function AdminStatCard({
   return (
     <div
       className={cn(
-        "rounded-md border bg-white p-5 md:p-6",
+        "rounded-sm border bg-[var(--color-landing-surface)] p-5 md:p-6",
         tone === "alert"
-          ? "border-[var(--color-prode-accent)]"
-          : "border-[var(--color-prode-border)]",
+          ? "border-[var(--color-landing-red)]"
+          : "border-[var(--color-landing-line-strong)]",
         className,
       )}
     >
-      <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+      <p className="font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">
         {label}
       </p>
       <div className="mt-3 flex items-end justify-between gap-3">
@@ -57,15 +59,15 @@ export function AdminStatCard({
             <div
               role="status"
               aria-busy="true"
-              className="h-12 w-32 animate-pulse rounded bg-[var(--color-prode-surface)]"
+              className="h-12 w-32 animate-pulse rounded-sm bg-[var(--color-landing-surface-2)]"
             />
           ) : (
             <p
               className={cn(
-                "font-display font-black leading-none tracking-tight tabular-nums",
+                "font-[family-name:var(--font-landing-display)] uppercase leading-none tracking-tight tabular-nums",
                 tone === "alert"
-                  ? "text-[var(--color-prode-accent)]"
-                  : "text-[var(--color-prode-near-black)]",
+                  ? "text-[var(--color-landing-red)]"
+                  : "text-[var(--color-landing-text)]",
               )}
               style={{ fontSize: "48px" }}
             >
@@ -73,7 +75,7 @@ export function AdminStatCard({
             </p>
           )}
           {hint ? (
-            <p className="mt-2 font-sans text-xs text-[var(--color-prode-text-secondary)]">
+            <p className="mt-2 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)]">
               {hint}
             </p>
           ) : null}

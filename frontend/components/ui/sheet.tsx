@@ -36,14 +36,14 @@ const SheetContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col",
-        "rounded-t-md bg-white",
-        "border-t border-[var(--color-prode-border)]",
+        "rounded-t-md bg-[var(--color-landing-surface)]",
+        "border-t border-[var(--color-landing-line-strong)]",
         className,
       )}
       {...props}
     >
       {/* Drag handle visible at top of sheet */}
-      <div className="mx-auto mt-4 h-1.5 w-12 rounded-pill bg-[var(--color-prode-border)]" />
+      <div className="mx-auto mt-4 h-1.5 w-12 rounded-pill bg-[var(--color-landing-line-strong)]" />
       <div className="p-4">{children}</div>
     </VaulDrawer.Content>
   </SheetPortal>
@@ -77,7 +77,7 @@ const SheetTitle = React.forwardRef<
     ref={ref}
     className={cn(
       "font-display text-2xl font-black uppercase tracking-wide leading-none",
-      "text-[var(--color-prode-near-black)]",
+      "text-[var(--color-landing-text)]",
       className,
     )}
     {...props}
@@ -92,7 +92,7 @@ const SheetDescription = React.forwardRef<
   <VaulDrawer.Description
     ref={ref}
     className={cn(
-      "font-sans text-base text-[var(--color-prode-text-secondary)]",
+      "font-sans text-base text-[var(--color-landing-text-muted)]",
       className,
     )}
     {...props}

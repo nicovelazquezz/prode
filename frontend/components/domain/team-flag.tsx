@@ -5,28 +5,32 @@ import { cn } from "@/lib/utils/cn";
 
 interface TeamFlagProps {
   /**
-   * Codigo FIFA de 3 letras (ej "ARG", "MEX", "BRA").
-   * Internamente lo cortamos a 2 letras lowercase para flagcdn,
-   * que sigue ISO 3166-1 alpha-2 (no FIFA). Esto no es perfecto
-   * (algunos paises difieren), pero cubre 95% de los casos para
-   * el MVP. Phase 3+ podra usar SVGs propios si hace falta.
+   * Código FIFA de 3 letras (ej "ARG", "MEX", "BRA"). Se usa como
+   * texto alt y como fallback si no se pasa `src`.
    */
   fifaCode: string;
+  /**
+   * URL completa de la bandera. Default backend: PNG hosted en
+   * `static.flashscore.com/res/image/data/{id}.png`. Si no se provee
+   * (callers legacy / tests), se cae a `flagcdn.com/{iso2}.svg`.
+   */
+  src?: string;
   size?: number;
   className?: string;
 }
 
 /**
- * Bandera de un seleccionado, fetcheada desde flagcdn.com como
- * fallback (no necesitamos hosting de SVGs propios). Usa
- * `next/image` con `unoptimized` para no pasar por el optimizer
- * (los SVG ya pesan poco y flagcdn.com no esta en remotePatterns).
+ * Bandera de un seleccionado. La fuente preferida es `team.flagUrl`
+ * (PNG flashscore); si no se pasa, fallback a flagcdn por código FIFA
+ * truncado a 2 letras lowercase. Siempre `unoptimized` — los assets
+ * son ya pequeños y los hosts externos no requieren optimización.
  */
-export function TeamFlag({ fifaCode, size = 32, className }: TeamFlagProps) {
-  const iso = fifaCode.toLowerCase().slice(0, 2);
+export function TeamFlag({ fifaCode, src, size = 32, className }: TeamFlagProps) {
+  const url =
+    src ?? `https://flagcdn.com/${fifaCode.toLowerCase().slice(0, 2)}.svg`;
   return (
     <Image
-      src={`https://flagcdn.com/${iso}.svg`}
+      src={url}
       alt={`Bandera ${fifaCode}`}
       width={size}
       height={size}

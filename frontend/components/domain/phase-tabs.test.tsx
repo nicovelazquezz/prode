@@ -4,10 +4,37 @@ import userEvent from "@testing-library/user-event";
 import { PhaseTabs } from "./phase-tabs";
 
 describe("PhaseTabs", () => {
-  it("renders all 7 tabs (Upcoming + 6 phases)", () => {
+  it("renders Upcoming + all 7 phases when no availablePhases prop is passed", () => {
     render(<PhaseTabs value="UPCOMING" onChange={vi.fn()} />);
     const tabs = screen.getAllByRole("tab");
-    expect(tabs).toHaveLength(7);
+    // Próx + 7 phases (GROUPS, ROUND_32, ROUND_16, QUARTERS, SEMIS, THIRD_PLACE, FINAL)
+    expect(tabs).toHaveLength(8);
+  });
+
+  it("renders only Upcoming + available phases when availablePhases is passed", () => {
+    render(
+      <PhaseTabs
+        value="GROUPS"
+        onChange={vi.fn()}
+        availablePhases={["GROUPS", "ROUND_32"]}
+      />,
+    );
+    const tabs = screen.getAllByRole("tab");
+    // Próx + GROUPS + ROUND_32 = 3
+    expect(tabs).toHaveLength(3);
+  });
+
+  it("hides the Upcoming tab when showUpcoming is false", () => {
+    render(
+      <PhaseTabs
+        value="GROUPS"
+        onChange={vi.fn()}
+        availablePhases={["GROUPS"]}
+        showUpcoming={false}
+      />,
+    );
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs).toHaveLength(1);
   });
 
   it("marks the selected tab as active and focusable", () => {

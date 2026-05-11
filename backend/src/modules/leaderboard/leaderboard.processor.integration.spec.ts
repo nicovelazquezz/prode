@@ -28,15 +28,16 @@ describe('LeaderboardRefreshProcessor (integration)', () => {
 
   let adminId: string;
   let userId: string;
+  let entryId: string;
   let matchId: string;
 
-  // Reads the user's row in the MV (returns null if not yet refreshed
-  // OR the user truly isn't in the MV — the test setup ensures this
+  // Reads the entry's row in the MV (returns null if not yet refreshed
+  // OR the entry truly isn't in the MV — the test setup ensures this
   // is the only ambiguity that matters).
-  async function readMvRow(uid: string) {
+  async function readMvRow(eid: string) {
     const rows = await prisma.$queryRaw<
-      Array<{ user_id: string; total_points: bigint }>
-    >`SELECT user_id, total_points FROM leaderboard_global WHERE user_id = ${uid}`;
+      Array<{ entry_id: string; total_points: bigint }>
+    >`SELECT entry_id, total_points FROM leaderboard_global WHERE entry_id = ${eid}`;
     return rows[0] ?? null;
   }
 
@@ -98,10 +99,29 @@ describe('LeaderboardRefreshProcessor (integration)', () => {
       },
     });
     userId = user.id;
+    const payment = await prisma.payment.create({
+      data: {
+        userId,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    const entry = await prisma.entry.create({
+      data: {
+        userId,
+        paymentId: payment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
+    entryId = entry.id;
 
     await prisma.prediction.create({
       data: {
-        userId,
+        entryId,
         matchId,
         scoreHome: 2,
         scoreAway: 1, // EXACT vs upcoming result — 5 base points × 1.0 multiplier.
@@ -143,9 +163,9 @@ describe('LeaderboardRefreshProcessor (integration)', () => {
   }, 30_000);
 
   it('refreshes the materialized view shortly after finishMatchAndScore', async () => {
-    // Sanity: refresh the MV BEFORE finish so the test user is at 0 points.
+    // Sanity: refresh the MV BEFORE finish so the test entry is at 0 points.
     await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_global`;
-    const baseline = await readMvRow(userId);
+    const baseline = await readMvRow(entryId);
     expect(baseline?.total_points ?? 0n).toBe(0n);
 
     // Drive scoring. The post-commit step enqueues `leaderboard.refresh`.
@@ -155,7 +175,7 @@ describe('LeaderboardRefreshProcessor (integration)', () => {
     const deadline = Date.now() + 10_000;
     let refreshed: Awaited<ReturnType<typeof readMvRow>> = null;
     while (Date.now() < deadline) {
-      refreshed = await readMvRow(userId);
+      refreshed = await readMvRow(entryId);
       if (refreshed && Number(refreshed.total_points) === 5) break;
       await new Promise((r) => setTimeout(r, 200));
     }

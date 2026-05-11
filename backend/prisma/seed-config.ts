@@ -64,7 +64,7 @@ const SPECIAL_PRIZE_RULES = [
 ];
 
 const APP_CONFIG = [
-  { key: 'inscripcion_precio', value: '15000', description: 'Precio de inscripción en ARS' },
+  { key: 'inscripcion_precio', value: '10000', description: 'Precio de inscripción en ARS' },
   { key: 'inscripcion_cierre', value: '2026-06-11T19:00:00-03:00', description: 'Fecha límite para inscribirse (ISO 8601)' },
   { key: 'pozo_dist_top1', value: '0.25', description: 'Porcentaje del pozo para el primer puesto' },
   { key: 'pozo_dist_top2', value: '0.12', description: 'Porcentaje del pozo para el segundo puesto' },
@@ -72,6 +72,14 @@ const APP_CONFIG = [
   { key: 'pozo_dist_fase', value: '0.05', description: 'Porcentaje del pozo para el ganador de cada fase' },
   { key: 'pozo_club', value: '0.20', description: 'Porcentaje del pozo retenido por el club' },
   { key: 'pozo_reserva', value: '0.05', description: 'Porcentaje del pozo retenido como reserva / fondo de premios especiales' },
+  // Multi-prode (v1.1): cap on how many entries a user can hold. Editable
+  // from /admin/configuracion. Default 5 per spec §1 alcance.
+  { key: 'max_entries_per_user', value: '5', description: 'Máximo de entradas (prodes) por usuario' },
+  // Hard cap on total `User` rows with role='USER'. Editable desde
+  // /admin/configuracion. Default 500 — el cliente confirmó "no creo
+  // que crezca más de 500". Aplica al complete-registration y al admin
+  // manual signup; el cap por entries (5) sigue independiente.
+  { key: 'max_users', value: '500', description: 'Máximo total de usuarios (role=USER) en el sistema' },
 ];
 
 async function seedScoringRules() {

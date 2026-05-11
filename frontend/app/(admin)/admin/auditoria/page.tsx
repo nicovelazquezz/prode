@@ -56,10 +56,18 @@ export default function AdminAuditoriaPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-display text-3xl md:text-4xl font-black uppercase tracking-wide text-[var(--color-prode-near-black)]">
-          Auditoria
+        <div className="mb-2 font-[family-name:var(--font-landing-mono)] text-[11px] uppercase tracking-[0.22em] text-[var(--color-landing-text-muted)]">Trazabilidad</div>
+
+        <h1 className="font-[family-name:var(--font-landing-display)] text-4xl md:text-5xl uppercase tracking-tight leading-[0.85] text-[var(--color-landing-text)]">
+
+          <span className="inline-block border-b-[6px] border-[var(--color-landing-green)] pb-1">
+
+            Auditoria
+
+          </span>
+
         </h1>
-        <p className="mt-1 font-sans text-sm text-[var(--color-prode-text-secondary)]">
+        <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
           Bitacora de cambios en el sistema. Click en una fila para ver el
           diff completo.
         </p>
@@ -120,47 +128,47 @@ export default function AdminAuditoriaPage() {
         </FilterField>
       </section>
 
-      <div className="overflow-x-auto rounded-md border border-[var(--color-prode-border)] bg-white">
+      <div className="overflow-x-auto rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)]">
         <table className="w-full border-collapse" aria-label="Tabla de auditoria">
-          <thead className="border-b border-[var(--color-prode-border)] bg-[var(--color-prode-surface)]">
+          <thead className="border-b border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)]">
             <tr>
               <th
                 scope="col"
-                className="w-10 px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]"
+                className="w-10 px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               />
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]"
+                className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               >
                 Fecha
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]"
+                className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               >
                 Entity
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]"
+                className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               >
                 Action
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]"
+                className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               >
                 User
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]"
+                className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               >
                 Entity ID
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-sans text-[10px] font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]"
+                className="px-4 py-3 text-left font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
               >
                 IP
               </th>
@@ -173,7 +181,7 @@ export default function AdminAuditoriaPage() {
                   <div
                     role="status"
                     aria-busy="true"
-                    className="mx-auto h-4 w-32 animate-pulse rounded bg-[var(--color-prode-surface)]"
+                    className="mx-auto h-4 w-32 animate-pulse rounded bg-[var(--color-landing-surface)]"
                   />
                 </td>
               </tr>
@@ -181,7 +189,7 @@ export default function AdminAuditoriaPage() {
               <tr>
                 <td
                   colSpan={7}
-                  className="px-4 py-10 text-center font-sans text-sm text-[var(--color-prode-text-secondary)]"
+                  className="px-4 py-10 text-center font-sans text-sm text-[var(--color-landing-text-muted)]"
                 >
                   Sin entradas para los filtros aplicados.
                 </td>
@@ -208,18 +216,18 @@ export default function AdminAuditoriaPage() {
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded-md border border-[var(--color-prode-border)] bg-white px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-[var(--color-prode-surface)]"
+            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-4 py-2 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] disabled:opacity-40 disabled:pointer-events-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
           >
             Anterior
           </button>
-          <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+          <span className="font-sans text-xs uppercase tracking-wider text-[var(--color-landing-text-muted)]">
             Pagina {page} de {totalPages}
           </span>
           <button
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="rounded-md border border-[var(--color-prode-border)] bg-white px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-[var(--color-prode-surface)]"
+            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-4 py-2 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)] disabled:opacity-40 disabled:pointer-events-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-landing-gold)]"
           >
             Siguiente
           </button>
@@ -242,8 +250,8 @@ function AuditRow({
     <Fragment>
       <tr
         className={cn(
-          "border-b border-[var(--color-prode-border)]",
-          "cursor-pointer transition-colors hover:bg-[var(--color-prode-surface)]",
+          "border-b border-[var(--color-landing-line-strong)]",
+          "cursor-pointer transition-colors hover:bg-[var(--color-landing-surface)]",
         )}
         onClick={onToggle}
         tabIndex={0}
@@ -256,12 +264,12 @@ function AuditRow({
         <td className="px-4 py-3 align-middle">
           {expanded ? (
             <ChevronDown
-              className="h-4 w-4 text-[var(--color-prode-text-secondary)]"
+              className="h-4 w-4 text-[var(--color-landing-text-muted)]"
               aria-hidden
             />
           ) : (
             <ChevronRight
-              className="h-4 w-4 text-[var(--color-prode-text-secondary)]"
+              className="h-4 w-4 text-[var(--color-landing-text-muted)]"
               aria-hidden
             />
           )}
@@ -275,23 +283,24 @@ function AuditRow({
         <td className="px-4 py-3 align-middle font-sans text-sm">
           {entry.action}
         </td>
-        <td className="px-4 py-3 align-middle font-mono text-xs text-[var(--color-prode-text-secondary)]">
+        <td className="px-4 py-3 align-middle font-mono text-xs text-[var(--color-landing-text-muted)]">
           {entry.userId ?? "—"}
         </td>
-        <td className="px-4 py-3 align-middle font-mono text-xs text-[var(--color-prode-text-secondary)]">
+        <td className="px-4 py-3 align-middle font-mono text-xs text-[var(--color-landing-text-muted)]">
           {entry.entityId ?? "—"}
         </td>
-        <td className="px-4 py-3 align-middle font-mono text-xs text-[var(--color-prode-text-secondary)]">
+        <td className="px-4 py-3 align-middle font-mono text-xs text-[var(--color-landing-text-muted)]">
           {entry.ipAddress ?? "—"}
         </td>
       </tr>
       {expanded ? (
-        <tr className="border-b border-[var(--color-prode-border)] bg-[var(--color-prode-surface)]">
-          <td colSpan={7} className="px-4 py-4">
+        <tr className="border-b border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface-2)]">
+          <td colSpan={7} className="px-4 py-5">
             <ChangesViewer changes={entry.changes} />
             {entry.userAgent ? (
-              <p className="mt-3 font-mono text-xs text-[var(--color-prode-text-secondary)]">
-                UA: {entry.userAgent}
+              <p className="mt-3 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)]">
+                <span className="text-[var(--color-landing-gold)]">UA:</span>{" "}
+                {entry.userAgent}
               </p>
             ) : null}
           </td>
@@ -304,7 +313,7 @@ function AuditRow({
 function ChangesViewer({ changes }: { changes: unknown }) {
   if (!changes) {
     return (
-      <p className="font-sans text-xs italic text-[var(--color-prode-text-secondary)]">
+      <p className="font-sans text-xs italic text-[var(--color-landing-text-muted)]">
         Sin diff registrado.
       </p>
     );
@@ -314,23 +323,29 @@ function ChangesViewer({ changes }: { changes: unknown }) {
     changes !== null &&
     ("before" in changes || "after" in changes);
 
+  const codeBlockBase =
+    "max-h-64 overflow-auto rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-bg)] p-3 font-[family-name:var(--font-landing-mono)] text-[11px] leading-relaxed text-[var(--color-landing-text)]";
+
+  const labelBase =
+    "font-[family-name:var(--font-landing-mono)] text-[10px] font-bold uppercase tracking-[0.18em]";
+
   if (hasBeforeAfter) {
     const obj = changes as { before?: unknown; after?: unknown };
     return (
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div>
-          <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+          <p className={cn(labelBase, "text-[var(--color-landing-red)]")}>
             Before
           </p>
-          <pre className="mt-1 max-h-64 overflow-auto rounded-md border border-[var(--color-prode-border)] bg-white p-3 font-mono text-xs">
+          <pre className={cn(codeBlockBase, "mt-1 [border-left-color:var(--color-landing-red)] border-l-[3px]")}>
             {JSON.stringify(obj.before ?? null, null, 2)}
           </pre>
         </div>
         <div>
-          <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-prode-text-secondary)]">
+          <p className={cn(labelBase, "text-[var(--color-landing-green)]")}>
             After
           </p>
-          <pre className="mt-1 max-h-64 overflow-auto rounded-md border border-[var(--color-prode-border)] bg-white p-3 font-mono text-xs">
+          <pre className={cn(codeBlockBase, "mt-1 [border-left-color:var(--color-landing-green)] border-l-[3px]")}>
             {JSON.stringify(obj.after ?? null, null, 2)}
           </pre>
         </div>
@@ -339,7 +354,7 @@ function ChangesViewer({ changes }: { changes: unknown }) {
   }
 
   return (
-    <pre className="max-h-64 overflow-auto rounded-md border border-[var(--color-prode-border)] bg-white p-3 font-mono text-xs">
+    <pre className={codeBlockBase}>
       {JSON.stringify(changes, null, 2)}
     </pre>
   );

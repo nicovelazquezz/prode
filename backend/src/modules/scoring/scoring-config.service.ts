@@ -17,9 +17,45 @@ const CONFIG_TTL_MS = 60 * 60 * 1000;
 
 const SCORING_RULES_KEY = 'scoring:rules:v1';
 const PHASE_MULTIPLIERS_KEY = 'scoring:multipliers:v1';
+const SPECIAL_PRIZE_RULES_KEY = 'scoring:special-prizes:v1';
 
 export type ScoringRulesMap = Record<OutcomeType, number>;
 export type PhaseMultipliersMap = Record<Phase, number>;
+
+/**
+ * Mapa de los puntos por categoría de pronóstico especial. Las keys
+ * vienen de `seed-config.ts` (`SpecialPrizeRule`) y son:
+ *
+ *   - champion          (acertar campeón)
+ *   - runnerUp          (subcampeón)
+ *   - thirdPlace        (tercer puesto)
+ *   - topScorer         (goleador del torneo)
+ *   - totalGoalsExact   (total de goles del torneo, exacto)
+ *   - totalGoalsClose   (total de goles, dentro de ±5)
+ */
+export interface SpecialPrizeRulesMap {
+  champion: number;
+  runnerUp: number;
+  thirdPlace: number;
+  topScorer: number;
+  totalGoalsExact: number;
+  totalGoalsClose: number;
+}
+
+/**
+ * Defaults fallback si la BD está incompleta. Coinciden con los valores
+ * sembrados en `seed-config.ts:SPECIAL_PRIZE_RULES`. Si una key falta en
+ * BD, usamos 0 — no inventar puntos para que el admin se entere de la
+ * misconfig vía el reporte de scoring.
+ */
+const SPECIAL_PRIZE_RULES_DEFAULTS: SpecialPrizeRulesMap = {
+  champion: 0,
+  runnerUp: 0,
+  thirdPlace: 0,
+  topScorer: 0,
+  totalGoalsExact: 0,
+  totalGoalsClose: 0,
+};
 
 /**
  * Read-through cache over `ScoringRule` and `PhaseMultiplier`. Both
@@ -103,6 +139,29 @@ export class ScoringConfigService {
   }
 
   /**
+   * Devuelve los puntos por categoría de pronóstico especial. Mismo
+   * patrón cache-through que `getRules()` y `getMultipliers()`. Si una
+   * key falta en BD, cae a 0 (defensivo — admin se entera por el
+   * reporte de scoring que distribuyó cero puntos).
+   */
+  async getSpecialPrizeRules(): Promise<SpecialPrizeRulesMap> {
+    const cached = await this.cache.get<SpecialPrizeRulesMap>(
+      SPECIAL_PRIZE_RULES_KEY,
+    );
+    if (cached) return cached;
+
+    const rows = await this.prisma.specialPrizeRule.findMany();
+    const map: SpecialPrizeRulesMap = { ...SPECIAL_PRIZE_RULES_DEFAULTS };
+    for (const row of rows) {
+      if (row.key in map) {
+        map[row.key as keyof SpecialPrizeRulesMap] = row.points;
+      }
+    }
+    await this.cache.set(SPECIAL_PRIZE_RULES_KEY, map, CONFIG_TTL_MS);
+    return map;
+  }
+
+  /**
    * Drops both cached entries. Call from admin write-paths (Phase 6+
    * admin config endpoints) so the next scoring call sees fresh values.
    * Idempotent — safe to call when nothing is cached.
@@ -110,6 +169,7 @@ export class ScoringConfigService {
   async invalidate(): Promise<void> {
     await this.cache.del(SCORING_RULES_KEY);
     await this.cache.del(PHASE_MULTIPLIERS_KEY);
+    await this.cache.del(SPECIAL_PRIZE_RULES_KEY);
     this.logger.log('Scoring config cache invalidated');
   }
 }

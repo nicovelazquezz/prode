@@ -49,8 +49,26 @@ describe('GET /matches/:matchId/predictions/count (public)', () => {
         },
       });
       userIds.push(user.id);
+      const payment = await prisma.payment.create({
+        data: {
+          userId: user.id,
+          amount: 10_000,
+          method: 'CASH',
+          status: 'APPROVED',
+          paidAt: new Date(),
+          completedAt: new Date(),
+        },
+      });
+      const entry = await prisma.entry.create({
+        data: {
+          userId: user.id,
+          paymentId: payment.id,
+          position: 1,
+          status: 'ACTIVE',
+        },
+      });
       await prisma.prediction.create({
-        data: { userId: user.id, matchId, scoreHome: 1, scoreAway: i },
+        data: { entryId: entry.id, matchId, scoreHome: 1, scoreAway: i },
       });
     }
   }, 30_000);
@@ -58,9 +76,8 @@ describe('GET /matches/:matchId/predictions/count (public)', () => {
   afterAll(async () => {
     if (prisma) {
       if (userIds.length > 0) {
-        await prisma.prediction.deleteMany({
-          where: { userId: { in: userIds } },
-        });
+        // Predictions cascade from entries; deleting the user wipes
+        // entry → prediction tree via the FK CASCADE.
         await prisma.auditLog.deleteMany({
           where: { userId: { in: userIds } },
         });
@@ -132,6 +149,26 @@ describe('GET /matches/:matchId/predictions/count (public)', () => {
       },
     });
     userIds.push(writer.id);
+    // Multi-prode: writer needs an entry so the controller can resolve
+    // the primary entry on POST /predictions/match/:matchId.
+    const writerPayment = await prisma.payment.create({
+      data: {
+        userId: writer.id,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    await prisma.entry.create({
+      data: {
+        userId: writer.id,
+        paymentId: writerPayment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
     const login = await request(app.getHttpServer()).post('/auth/login').send({
       dni: writer.dni,
       password: 'cache-invalidation-test',

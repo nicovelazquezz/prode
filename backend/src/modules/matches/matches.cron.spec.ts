@@ -189,9 +189,8 @@ describe('MatchesCron.lockSpecialPredictions (integration)', () => {
 
   afterAll(async () => {
     if (prisma) {
-      await prisma.specialPrediction.deleteMany({
-        where: { userId: { in: createdUserIds } },
-      });
+      // Special predictions cascade off entries; deleting the user
+      // wipes the user → entry → specialPrediction tree.
       await prisma.user.deleteMany({
         where: { id: { in: createdUserIds } },
       });
@@ -221,7 +220,7 @@ describe('MatchesCron.lockSpecialPredictions (integration)', () => {
       },
     });
 
-    // Create a user + SpecialPrediction with lockedAt = null.
+    // Create a user + entry + SpecialPrediction with lockedAt = null.
     const suffix = Date.now().toString();
     const user = await prisma.user.create({
       data: {
@@ -234,15 +233,33 @@ describe('MatchesCron.lockSpecialPredictions (integration)', () => {
       },
     });
     createdUserIds.push(user.id);
+    const payment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    const entry = await prisma.entry.create({
+      data: {
+        userId: user.id,
+        paymentId: payment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
     await prisma.specialPrediction.create({
-      data: { userId: user.id, lockedAt: null },
+      data: { entryId: entry.id, lockedAt: null },
     });
 
     const flipped = await cron.lockSpecialPredictions();
     expect(flipped).toBeGreaterThanOrEqual(1);
 
     const after = await prisma.specialPrediction.findUniqueOrThrow({
-      where: { userId: user.id },
+      where: { entryId: entry.id },
     });
     expect(after.lockedAt).not.toBeNull();
   });
@@ -270,15 +287,33 @@ describe('MatchesCron.lockSpecialPredictions (integration)', () => {
       },
     });
     createdUserIds.push(user.id);
+    const payment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    const entry = await prisma.entry.create({
+      data: {
+        userId: user.id,
+        paymentId: payment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
     await prisma.specialPrediction.create({
-      data: { userId: user.id, lockedAt: null },
+      data: { entryId: entry.id, lockedAt: null },
     });
 
     const flipped = await cron.lockSpecialPredictions();
     expect(flipped).toBe(0);
 
     const after = await prisma.specialPrediction.findUniqueOrThrow({
-      where: { userId: user.id },
+      where: { entryId: entry.id },
     });
     expect(after.lockedAt).toBeNull();
   });

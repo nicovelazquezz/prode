@@ -25,6 +25,7 @@ describe('Leaderboard refresh after scoring (e2e)', () => {
   let phase: PhaseService;
   let adminToken: string;
   let userId: string;
+  let entryId: string;
   let matchId: string;
   // Snapshot of the original match state so the suite can restore it.
   let matchSnapshot: {
@@ -101,10 +102,29 @@ describe('Leaderboard refresh after scoring (e2e)', () => {
       },
     });
     userId = user.id;
+    const payment = await prisma.payment.create({
+      data: {
+        userId,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    const entry = await prisma.entry.create({
+      data: {
+        userId,
+        paymentId: payment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
+    entryId = entry.id;
 
     await prisma.prediction.create({
       data: {
-        userId,
+        entryId,
         matchId,
         scoreHome: 2,
         scoreAway: 1,
@@ -150,9 +170,9 @@ describe('Leaderboard refresh after scoring (e2e)', () => {
   }, 30_000);
 
   it('finishMatch → worker refreshes MV → /leaderboard/global reflects new points', async () => {
-    // 1) Sanity: user is in the MV at 0 points before the score.
+    // 1) Sanity: entry is in the MV at 0 points before the score.
     const before = await prisma.$queryRaw<Array<{ total_points: bigint }>>`
-      SELECT total_points FROM leaderboard_global WHERE user_id = ${userId}
+      SELECT total_points FROM leaderboard_global WHERE entry_id = ${entryId}
     `;
     expect(Number(before[0]?.total_points ?? 0n)).toBe(0);
 
@@ -177,7 +197,7 @@ describe('Leaderboard refresh after scoring (e2e)', () => {
     let mvPoints = 0;
     while (Date.now() < deadline) {
       const rows = await prisma.$queryRaw<Array<{ total_points: bigint }>>`
-        SELECT total_points FROM leaderboard_global WHERE user_id = ${userId}
+        SELECT total_points FROM leaderboard_global WHERE entry_id = ${entryId}
       `;
       mvPoints = Number(rows[0]?.total_points ?? 0n);
       if (mvPoints === 5) break;
@@ -185,14 +205,11 @@ describe('Leaderboard refresh after scoring (e2e)', () => {
     }
     expect(mvPoints).toBe(5);
 
-    // 4) GET /leaderboard/global must return the updated points. Without
-    //    invalidation the cached payload from `primed` would still pin
-    //    the user at 0; this assertion proves the worker dropped the
-    //    cache key.
+    // 4) GET /leaderboard/global must return the updated points.
     const after = await request(app.getHttpServer()).get('/leaderboard/global');
     expect(after.status).toBe(200);
-    const meRow = (after.body.rows as Array<{ user_id: string; total_points: number }>).find(
-      (r) => r.user_id === userId,
+    const meRow = (after.body.rows as Array<{ entry_id: string; total_points: number }>).find(
+      (r) => r.entry_id === entryId,
     );
     expect(meRow).toBeDefined();
     expect(meRow!.total_points).toBe(5);

@@ -44,4 +44,14 @@ export class CreateLeagueDto {
   @Min(2)
   @Max(200)
   maxMembers?: number;
+
+  /**
+   * Multi-prode: which of the caller's entries joins the new league as
+   * the owner's first member. Optional — when omitted, the service
+   * picks the caller's primary (lowest-position) ACTIVE entry. The
+   * frontend sends it explicitly when the user has > 1 entry.
+   */
+  @IsOptional()
+  @IsString()
+  entryId?: string;
 }

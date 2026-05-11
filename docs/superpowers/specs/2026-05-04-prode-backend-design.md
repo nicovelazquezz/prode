@@ -1317,7 +1317,7 @@ App falla rápido al startup si falta cualquier env crítica.
   - `prode-redis`
 - **Single instance:** suficiente para <200 users
 - **HTTPS:** Let's Encrypt automático
-- **Dominio:** `api.prode.tirofederal.com`
+- **Dominio:** `api.prodeplus.com`
 - **Variables de entorno:** panel Dokploy, no en repo
 - **Backups BD:** diario, retención 30 días en B2
 

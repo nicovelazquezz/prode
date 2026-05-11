@@ -22,6 +22,7 @@ describe('PredictionsController (integration)', () => {
   // Throwaway user + JWT minted at boot.
   let userId: string;
   let userToken: string;
+  let paymentId: string;
 
   // Matches we'll mutate. Each one is restored on teardown.
   let matchOpenId: string;
@@ -61,6 +62,27 @@ describe('PredictionsController (integration)', () => {
       },
     });
     userId = user.id;
+    // Multi-prode: every paying user has an Entry — controller resolves
+    // the primary entry on /predictions/... so we need one too.
+    const payment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: 10_000,
+        method: 'CASH',
+        status: 'APPROVED',
+        paidAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+    paymentId = payment.id;
+    await prisma.entry.create({
+      data: {
+        userId: user.id,
+        paymentId: payment.id,
+        position: 1,
+        status: 'ACTIVE',
+      },
+    });
 
     const login = await request(app.getHttpServer())
       .post('/auth/login')
@@ -95,10 +117,18 @@ describe('PredictionsController (integration)', () => {
 
   afterAll(async () => {
     if (prisma) {
-      await prisma.prediction.deleteMany({ where: { userId } });
+      // Predictions cascade from Entry → User; deleting the user
+      // unwinds the entry/predictions tree via FK CASCADE. Payment
+      // is NOT cascaded (Entry.paymentId is ON DELETE RESTRICT) so
+      // delete it explicitly after the user goes.
       await prisma.auditLog.deleteMany({ where: { userId } });
       await prisma.refreshToken.deleteMany({ where: { userId } });
       await prisma.user.delete({ where: { id: userId } }).catch(() => undefined);
+      // Payment.userId got set to NULL via the user delete cascade rule
+      // (ON DELETE SET NULL); delete the payment by id.
+      if (paymentId) {
+        await prisma.payment.delete({ where: { id: paymentId } }).catch(() => undefined);
+      }
       if (matchLockedId && originalLock) {
         await prisma.match.update({
           where: { id: matchLockedId },
@@ -126,7 +156,9 @@ describe('PredictionsController (integration)', () => {
       expect(res.body.scoreHome).toBe(3);
       expect(res.body.scoreAway).toBe(2);
       expect(res.body.matchId).toBe(matchOpenId);
-      expect(res.body.userId).toBe(userId);
+      // Multi-prode: response carries entryId now (the controller
+      // resolves the user's primary entry).
+      expect(res.body.entryId).toBeDefined();
     });
 
     it('rejects invalid scores via the DTO (400)', async () => {
@@ -174,8 +206,14 @@ describe('PredictionsController (integration)', () => {
       expect(res.body.scoreHome).toBe(0);
       expect(res.body.scoreAway).toBe(5);
 
+      // Find via entry — the user's primary entry is the one the
+      // controller resolves to.
+      const entry = await prisma.entry.findFirstOrThrow({
+        where: { userId, status: 'ACTIVE' },
+        orderBy: { position: 'asc' },
+      });
       const inDb = await prisma.prediction.findUniqueOrThrow({
-        where: { userId_matchId: { userId, matchId: matchOpenId } },
+        where: { entryId_matchId: { entryId: entry.id, matchId: matchOpenId } },
       });
       expect(inDb.scoreHome).toBe(0);
       expect(inDb.scoreAway).toBe(5);
