@@ -113,7 +113,10 @@ export class BaileysClientService
     this.sock = makeWASocket({
       auth: authState,
       printQRInTerminal: false,
-      logger: pino({ level: 'silent' }) as never,
+      // `warn` (no `silent`) para que errores reales de red, TLS, o
+      // protocolo Baileys ↔ WhatsApp salgan en logs y podamos
+      // diagnosticar cuando la conexión falla antes de generar QR.
+      logger: pino({ level: 'warn' }) as never,
       browser: ['ProdePlus', 'Chrome', '120'],
     });
     this.sock.ev.on('creds.update', saveCreds);
@@ -135,8 +138,14 @@ export class BaileysClientService
     }
     if (u.connection === 'close') {
       this.state.markDisconnected();
-      const code = (u.lastDisconnect?.error as Boom | undefined)?.output
-        ?.statusCode;
+      const err = u.lastDisconnect?.error as Boom | Error | undefined;
+      const code = (err as Boom | undefined)?.output?.statusCode;
+      const errMessage = err?.message ?? 'unknown';
+      // Loguear SIEMPRE el motivo del close (no solo cuando es loggedOut)
+      // para poder diagnosticar conexiones que fallan antes de emitir QR.
+      this.logger.warn(
+        `WA connection closed — code=${code ?? '?'} message=${errMessage}`,
+      );
       if (code === DisconnectReason.loggedOut) {
         this.logger.error(
           'WA loggedOut — re-scan QR after deleting auth dir.',
