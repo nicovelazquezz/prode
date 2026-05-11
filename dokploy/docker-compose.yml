@@ -1,33 +1,19 @@
 # Dokploy production stack for prode-backend.
 #
 # Env vars are populated from the Dokploy panel (NOT from the repo) — the
-# `${VAR}` placeholders below are resolved at deploy time. Only POSTGRES_PASSWORD
-# is required for both the postgres container and the backend's DATABASE_URL.
+# `${VAR}` placeholders below are resolved at deploy time.
 #
-# Volumes are named so Dokploy can manage backups (Postgres → Backblaze B2).
+# Postgres NO está acá como service: corre como database standalone
+# gestionada por Dokploy (proyecto `prode`, app name `prodeplus-db`). El
+# backend la alcanza por la red interna del proyecto. `DATABASE_URL`
+# completo se setea en el panel de Dokploy.
+#
+# Redis SÍ está acá como service porque la config (maxmemory, AOF) no
+# se puede pasar via UI estándar de Dokploy y queremos control fino.
+#
+# Volumes son named para que Dokploy pueda backupearlos.
 
 services:
-  prode-postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: prode
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: prode
-      TZ: America/Argentina/Buenos_Aires
-    volumes:
-      - prode-pg-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U prode']
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: '5'
-    restart: unless-stopped
-
   prode-redis:
     image: redis:7-alpine
     command: >
@@ -97,7 +83,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: postgresql://prode:${POSTGRES_PASSWORD}@prode-postgres:5432/prode
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://prode-redis:6379
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
@@ -116,8 +102,6 @@ services:
       ADMIN_DEFAULT_DNI: ${ADMIN_DEFAULT_DNI}
       ADMIN_DEFAULT_PASSWORD: ${ADMIN_DEFAULT_PASSWORD}
     depends_on:
-      prode-postgres:
-        condition: service_healthy
       prode-redis:
         condition: service_healthy
       prode-wa-backend:
@@ -172,6 +156,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  prode-pg-data:
   prode-redis-data:
   prode-wa-data:
