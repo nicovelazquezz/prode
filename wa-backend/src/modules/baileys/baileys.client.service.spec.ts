@@ -3,7 +3,7 @@ import {
   BadRequestException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { DisconnectReason } from '@whiskeysockets/baileys';
+import { DisconnectReason } from 'baileys';
 import { Boom } from '@hapi/boom';
 import { BaileysClientService } from './baileys.client.service.js';
 import { BaileysConnectionState } from './baileys-connection-state.js';

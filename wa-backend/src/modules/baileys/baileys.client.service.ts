@@ -13,7 +13,7 @@ import baileysPkg, {
   useMultiFileAuthState,
   type ConnectionState,
   type WASocket,
-} from '@whiskeysockets/baileys';
+} from 'baileys';
 import type { Boom } from '@hapi/boom';
 import pino from 'pino';
 import qrcode from 'qrcode-terminal';
