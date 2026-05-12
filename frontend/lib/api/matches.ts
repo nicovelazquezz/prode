@@ -74,6 +74,30 @@ export async function getMatchPredictionCount(
     .json<{ count: number }>();
 }
 
+/**
+ * Crea un partido nuevo via admin. matchNumber se auto-asigna server-side
+ * si no se pasa. homeTeamLabel / awayTeamLabel pueden ser fifaCodes
+ * (ej "ARG") o placeholders (ej "Ganador R16-1"); el backend resuelve
+ * los fifaCodes contra la tabla teams.
+ */
+export interface CreateMatchInput {
+  matchNumber?: number;
+  phase: Phase;
+  groupCode?: string;
+  homeTeamLabel: string;
+  awayTeamLabel: string;
+  kickoffAt: string; // ISO 8601
+  predictionsLockAt?: string;
+  predictionsOpenAt?: string;
+  venue?: string;
+  city?: string;
+  country?: string;
+}
+
+export async function createMatch(input: CreateMatchInput): Promise<Match> {
+  return api.post("admin/matches", { json: input }).json<Match>();
+}
+
 function cleanParams(
   params?: Record<string, string | number | boolean | undefined>,
 ): Record<string, string> {

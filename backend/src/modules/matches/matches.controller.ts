@@ -25,6 +25,7 @@ import { MatchesService } from './matches.service.js';
 import { ListMatchesDto } from './dto/list-matches.dto.js';
 import { UpdateMatchDto } from './dto/update-match.dto.js';
 import { PostponeMatchDto } from './dto/postpone-match.dto.js';
+import { CreateMatchDto } from './dto/create-match.dto.js';
 import { Phase } from '../../../generated/prisma/enums.js';
 
 /**
@@ -168,5 +169,39 @@ export class AdminMatchesController {
       ipAddress: ctx.ipAddress,
       userAgent: ctx.userAgent,
     });
+  }
+
+  /**
+   * Crea un partido nuevo. Usado para cargar partidos del Mundial uno
+   * por uno desde la UI admin, o para fases siguientes con equipos aún
+   * sin asignar (`homeTeamLabel = "Ganador R32-3"`).
+   */
+  @Post()
+  async create(
+    @Body() dto: CreateMatchDto,
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Req() req: Request,
+  ) {
+    const ctx = getRequestContext(req);
+    return this.matchesService.create(
+      {
+        matchNumber: dto.matchNumber,
+        phase: dto.phase as Phase,
+        groupCode: dto.groupCode,
+        homeTeamLabel: dto.homeTeamLabel,
+        awayTeamLabel: dto.awayTeamLabel,
+        kickoffAt: dto.kickoffAt,
+        predictionsLockAt: dto.predictionsLockAt,
+        predictionsOpenAt: dto.predictionsOpenAt,
+        venue: dto.venue,
+        city: dto.city,
+        country: dto.country,
+      },
+      {
+        userId: user?.id ?? null,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+      },
+    );
   }
 }

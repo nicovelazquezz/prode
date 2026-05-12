@@ -410,4 +410,130 @@ export class MatchesService {
 
     return updated;
   }
+
+  /**
+   * Crea un partido nuevo. Pensado tanto para cargar partidos del
+   * Mundial uno por uno desde la UI admin como para el flujo de fases
+   * eliminatorias donde los equipos aún no están definidos (se cargan
+   * con `homeTeamLabel = "Ganador 16-1"`).
+   *
+   * Reglas:
+   *   - `matchNumber`: si no viene en el DTO, se setea a `max+1` para
+   *     no obligar al admin a llevar la cuenta. Si viene, se valida
+   *     que sea único antes del insert.
+   *   - `homeTeamLabel` / `awayTeamLabel` se resuelven a `teamId` si
+   *     coinciden con un `fifaCode` (3 letras mayúsculas) de la tabla
+   *     `teams`. Sino quedan solo como labels, igual que en el seed.
+   *   - `predictionsLockAt`: si no viene, kickoff − 10 min (spec 5.3).
+   *   - `predictionsOpenAt`: el admin lo pasa o queda null.
+   */
+  async create(
+    dto: {
+      matchNumber?: number;
+      phase: Phase;
+      groupCode?: string;
+      homeTeamLabel: string;
+      awayTeamLabel: string;
+      kickoffAt: string;
+      predictionsLockAt?: string;
+      predictionsOpenAt?: string;
+      venue?: string;
+      city?: string;
+      country?: string;
+    },
+    ctx: AuditContext = {},
+  ): Promise<Match> {
+    const kickoffAt = new Date(dto.kickoffAt);
+    if (Number.isNaN(kickoffAt.getTime())) {
+      throw new BadRequestException('Invalid kickoffAt');
+    }
+
+    const predictionsLockAt = dto.predictionsLockAt
+      ? new Date(dto.predictionsLockAt)
+      : this.recomputeLockAt(kickoffAt);
+
+    let matchNumber: number;
+    if (dto.matchNumber !== undefined) {
+      const dup = await this.prisma.match.findUnique({
+        where: { matchNumber: dto.matchNumber },
+      });
+      if (dup) {
+        throw new BadRequestException(
+          `matchNumber ${dto.matchNumber} ya existe`,
+        );
+      }
+      matchNumber = dto.matchNumber;
+    } else {
+      const last = await this.prisma.match.findFirst({
+        orderBy: { matchNumber: 'desc' },
+        select: { matchNumber: true },
+      });
+      matchNumber = (last?.matchNumber ?? 0) + 1;
+    }
+
+    // Resolver labels que sean fifaCode a teamId. Mismo criterio que el
+    // seed: 3 letras mayúsculas.
+    const fifaPattern = /^[A-Z]{3}$/;
+    const labelsToResolve: string[] = [];
+    if (fifaPattern.test(dto.homeTeamLabel))
+      labelsToResolve.push(dto.homeTeamLabel);
+    if (fifaPattern.test(dto.awayTeamLabel))
+      labelsToResolve.push(dto.awayTeamLabel);
+
+    let homeTeamId: string | null = null;
+    let awayTeamId: string | null = null;
+    if (labelsToResolve.length > 0) {
+      const teams = await this.prisma.team.findMany({
+        where: { fifaCode: { in: labelsToResolve } },
+        select: { id: true, fifaCode: true },
+      });
+      const codeToId = new Map(teams.map((t) => [t.fifaCode, t.id]));
+      homeTeamId = codeToId.get(dto.homeTeamLabel) ?? null;
+      awayTeamId = codeToId.get(dto.awayTeamLabel) ?? null;
+    }
+
+    const match = await this.prisma.match.create({
+      data: {
+        matchNumber,
+        phase: dto.phase,
+        groupCode: dto.groupCode ?? null,
+        homeTeamId,
+        awayTeamId,
+        homeTeamLabel: dto.homeTeamLabel,
+        awayTeamLabel: dto.awayTeamLabel,
+        kickoffAt,
+        predictionsLockAt,
+        predictionsOpenAt: dto.predictionsOpenAt
+          ? new Date(dto.predictionsOpenAt)
+          : null,
+        venue: dto.venue ?? null,
+        city: dto.city ?? null,
+        country: dto.country ?? null,
+        status: MatchStatus.SCHEDULED,
+      },
+      include: { homeTeam: true, awayTeam: true },
+    });
+
+    void this.audit.log({
+      userId: ctx.userId,
+      action: 'match.created',
+      entity: 'match',
+      entityId: match.id,
+      changes: {
+        matchNumber,
+        phase: dto.phase,
+        homeTeamLabel: dto.homeTeamLabel,
+        awayTeamLabel: dto.awayTeamLabel,
+        kickoffAt: kickoffAt.toISOString(),
+      },
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+    });
+
+    this.logger.log(
+      `Created match ${match.id} (#${matchNumber}, ${dto.phase}, ${dto.homeTeamLabel} vs ${dto.awayTeamLabel})`,
+    );
+
+    return match;
+  }
 }
