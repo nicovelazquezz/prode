@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { normalizeArgentinePhone } from "../utils/normalize-phone";
 import type {
   Match,
   MatchStatus,
@@ -43,10 +44,10 @@ export async function createManualUser(dto: {
   paymentMethod: "CASH" | "TRANSFER";
   notes?: string;
 }): Promise<User> {
-  // Normalizamos el whatsapp a solo dígitos — el backend rechaza `+`,
-  // espacios o guiones (regex /^\d{10,15}$/). Aceptamos cualquier input
-  // razonable del admin para no obligarlo a tipear exacto.
-  const payload = { ...dto, whatsapp: dto.whatsapp.replace(/\D/g, "") };
+  // Normalizamos el whatsapp asumiendo Argentina (prepend 549 si falta).
+  // El backend re-normaliza vía @Transform pero hacerlo acá da UX previsible
+  // y evita depender solo de la validación remota.
+  const payload = { ...dto, whatsapp: normalizeArgentinePhone(dto.whatsapp) };
   return api.post("admin/users", { json: payload }).json<User>();
 }
 

@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsEnum,
   IsNotEmpty,
@@ -6,6 +7,7 @@ import {
   Matches,
   MaxLength,
 } from 'class-validator';
+import { normalizeArgentinePhone } from '../../../shared/utils/normalize-phone.js';
 
 /**
  * Body de `PATCH /admin/users/:id`. Todos los campos son opcionales —

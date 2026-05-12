@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsOptional,
@@ -6,6 +7,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { normalizeArgentinePhone } from '../../../shared/utils/normalize-phone.js';
 
 /**
  * Body de `PATCH /users/me`. Todos los campos son opcionales — el user
@@ -48,6 +50,7 @@ export class UpdateMeDto {
 
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => normalizeArgentinePhone(value))
   @Matches(/^\d{10,15}$/, {
     message: 'whatsapp debe ser 10-15 dígitos sin signos',
   })

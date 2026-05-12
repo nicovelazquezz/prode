@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
@@ -9,6 +10,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { normalizeArgentinePhone } from '../../../shared/utils/normalize-phone.js';
 
 /**
  * Methods accepted by the admin-manual user creation flow. MERCADOPAGO is
@@ -43,6 +45,7 @@ export class CreateManualUserDto {
   lastName!: string;
 
   @IsString()
+  @Transform(({ value }) => normalizeArgentinePhone(value))
   @Matches(/^\d{10,15}$/, { message: 'whatsapp must be 10-15 digits' })
   whatsapp!: string;
 

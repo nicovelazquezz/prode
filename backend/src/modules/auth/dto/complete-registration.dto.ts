@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsNotEmpty,
   IsString,
@@ -5,6 +6,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { normalizeArgentinePhone } from '../../../shared/utils/normalize-phone.js';
 
 /**
  * Body of `POST /auth/complete-registration`. Validates with class-validator
@@ -33,6 +35,7 @@ export class CompleteRegistrationDto {
   lastName!: string;
 
   @IsString()
+  @Transform(({ value }) => normalizeArgentinePhone(value))
   @Matches(/^\d{10,15}$/, { message: 'whatsapp must be 10-15 digits' })
   whatsapp!: string;
 
