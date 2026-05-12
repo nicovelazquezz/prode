@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -39,8 +39,20 @@ const errorClass =
  * Página `/login` — DNI + password sobre la estética stadium.
  * Card centrada con surface oscuro, inputs dark, CTA red full-width.
  * Errores via toast. Redirige según rol: USER → /predicciones, ADMIN → /admin.
+ *
+ * El form está dentro de un Suspense boundary porque usa
+ * `useSearchParams()` para leer `?returnTo=...`; sin Suspense, el
+ * prerender estático de Next falla (CSR bailout).
  */
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
