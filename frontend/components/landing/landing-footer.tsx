@@ -22,6 +22,7 @@ function hasLinks(
 export function LandingFooter() {
   return (
     <footer className="border-t border-[var(--color-landing-line)] bg-black/30 px-8 pb-6 pt-10">
+      <div className="mx-auto max-w-5xl">
       <div className="mb-7 grid grid-cols-1 gap-8 md:grid-cols-[2fr_1fr_1fr_1fr]">
         {LANDING.footer.columns.map((col) => (
           <div key={col.title}>
@@ -60,6 +61,7 @@ export function LandingFooter() {
       <div className="flex flex-col justify-between gap-2 border-t border-[var(--color-landing-line)] pt-4 font-[family-name:var(--font-landing-mono)] text-[10px] tracking-wider text-[var(--color-landing-text-muted)] md:flex-row">
         <span className="text-[var(--color-landing-text)]">{LANDING.footer.barLeft}</span>
         <span>{LANDING.footer.barRight}</span>
+      </div>
       </div>
     </footer>
   );

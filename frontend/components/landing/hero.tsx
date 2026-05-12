@@ -23,6 +23,7 @@ export function Hero({ daysToKickoff }: HeroProps) {
           "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(62,84,137,0.18) 0%, transparent 60%)",
       }}
     >
+      <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex items-center gap-3 whitespace-nowrap font-[family-name:var(--font-landing-mono)] text-[9px] uppercase tracking-[0.04em] text-[var(--color-landing-red)] sm:text-[11px] sm:tracking-[0.22em]">
         <span className="landing-pulse h-[7px] w-[7px] shrink-0 rounded-full bg-[var(--color-landing-red)] shadow-[0_0_12px_var(--color-landing-red)]" />
         <span>
@@ -75,6 +76,7 @@ export function Hero({ daysToKickoff }: HeroProps) {
       <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 font-[family-name:var(--font-landing-mono)] text-[11px] tracking-[0.1em] text-[var(--color-landing-text-muted)]">
         <strong className="text-[var(--color-landing-gold)]">{hero.miniMeta}</strong>
         <span>{hero.paymentMethods}</span>
+      </div>
       </div>
     </section>
   );
