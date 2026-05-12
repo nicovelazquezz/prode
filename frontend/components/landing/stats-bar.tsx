@@ -15,7 +15,10 @@ export function StatsBar() {
   return (
     <div className="grid grid-cols-2 gap-px border-y border-[var(--color-landing-line-strong)] bg-[var(--color-landing-line)] md:grid-cols-4">
       {LANDING.stats.map((stat) => (
-        <div key={stat.l} className="bg-[var(--color-landing-bg)] px-6 py-7">
+        <div
+          key={stat.l}
+          className="flex flex-col items-center justify-center bg-[var(--color-landing-bg)] px-6 py-7 text-center"
+        >
           <span
             className={`block font-[family-name:var(--font-landing-display)] text-[56px] leading-none ${COLOR_CLASS[stat.color] ?? COLOR_CLASS.default}`}
           >

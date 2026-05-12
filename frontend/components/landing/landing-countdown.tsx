@@ -52,7 +52,7 @@ export function LandingCountdown() {
         {cells.map((cell) => (
           <div
             key={cell.l}
-            className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-6 text-center"
+            className="flex flex-col items-center justify-center rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-6 text-center"
           >
             <span className="block font-[family-name:var(--font-landing-display)] text-5xl leading-none tabular-nums md:text-6xl">
               {cell.n}
