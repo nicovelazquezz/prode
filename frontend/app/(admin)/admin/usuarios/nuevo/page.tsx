@@ -96,7 +96,7 @@ export default function NuevoUsuarioPage() {
         whatsapp: vars.whatsapp,
         password: vars.password,
         amount: vars.amount,
-        method: vars.paymentMethod,
+        paymentMethod: vars.paymentMethod,
         notes: vars.notes?.trim() || undefined,
       }),
     onSuccess: (_user, vars) => {

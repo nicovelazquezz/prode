@@ -39,11 +39,15 @@ export async function createManualUser(dto: {
   lastName: string;
   whatsapp: string;
   password: string;
-  amount?: number;
-  method?: string;
+  amount: number;
+  paymentMethod: "CASH" | "TRANSFER";
   notes?: string;
 }): Promise<User> {
-  return api.post("admin/users", { json: dto }).json<User>();
+  // Normalizamos el whatsapp a solo dígitos — el backend rechaza `+`,
+  // espacios o guiones (regex /^\d{10,15}$/). Aceptamos cualquier input
+  // razonable del admin para no obligarlo a tipear exacto.
+  const payload = { ...dto, whatsapp: dto.whatsapp.replace(/\D/g, "") };
+  return api.post("admin/users", { json: payload }).json<User>();
 }
 
 export async function updateUser(
