@@ -61,7 +61,13 @@ export async function updateUser(
     role: string;
   }>,
 ): Promise<User> {
-  return api.patch(`admin/users/${id}`, { json: dto }).json<User>();
+  // Normalizar whatsapp client-side por consistencia (el backend también
+  // lo hace vía @Transform).
+  const payload =
+    dto.whatsapp !== undefined
+      ? { ...dto, whatsapp: normalizeArgentinePhone(dto.whatsapp) }
+      : dto;
+  return api.patch(`admin/users/${id}`, { json: payload }).json<User>();
 }
 
 /**
@@ -75,6 +81,41 @@ export async function resetUserPassword(
   return api
     .post(`admin/users/${id}/reset-password`)
     .json<{ password: string }>();
+}
+
+/**
+ * Read-only summary que muestra el modal de confirmación de borrado.
+ * `canDelete=false` solo cuando hay blockers estructurales (ligas
+ * propias). Los guards self-delete y last-admin se evalúan en el DELETE.
+ */
+export interface DeletionImpact {
+  entriesCount: number;
+  predictionsCount: number;
+  paymentsCount: number;
+  leaguesOwnedCount: number;
+  leaguesOwned: Array<{ id: string; name: string }>;
+  canDelete: boolean;
+  blockers: string[];
+}
+
+export async function getUserDeletionImpact(
+  id: string,
+): Promise<DeletionImpact> {
+  return api.get(`admin/users/${id}/deletion-impact`).json<DeletionImpact>();
+}
+
+/**
+ * Hard delete del user. El backend cascadea entries/predictions y
+ * preserva como huérfanos (userId=null) payments/notifications/audit.
+ * Devuelve `{ id, dni, deletedAt }` para que el admin lo confirme y la
+ * UI invalide la query.
+ */
+export async function deleteUser(
+  id: string,
+): Promise<{ id: string; dni: string; deletedAt: string }> {
+  return api
+    .delete(`admin/users/${id}`)
+    .json<{ id: string; dni: string; deletedAt: string }>();
 }
 
 // ── Payments ────────────────────────────────────────────────────

@@ -1,8 +1,11 @@
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Logger,
   NotFoundException,
   Param,
@@ -490,6 +493,173 @@ export class AdminUsersController {
 
     this.logger.log(`Admin ${admin.id} reset password for user ${id}`);
     return { password: newPassword };
+  }
+
+  /**
+   * `GET /admin/users/:id/deletion-impact` — read-only summary que el
+   * frontend usa para mostrar el warning antes de borrar.
+   *
+   * Devuelve cuántas filas se van a borrar en cascada (entries +
+   * predictions), cuántas quedarán huérfanas con `userId=null`
+   * (payments, notifications, audit logs) y cuántas leagues bloquean
+   * el delete porque el user es owner.
+   *
+   * `canDelete` solo refleja blockers estructurales (leagues owned).
+   * Los guards self-delete y last-admin se chequean en el momento del
+   * DELETE porque dependen del caller.
+   */
+  @Get(':id/deletion-impact')
+  async deletionImpact(
+    @Param('id') id: string,
+    @CurrentUser() admin: AuthenticatedUser | undefined,
+  ) {
+    if (!admin?.id) {
+      throw new UnauthorizedException('Authenticated admin required');
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, dni: true, firstName: true, lastName: true },
+    });
+    if (!target) {
+      throw new NotFoundException(`User ${id} not found`);
+    }
+
+    const [entriesCount, predictionsCount, paymentsCount, leaguesOwned] =
+      await Promise.all([
+        this.prisma.entry.count({ where: { userId: id } }),
+        this.prisma.prediction.count({ where: { entry: { userId: id } } }),
+        this.prisma.payment.count({ where: { userId: id } }),
+        this.prisma.league.findMany({
+          where: { ownerId: id },
+          select: { id: true, name: true },
+        }),
+      ]);
+
+    const blockers: string[] = [];
+    if (leaguesOwned.length > 0) {
+      blockers.push(
+        `Es owner de ${leaguesOwned.length} liga(s). Transferí el ownership o borrá la liga antes.`,
+      );
+    }
+
+    return {
+      entriesCount,
+      predictionsCount,
+      paymentsCount,
+      leaguesOwnedCount: leaguesOwned.length,
+      leaguesOwned,
+      canDelete: blockers.length === 0,
+      blockers,
+    };
+  }
+
+  /**
+   * `DELETE /admin/users/:id` — hard delete con guards de seguridad.
+   *
+   * Cascadea: entries (→ predictions, special_predictions), refresh
+   * tokens, password resets.
+   * SetNull: payments.userId, audit_logs.userId, notifications.userId
+   * (preservados para auditoría contable y de log).
+   * Restrict: leagues.ownerId — bloquea el delete; el admin tiene que
+   * transferir o borrar la liga primero.
+   *
+   * Audit + delete corren en una sola TX. Si la audit insert falla,
+   * el delete revierte — no queremos un user borrado sin rastro.
+   *
+   * Idempotencia: si dos requests llegan a la vez, la primera borra y
+   * la segunda recibe 404 (Prisma P2025) que el frontend traduce a
+   * "ya fue eliminado".
+   */
+  @Delete(':id')
+  @HttpCode(200)
+  async delete(
+    @Param('id') id: string,
+    @CurrentUser() admin: AuthenticatedUser | undefined,
+    @Req() req: Request,
+  ) {
+    if (!admin?.id) {
+      throw new UnauthorizedException('Authenticated admin required');
+    }
+    const ctx = getRequestContext(req);
+
+    const target = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        dni: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+      },
+    });
+    if (!target) {
+      throw new NotFoundException(`User ${id} not found`);
+    }
+
+    if (admin.id === id) {
+      throw new BadRequestException(
+        'No podés borrarte a vos mismo. Pedile a otro admin que lo haga.',
+      );
+    }
+
+    if (target.role === 'ADMIN') {
+      const remainingAdmins = await this.prisma.user.count({
+        where: { role: 'ADMIN', id: { not: id } },
+      });
+      if (remainingAdmins === 0) {
+        throw new BadRequestException(
+          'Tiene que quedar al menos un admin. No se puede borrar al último.',
+        );
+      }
+    }
+
+    const ownedLeagues = await this.prisma.league.findMany({
+      where: { ownerId: id },
+      select: { id: true, name: true },
+    });
+    if (ownedLeagues.length > 0) {
+      throw new ConflictException({
+        message: 'El usuario es owner de ligas. Transferí o borrá esas ligas primero.',
+        leaguesOwned: ownedLeagues,
+      });
+    }
+
+    const deletedAt = new Date();
+
+    await this.prisma.$transaction(async (tx) => {
+      // Snapshot dentro de la TX para que los counts no driften.
+      const [entriesCount, paymentsCount] = await Promise.all([
+        tx.entry.count({ where: { userId: id } }),
+        tx.payment.count({ where: { userId: id } }),
+      ]);
+
+      await tx.user.delete({ where: { id } });
+
+      await tx.auditLog.create({
+        data: {
+          userId: admin.id,
+          action: 'admin.user_deleted',
+          entity: 'user',
+          entityId: id,
+          changes: {
+            targetDni: target.dni,
+            targetFirstName: target.firstName,
+            targetLastName: target.lastName,
+            entriesCount,
+            paymentsCount,
+          },
+          ipAddress: ctx.ipAddress,
+          userAgent: ctx.userAgent,
+        },
+      });
+    });
+
+    this.logger.log(
+      `Admin ${admin.id} hard-deleted user ${id} (dni=${maskDni(target.dni)})`,
+    );
+
+    return { id, dni: target.dni, deletedAt: deletedAt.toISOString() };
   }
 
   /**

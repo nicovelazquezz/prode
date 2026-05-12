@@ -482,7 +482,10 @@ model LeagueMembership {
 model Notification {
   id            String              @id @default(cuid())
   userId        String?
-  user          User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // SetNull (no Cascade) — cuando un user se hard-deletea, queremos
+  // preservar la fila para auditoría histórica. La UI muestra
+  // "Usuario eliminado" cuando userId es null.
+  user          User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
   toAddress     String? // null si MP no devolvió email del payer; service decide fallback
   type          NotificationType
   title         String

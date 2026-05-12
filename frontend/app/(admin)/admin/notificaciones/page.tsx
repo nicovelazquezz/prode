@@ -17,6 +17,10 @@ import {
   type NotificationHistoryEntry,
   type NotificationSegment,
 } from "@/lib/api/admin";
+import {
+  UserCombobox,
+  type UserComboboxOption,
+} from "@/components/admin/user-combobox";
 import { queryKeys } from "@/lib/api/queryKeys";
 import { formatDateTime } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
@@ -125,7 +129,7 @@ export default function AdminNotificacionesPage() {
 }
 
 function DirectMessageForm() {
-  const [userId, setUserId] = useState("");
+  const [selected, setSelected] = useState<UserComboboxOption | null>(null);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [channel, setChannel] = useState<"WHATSAPP" | "EMAIL">("WHATSAPP");
@@ -133,14 +137,14 @@ function DirectMessageForm() {
   const sendMutation = useMutation({
     mutationFn: () =>
       sendDirectNotification({
-        userId: userId.trim(),
+        userId: selected!.id,
         title: title.trim(),
         message: message.trim(),
         channel,
       }),
     onSuccess: () => {
       toast.success("Mensaje enviado");
-      setUserId("");
+      setSelected(null);
       setTitle("");
       setMessage("");
     },
@@ -149,7 +153,7 @@ function DirectMessageForm() {
     },
   });
 
-  const canSend = userId.trim() && title.trim() && message.trim();
+  const canSend = !!selected && title.trim() && message.trim();
 
   return (
     <form
@@ -161,13 +165,8 @@ function DirectMessageForm() {
       noValidate
     >
       <div>
-        <Label htmlFor="userId">User ID</Label>
-        <Input
-          id="userId"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          placeholder="Pegar el ID del user (de /admin/usuarios)"
-        />
+        <Label htmlFor="user-search">Destinatario</Label>
+        <UserCombobox value={selected} onSelect={setSelected} />
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_180px]">
         <div>

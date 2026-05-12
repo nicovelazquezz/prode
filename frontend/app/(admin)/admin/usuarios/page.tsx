@@ -27,14 +27,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toaster";
 import {
+  deleteUser,
+  getUserDeletionImpact,
   listUsers,
   resetUserPassword,
   updateUser,
   type AdminUser,
+  type DeletionImpact,
 } from "@/lib/api/admin";
 import { queryKeys } from "@/lib/api/queryKeys";
 import { formatDate, formatNumber } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
+import { normalizeArgentinePhone } from "@/lib/utils/normalize-phone";
 
 type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE" | "BANNED";
 type RoleFilter = "ALL" | "USER" | "ADMIN";
@@ -363,6 +367,8 @@ function StatusBadge({ status }: { status: AdminUser["status"] }) {
 function UserActionsMenu({ user }: { user: AdminUser }) {
   const queryClient = useQueryClient();
   const [resetOpen, setResetOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(
     null,
   );
@@ -416,6 +422,9 @@ function UserActionsMenu({ user }: { user: AdminUser }) {
           <DropdownMenuItem asChild>
             <Link href={`/admin/usuarios/${user.id}`}>Ver detalle</Link>
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+            Editar
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           {isInactive || isBanned ? (
             <DropdownMenuItem
@@ -442,6 +451,13 @@ function UserActionsMenu({ user }: { user: AdminUser }) {
           <DropdownMenuItem onSelect={() => resetMutation.mutate()}>
             Reset password
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={() => setDeleteOpen(true)}
+            className="text-[var(--color-landing-red)]"
+          >
+            Borrar definitivamente
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -453,6 +469,18 @@ function UserActionsMenu({ user }: { user: AdminUser }) {
         }}
         userName={`${user.firstName} ${user.lastName}`}
         password={generatedPassword}
+      />
+
+      <EditUserDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        user={user}
+      />
+
+      <DeleteUserDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        user={user}
       />
     </>
   );
@@ -524,6 +552,320 @@ function ResetPasswordDialog({
           >
             Listo
           </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Modal para editar firstName, lastName y whatsapp de un user existente.
+ * Status y role se cambian via las acciones inline del menú; este modal
+ * solo expone los campos "no críticos" que el admin usa para corregir
+ * datos personales (typos, número que cambió, etc.).
+ *
+ * El whatsapp pasa por `normalizeArgentinePhone` antes de mandarse — la
+ * misma función que el backend aplica via `@Transform`. Mostramos abajo
+ * del input el resultado normalizado para que el admin vea exactamente
+ * lo que se va a guardar.
+ */
+function EditUserDialog({
+  open,
+  onOpenChange,
+  user,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  user: AdminUser;
+}) {
+  const queryClient = useQueryClient();
+  const [firstName, setFirstName] = useState(user.firstName);
+  const [lastName, setLastName] = useState(user.lastName);
+  const [whatsapp, setWhatsapp] = useState(user.whatsapp);
+
+  // Reset cuando se cambia el user editado o se abre/cierra el modal.
+  // Sin esto, si abrís el modal de A, lo cerrás, y abrís el de B, ves los
+  // campos de A.
+  useMemo(() => {
+    if (open) {
+      setFirstName(user.firstName);
+      setLastName(user.lastName);
+      setWhatsapp(user.whatsapp);
+    }
+  }, [open, user.firstName, user.lastName, user.whatsapp]);
+
+  const normalizedWa = useMemo(
+    () => normalizeArgentinePhone(whatsapp),
+    [whatsapp],
+  );
+
+  const mutation = useMutation({
+    mutationFn: () => {
+      const diff: {
+        firstName?: string;
+        lastName?: string;
+        whatsapp?: string;
+      } = {};
+      if (firstName.trim() !== user.firstName) diff.firstName = firstName.trim();
+      if (lastName.trim() !== user.lastName) diff.lastName = lastName.trim();
+      if (normalizedWa !== user.whatsapp) diff.whatsapp = whatsapp;
+      return updateUser(user.id, diff);
+    },
+    onSuccess: () => {
+      toast.success("Usuario actualizado");
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.users.list(),
+      });
+      onOpenChange(false);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message ?? "No pudimos actualizar el usuario");
+    },
+  });
+
+  const hasChanges =
+    firstName.trim() !== user.firstName ||
+    lastName.trim() !== user.lastName ||
+    normalizedWa !== user.whatsapp;
+
+  const canSubmit =
+    firstName.trim().length >= 2 &&
+    lastName.trim().length >= 2 &&
+    normalizedWa.length >= 10 &&
+    hasChanges &&
+    !mutation.isPending;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogTitle className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
+          <span className="inline-block border-b-[3px] border-[var(--color-landing-gold)] pb-1">
+            Editar usuario
+          </span>
+        </DialogTitle>
+        <DialogDescription className="text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+          DNI {user.dni} · ID interno no editable.
+        </DialogDescription>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (canSubmit) mutation.mutate();
+          }}
+          className="mt-4 space-y-4"
+          noValidate
+        >
+          <div>
+            <label
+              htmlFor="edit-firstName"
+              className="block font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
+            >
+              Nombre
+            </label>
+            <Input
+              id="edit-firstName"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              autoComplete="off"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="edit-lastName"
+              className="block font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
+            >
+              Apellido
+            </label>
+            <Input
+              id="edit-lastName"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              autoComplete="off"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="edit-whatsapp"
+              className="block font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]"
+            >
+              WhatsApp
+            </label>
+            <Input
+              id="edit-whatsapp"
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              autoComplete="off"
+              className="mt-1"
+              placeholder="2914231087 o +54 9 291 423 1087"
+            />
+            <p className="mt-1 font-[family-name:var(--font-landing-mono)] text-[10px] text-[var(--color-landing-text-muted)]">
+              Se va a guardar como: <span className="text-[var(--color-landing-text)]">{normalizedWa || "—"}</span>
+            </p>
+          </div>
+          <DialogFooter className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="inline-flex items-center justify-center rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-5 py-2.5 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="inline-flex items-center justify-center rounded-sm bg-[var(--color-landing-gold)] px-5 py-2.5 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text-on-gold,#000)] transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {mutation.isPending ? "Guardando…" : "Guardar"}
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Modal de confirmación de hard delete. Al abrirse hace
+ * `GET /admin/users/:id/deletion-impact` para mostrar exactamente qué se
+ * va a perder. Tres estados visuales según el response:
+ *
+ *   - Sin entries/predicciones: warning simple "este usuario no tiene
+ *     datos asociados".
+ *   - Con entries/predicciones: warning detallado con counts.
+ *   - Bloqueado (owner de liga): no se permite borrar, solo cerrar.
+ */
+function DeleteUserDialog({
+  open,
+  onOpenChange,
+  user,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  user: AdminUser;
+}) {
+  const queryClient = useQueryClient();
+
+  const impactQuery = useQuery({
+    queryKey: ["admin-user-deletion-impact", user.id],
+    queryFn: () => getUserDeletionImpact(user.id),
+    enabled: open,
+    staleTime: 0,
+  });
+
+  const mutation = useMutation({
+    mutationFn: () => deleteUser(user.id),
+    onSuccess: () => {
+      toast.success(`${user.firstName} ${user.lastName} borrado`);
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.users.list(),
+      });
+      onOpenChange(false);
+    },
+    onError: (err: Error) => {
+      // P2025 (record not found) — race condition con otro admin.
+      toast.error(err.message ?? "No pudimos borrar el usuario");
+    },
+  });
+
+  const impact: DeletionImpact | undefined = impactQuery.data;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogTitle className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">
+          <span className="inline-block border-b-[3px] border-[var(--color-landing-red)] pb-1">
+            Borrar usuario
+          </span>
+        </DialogTitle>
+        <DialogDescription className="text-sm leading-relaxed text-[var(--color-landing-text-muted)]">
+          {user.firstName} {user.lastName} · DNI {user.dni}
+        </DialogDescription>
+
+        {impactQuery.isLoading ? (
+          <p className="mt-4 font-sans text-sm text-[var(--color-landing-text-muted)]">
+            Calculando impacto…
+          </p>
+        ) : !impact ? (
+          <p className="mt-4 font-sans text-sm text-[var(--color-landing-red)]">
+            No pudimos obtener el detalle del impacto. Probá cerrar y abrir
+            de nuevo.
+          </p>
+        ) : !impact.canDelete ? (
+          <div className="mt-4 space-y-3">
+            <p className="font-sans text-sm font-bold text-[var(--color-landing-red)]">
+              No se puede borrar.
+            </p>
+            <ul className="list-inside list-disc space-y-1 font-sans text-sm text-[var(--color-landing-text)]">
+              {impact.blockers.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+            {impact.leaguesOwned.length > 0 ? (
+              <div>
+                <p className="font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-landing-text-muted)]">
+                  Ligas:
+                </p>
+                <ul className="mt-1 list-inside list-disc space-y-0.5 font-sans text-xs text-[var(--color-landing-text-muted)]">
+                  {impact.leaguesOwned.map((l) => (
+                    <li key={l.id}>{l.name}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        ) : impact.entriesCount === 0 && impact.paymentsCount === 0 ? (
+          <p className="mt-4 font-sans text-sm text-[var(--color-landing-text)]">
+            Este usuario no tiene entries ni pagos asociados. El borrado es
+            seguro y libera el DNI <strong>{user.dni}</strong> para
+            re-registro.
+          </p>
+        ) : (
+          <div className="mt-4 rounded-sm border-2 border-[var(--color-landing-red)] bg-[var(--color-landing-surface)] p-4">
+            <p className="font-sans text-sm font-bold text-[var(--color-landing-red)]">
+              ⚠️ Atención: se perderá información permanentemente
+            </p>
+            <ul className="mt-2 list-inside list-disc space-y-1 font-sans text-sm text-[var(--color-landing-text)]">
+              {impact.entriesCount > 0 ? (
+                <li>
+                  {impact.entriesCount} entry(s) y {impact.predictionsCount}{" "}
+                  predicciones (cascade)
+                </li>
+              ) : null}
+              {impact.paymentsCount > 0 ? (
+                <li>
+                  {impact.paymentsCount} pago(s) quedarán huérfanos
+                  (preservados para contabilidad pero sin nombre)
+                </li>
+              ) : null}
+            </ul>
+            <p className="mt-3 font-sans text-xs text-[var(--color-landing-text-muted)]">
+              El DNI <strong>{user.dni}</strong> quedará liberado para
+              re-registro. Esta acción <strong>no se puede deshacer</strong>.
+            </p>
+          </div>
+        )}
+
+        <DialogFooter className="flex justify-end gap-2 pt-4">
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="inline-flex items-center justify-center rounded-sm border border-[var(--color-landing-line-strong)] bg-transparent px-5 py-2.5 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:border-[var(--color-landing-text)]"
+          >
+            {impact?.canDelete ? "Cancelar" : "Cerrar"}
+          </button>
+          {impact?.canDelete ? (
+            <button
+              type="button"
+              onClick={() => mutation.mutate()}
+              disabled={mutation.isPending}
+              className="inline-flex items-center justify-center rounded-sm bg-[var(--color-landing-red)] px-5 py-2.5 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {mutation.isPending
+                ? "Borrando…"
+                : "Sí, borrar definitivamente"}
+            </button>
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>
