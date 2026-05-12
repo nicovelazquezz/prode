@@ -7,13 +7,13 @@
  */
 export const LANDING = {
   topbar: {
-    brand: "PRODE MUNDIAL 2026 · BAHÍA BLANCA",
+    brand: "PRODE MUNDIAL 2026",
     loginCta: "Iniciar sesión",
     loginHref: "/login",
   },
 
   hero: {
-    eyebrowPrefix: "INSCRIPCIÓN ABIERTA · MUNDIAL 2026 · ARRANCA EN",
+    eyebrowPrefix: "INSCRIPCIÓN ABIERTA · ARRANCA EN",
     eyebrowSuffix: "DÍAS",
     h1Lines: ["JUGÁ EL PRODE.", "GANÁ EN EFECTIVO."] as const,
     underlineSecondLine: true,
@@ -26,7 +26,8 @@ export const LANDING = {
       "https://wa.me/5492914231087?text=hola%20quiero%20inscribirme%20al%20prode",
     secondaryExternal: true,
     secondaryIcon: "whatsapp",
-    miniMeta: "CIERRA 11/JUN/26 · MERCADOPAGO · TRANSFERENCIA · EFECTIVO EN EL CLUB",
+    miniMeta: "CIERRA 11/JUN/26",
+    paymentMethods: "MERCADOPAGO · TRANSFERENCIA",
   },
 
   stats: [
@@ -141,7 +142,7 @@ export const LANDING = {
     underlineFirst: true,
     body: [
       "El equipo de handball del Club Tiro Federal de Bahía Blanca clasificó al **Nacional C de Clubes** que se juega en **Comodoro Rivadavia**. Hay que pagar viaje, hospedaje, viáticos, indumentaria.",
-      "Cada inscripción al prode banca ese fondo. **Jugás vos, viajan ellos.**",
+      "Cada inscripción al prode banca ese fondo.",
     ],
     bodyMuted:
       "No hace falta ser socio del club ni de Bahía Blanca. La causa es la causa, el prode es para todos.",
