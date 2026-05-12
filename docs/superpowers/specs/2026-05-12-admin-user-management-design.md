@@ -44,25 +44,26 @@ notification flow and let the operator manage users sanely:
 ## 1. Data model (Prisma)
 
 The hard delete needs Prisma to know what to cascade and what to set
-to NULL when a user row is deleted. The current schema is half-spec'd
-(some FKs declare `onDelete: Cascade`, others rely on Prisma's
-implicit `NoAction` default, which would BLOCK the delete on the first
-non-cascaded child row).
+to NULL when a user row is deleted. Audited against the live state
+(init migration `20260504200315_init` + later migrations including the
+multi-prode m2 destructive that dropped vestigial `predictions.userId`,
+`special_predictions.userId`, `phase_winners.userId` columns — those
+no longer exist).
 
 Audited FKs that point to `User`:
 
-| FK                          | Today                  | Action                                              |
+| FK                          | Today (post-m2)        | Action                                              |
 | --------------------------- | ---------------------- | --------------------------------------------------- |
 | `RefreshToken.userId`       | `Cascade`              | unchanged — sessions die with the user              |
 | `PasswordReset.userId`      | `Cascade`              | unchanged                                            |
-| `Entry.userId`              | `Cascade`              | unchanged (cascades further to predictions, etc.)   |
+| `Entry.userId`              | `Cascade`              | unchanged (cascades to predictions, special_predictions via entryId) |
 | `Notification.userId` *(nullable)* | `Cascade`        | **change to `SetNull`** — preserve notification log |
-| `Payment.userId` *(nullable)* | unspecified (NoAction) | **change to `SetNull`** explicit (accounting trail) |
-| `AuditLog.userId` *(nullable)* | unspecified           | **change to `SetNull`** explicit (audit trail)      |
-| `League.ownerId`            | unspecified            | **change to `Restrict`** — block delete if owner    |
+| `Payment.userId` *(nullable)* | `SetNull`            | unchanged (already correct in init migration)        |
+| `AuditLog.userId` *(nullable)* | `SetNull`           | unchanged (already correct)                          |
+| `League.ownerId`            | `Restrict`             | unchanged (already correct — blocks delete if owner) |
 
-Migration: one `2026XXXXXXXXXX_cascade_user_relations` that ALTERs the
-4 FK constraints. No data rewrites, no downtime.
+**Net change: 1 FK**. Migration `2026XXXXXXXXXX_notification_set_null`
+ALTERs only the `notifications.userId` FK. No data rewrites, no downtime.
 
 The DNI uniqueness constraint stays as-is. After hard delete the row
 is gone, the unique index is free, the DNI can be reused for a new
@@ -86,15 +87,20 @@ Flow:
 5. **Guard: leagues owned.** If the target owns any league, `409` with
    the list (the operator must transfer or delete those leagues
    first — enforced by FK `Restrict`).
-6. Build the audit payload **before** delete (target won't exist
-   afterwards): `{ targetDni, targetFirstName, targetLastName,
-   entriesCount, paymentsCount }`.
-7. `prisma.user.delete({ where: { id } })`. Prisma cascades entries
-   (→ predictions, → phase winners), refresh tokens, password resets;
-   sets `userId=null` on notifications, payments, audit logs.
-8. Write the audit log row with `userId=admin.id`,
-   `action='admin.user_deleted'`, `entity='user'`,
-   `entityId=targetId`, `changes={ ...payload }`.
+6. **Single `prisma.$transaction`** wrapping the next two steps:
+   1. Build the audit payload from the target row (read inside the TX
+      so it can't drift): `{ targetDni, targetFirstName,
+      targetLastName, entriesCount, paymentsCount }`.
+   2. `prisma.user.delete({ where: { id } })`. Prisma cascades entries
+      (which cascade predictions / special_predictions via `entryId`),
+      refresh tokens, password resets; sets `userId=null` on
+      notifications, payments, audit logs.
+   3. Insert the audit log row with `userId=admin.id`,
+      `action='admin.user_deleted'`, `entity='user'`,
+      `entityId=targetId`, `changes={ ...payload }`.
+
+   Reason for the TX: without it, if the audit insert fails after the
+   user is gone, we lose the audit trail for an irreversible action.
 
 Response: `200 { id: string, dni: string, deletedAt: string }`.
 
@@ -128,8 +134,8 @@ endpoint.
 
 ### 2.4 `GET /admin/users?search=` (existing, no change)
 
-Already case-insensitive against firstName, lastName, dni. Reused by
-the autocomplete.
+Case-insensitive against firstName/lastName, plain substring against
+DNI (digits-only, no case sensitivity needed). Reused by the autocomplete.
 
 ### 2.5 Backend tests to add
 
@@ -142,7 +148,13 @@ the autocomplete.
   populated when owner of league.
 
 Existing tests stay green because the migration only changes ON DELETE
-behaviour, not the read API.
+behaviour, not the read API. **However**, the `Notification.userId`
+change from `Cascade` to `SetNull` is a semantic shift: any test that
+asserted notifications disappear with the user will fail. Audit the
+existing notification tests and, where they assert disappearance,
+update them to assert the orphan state (`userId === null`) instead.
+The notifications history view also needs a tiny rendering update to
+show "Usuario eliminado" when `userId` is null.
 
 ## 3. UI flows (frontend)
 
@@ -181,10 +193,13 @@ tokens used elsewhere in the admin.
 
 ### 3.2 `/admin/notificaciones` (existing page, refactored)
 
-- Remove the freeform "User ID" input.
+- Remove ONLY the freeform "User ID" input.
 - Replace with `<UserCombobox value={selected} onSelect={setSelected} />`.
+- **Keep the existing channel select** (`WHATSAPP` | `EMAIL`) — only
+  the userId input changes.
 - Submit button disabled until `selected !== null && title && message`.
-- POST body builds `{ userId: selected.id, title, message, channel: 'WHATSAPP' }`.
+- POST body builds `{ userId: selected.id, title, message, channel }`
+  (channel comes from the existing state, not hardcoded).
 
 ### 3.3 Edit modal in `/admin/usuarios`
 
@@ -238,14 +253,13 @@ States:
 - Network/race error (P2025 "record not found") → toast "El usuario ya
   fue eliminado" + invalidate.
 
-### 3.5 Row actions consolidation
+### 3.5 Row actions
 
-Today the row shows inline buttons for status changes. After this change:
+The `⋮` dropdown already exists in `frontend/app/(admin)/admin/usuarios/page.tsx`
+(holds Activar / Desactivar / Banear). Add two new items:
 
-- Move all per-row actions into a `⋮` dropdown:
-  - **Editar** (modal 3.3)
-  - **Activar / Desactivar / Banear** (existing logic)
-  - **Borrar** (modal 3.4, visually separated, destructive style)
+- **Editar** (modal 3.3) — first item.
+- **Borrar** (modal 3.4) — last item, destructive style + separator above.
 
 ### 3.6 Frontend tests to add
 
