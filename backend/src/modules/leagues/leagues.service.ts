@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { AuditService } from '../audit/audit.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { generateUniqueInviteCode } from './invite-code.js';
 import type { CreateLeagueDto } from './dto/create-league.dto.js';
 import type { League } from '../../../generated/prisma/client.js';
@@ -47,6 +48,7 @@ export class LeaguesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /**
@@ -134,6 +136,12 @@ export class LeaguesService {
       ipAddress: ctx.ipAddress,
       userAgent: ctx.userAgent,
     });
+
+    // El leaderboard de la liga lee de la MV `leaderboard_global`, que
+    // solo se refresca al finalizar partidos. Si la liga se crea antes
+    // de que haya algún partido finalizado, el owner no aparecería en
+    // su propia liga. Encolar refresh (dedupado vía jobId) lo arregla.
+    void this.notifications.enqueueLeaderboardRefresh();
 
     return league;
   }
@@ -235,6 +243,11 @@ export class LeaguesService {
       ipAddress: ctx.ipAddress,
       userAgent: ctx.userAgent,
     });
+
+    // Misma razón que en createLeague — sin esto, los nuevos miembros
+    // no aparecen en el leaderboard de la liga hasta que se finalice
+    // algún partido.
+    void this.notifications.enqueueLeaderboardRefresh();
 
     const { _count, ...rest } = league;
     void _count;
