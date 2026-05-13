@@ -74,6 +74,18 @@ const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
+  // Skip TS check en el build del container. Razón:
+  //  - Peak memory del build se va a 3-5 GB con `tsc --noEmit` post-webpack,
+  //    los hosts chicos de Dokploy se quedan sin RAM y matan el proceso
+  //    (deployment queda "Cancelled" sin error visible).
+  //  - El type-check ya corre obligatorio en local antes del push, así que
+  //    chequearlo de nuevo en el container es trabajo duplicado.
+  //  - Si en el futuro queremos validación en CI, va a un step separado en
+  //    un runner liviano, no acoplado al build de producción.
+  //
+  // Next 16 ya no integra ESLint en `next build` (la key `eslint` se removió
+  // del config), así que no necesitamos un flag equivalente para eso.
+  typescript: { ignoreBuildErrors: true },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "flagcdn.com" },
