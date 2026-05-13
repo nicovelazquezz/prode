@@ -34,6 +34,7 @@ import { Phase } from '../../../generated/prisma/enums.js';
  * auto-lock cron, which already sets a wider tolerance for stale data.
  */
 const UPCOMING_TTL_MS = 5 * 60 * 1000;
+const UPCOMING_CACHE_KEY = 'matches:upcoming:v1';
 
 function getRequestContext(req: Request): {
   ipAddress?: string;
@@ -76,11 +77,10 @@ export class MatchesController {
   @Public()
   @Get('upcoming')
   async upcoming() {
-    const cacheKey = 'matches:upcoming:v1';
-    const cached = await this.cache.get<unknown>(cacheKey);
+    const cached = await this.cache.get<unknown>(UPCOMING_CACHE_KEY);
     if (cached) return cached;
     const fresh = await this.matchesService.upcoming();
-    await this.cache.set(cacheKey, fresh, UPCOMING_TTL_MS);
+    await this.cache.set(UPCOMING_CACHE_KEY, fresh, UPCOMING_TTL_MS);
     return fresh;
   }
 
@@ -115,7 +115,10 @@ export class MatchesController {
 @UseGuards(RolesGuard)
 @Roles('ADMIN')
 export class AdminMatchesController {
-  constructor(private readonly matchesService: MatchesService) {}
+  constructor(
+    private readonly matchesService: MatchesService,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
+  ) {}
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
@@ -183,7 +186,7 @@ export class AdminMatchesController {
     @Req() req: Request,
   ) {
     const ctx = getRequestContext(req);
-    return this.matchesService.create(
+    const created = await this.matchesService.create(
       {
         matchNumber: dto.matchNumber,
         phase: dto.phase as Phase,
@@ -203,5 +206,13 @@ export class AdminMatchesController {
         userAgent: ctx.userAgent,
       },
     );
+
+    // Bust el cache de upcoming para que el partido nuevo aparezca al
+    // toque en /matches/upcoming. Sin esto, el endpoint público devuelve
+    // la versión cacheada (hasta 5 min stale) y la lista admin que usa
+    // el mismo endpoint tampoco lo ve.
+    await this.cache.del(UPCOMING_CACHE_KEY);
+
+    return created;
   }
 }
