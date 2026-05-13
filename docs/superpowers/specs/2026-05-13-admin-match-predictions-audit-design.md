@@ -43,32 +43,31 @@ New endpoint on `AdminMatchesController`. Auth: `RolesGuard` +
 | ---------- | ---------------------------------------------------------------------------------------------- | -------------- |
 | `page`     | int ≥ 1                                                                                        | `1`            |
 | `pageSize` | int 1–200                                                                                      | `50`           |
-| `outcome`  | `EXACT \| WINNER_AND_DIFF \| DRAW_DIFFERENT \| WINNER_ONLY \| MISS \| PENDING`                  | unset (no filter) |
+| `outcome`  | one of `EXACT, WINNER_AND_DIFF, DRAW_DIFFERENT, WINNER_ONLY, MISS, PENDING`                     | unset (no filter) |
 | `search`   | string, ≤ 100 chars                                                                            | unset          |
 | `sort`     | `points_desc \| points_asc \| name_asc \| name_desc \| prediction`                             | `points_desc`  |
 
 `outcome=PENDING` is the sentinel for `outcomeType IS NULL` (not yet
-evaluated). Anything else maps 1:1 to the enum.
+evaluated). Anything else maps 1:1 to `OutcomeType`. The DTO validator
+**must use `@IsIn([...Object.values(OutcomeType), 'PENDING'])`**, not
+`@IsEnum(OutcomeType)`, because `PENDING` is a UI value and isn't part
+of the Prisma enum — `@IsEnum` would reject it.
 
 `search` matches `firstName` ILIKE, `lastName` ILIKE, and `dni`
 substring — same rule as `GET /admin/users` so the admin doesn't need
-to learn a second convention.
+to learn a second convention. The search input on the existing
+`/admin/usuarios` page is the closest UX analog (free-text + debounce);
+the new section reuses that visual pattern, not the
+`<UserCombobox />` dropdown.
 
 ### Response shape
 
+The response intentionally **does not echo the match** — the page
+already fetched it through `getAdminMatch` for the "Resumen" / "Editar"
+sections. The new endpoint is a sibling fetch with its own query key.
+
 ```ts
 {
-  match: {
-    id: string;
-    matchNumber: number;
-    phase: Phase;
-    status: MatchStatus;
-    scoreHome: number | null;
-    scoreAway: number | null;
-    finishedAt: string | null;
-    homeTeamLabel: string;
-    awayTeamLabel: string;
-  };
   stats: {
     totalPredictions: number;
     evaluatedCount: number;
@@ -104,15 +103,29 @@ to learn a second convention.
 
 ### Implementation notes
 
-- One Prisma query for `data`: `prediction.findMany({ where: { matchId, ...filters }, include: { entry: { include: { user: true } } }, skip, take, orderBy })`.
-- One `prediction.count({ where: { matchId, ...filters } })` for `total`.
-- One `prediction.groupBy({ by: ['outcomeType'], where: { matchId }, _count: true, _sum: { pointsEarned: true } })` for the `stats` block. The stats are computed **over the whole match**, not the filtered subset — they describe the match, the filtered data describes the current view.
-- Sort tie-break: `outcomeType` ASC by enum order, then `lastName` ASC.
-- 404 if the match doesn't exist (Prisma `findUnique` returns null).
-- The index on `predictions(matchId)` already exists from
-  `20260504200315_init`; no schema changes.
+- **Pre-check existence** by calling `matchesService.findOne(id)` — it
+  already throws `NotFoundException` on miss, so the predictions
+  endpoint inherits the 404 without extra code.
+- One Prisma query for `data`:
+  `prediction.findMany({ where: { matchId, ...filters }, include: { entry: { include: { user: true } } }, skip, take, orderBy })`.
+- Sort mapping:
+  - `points_desc` → `[{ pointsEarned: 'desc' }, { outcomeType: 'asc' }, { entry: { user: { lastName: 'asc' } } }]`
+  - `points_asc` → mirror with `pointsEarned: 'asc'`
+  - `name_asc` / `name_desc` → `[{ entry: { user: { lastName: <dir> } }, { entry: { user: { firstName: <dir> } } }]`
+  - `prediction` → `[{ scoreHome: 'asc' }, { scoreAway: 'asc' }]` (used to group identical pronósticos together for visual inspection).
+- One `prediction.count({ where: { matchId, ...filters } })` for `total` (data pagination).
+- For `stats`: one `prediction.groupBy({ by: ['outcomeType'], where: { matchId }, _count: { _all: true }, _sum: { pointsEarned: true } })` over the **whole match** (no filters). `pointsDistributed` is computed in app code as the sum of `_sum.pointsEarned` across all buckets (the SUM aggregate per group, then summed). `totalPredictions = sum of _count._all`. Each `*Count` is taken from the matching bucket.
+- Indexes available: `predictions(matchId)` from the init migration is
+  enough for the `WHERE` and `COUNT`. The `ORDER BY pointsEarned DESC`
+  is not index-backed but the cardinality (≤ ~500 rows per match)
+  makes the unsorted scan trivially fast for v1. Document this so the
+  next person doesn't add a premature index.
 
 ### Backend tests (`admin-matches-predictions.controller.integration.spec.ts`)
+
+Also: the validator test must assert that `?outcome=PENDING` is
+accepted by the DTO and that `?outcome=BOGUS` returns 400 — these are
+the two boundary cases for the `@IsIn` decision above.
 
 Seed: one match + 5 users with one entry each + 5 predictions with
 mixed outcomes (`EXACT`, `WINNER_AND_DIFF`, `WINNER_ONLY`, `MISS`,
@@ -160,7 +173,7 @@ refetches. Clicking the same chip again clears the filter.
 
 **Toolbar** above the table:
 - `<input type="search" />` for name/DNI (debounce 300ms, min 2 chars).
-  Reuses the same UX shape as `<UserCombobox />`.
+  Same UX shape as the free-text search on `/admin/usuarios`.
 - `<select>` for sort (5 options).
 - `<select>` for outcome (redundant with chips but always discoverable).
 
@@ -182,12 +195,20 @@ Uses the existing `AdminDataTable` component.
 
 **Empty state**: "Aún nadie cargó predicción para este partido."
 
-**Banners conditional on `match.status`**:
+**Banners conditional on `match.status`** (the page already has the
+`match` object — we don't echo it from the new endpoint):
+- `LOCKED`: "Predicciones cerradas, esperando inicio." (neutral)
+- `IN_PROGRESS`: no banner (the table is the protagonist).
 - `CANCELLED`: "Este partido fue cancelado. Las predicciones no suman puntos."
 - `POSTPONED`: "Este partido fue postergado. Cuando se finalice se evaluarán."
+- `SCHEDULED` / `FINISHED`: no banner.
 
-**Pagination**: standard, only when `total > pageSize`. Uses the same
-`<Pagination />` pattern as the leaderboard pages.
+**Pagination**: standard, only when `total > pageSize`. The leaderboard
+pages currently inline a local `Pagination` function — as part of this
+work, **extract it to `frontend/components/domain/pagination.tsx`** and
+reuse it in three places: leaderboard global, leaderboard liga, and
+the new predictions section. This stays small and focused; no behaviour
+change for the existing leaderboards.
 
 ### Polling
 
