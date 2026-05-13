@@ -26,6 +26,7 @@ import { ListMatchesDto } from './dto/list-matches.dto.js';
 import { UpdateMatchDto } from './dto/update-match.dto.js';
 import { PostponeMatchDto } from './dto/postpone-match.dto.js';
 import { CreateMatchDto } from './dto/create-match.dto.js';
+import { ListMatchPredictionsDto } from './dto/list-match-predictions.dto.js';
 import { Phase } from '../../../generated/prisma/enums.js';
 
 /**
@@ -123,6 +124,25 @@ export class AdminMatchesController {
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.matchesService.findOne(id);
+  }
+
+  /**
+   * Lista paginada de predicciones del partido con stats agregadas.
+   * Consumida por la sección "Predicciones" en /admin/partidos/[id].
+   * 404 si el match no existe (heredado de findOne).
+   */
+  @Get(':id/predictions')
+  async listPredictions(
+    @Param('id') id: string,
+    @Query() query: ListMatchPredictionsDto,
+  ) {
+    return this.matchesService.listPredictions(id, {
+      page: query.page,
+      pageSize: query.pageSize,
+      outcome: query.outcome,
+      search: query.search,
+      sort: query.sort,
+    });
   }
 
   @Put(':id')

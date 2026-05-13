@@ -105,6 +105,8 @@ export const queryKeys = {
     },
     matches: {
       detail: (id: string) => ["admin", "matches", id] as const,
+      predictions: (id: string, filters?: Record<string, unknown>) =>
+        ["admin", "matches", id, "predictions", filters ?? {}] as const,
     },
     phases: {
       summary: () => ["admin", "phases", "summary"] as const,

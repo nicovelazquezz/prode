@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TeamFlag } from "@/components/domain/team-flag";
 import { PredictionInput } from "@/components/domain/prediction-input";
+import { MatchPredictionsSection } from "@/components/admin/match-predictions-section";
 import {
   Dialog,
   DialogContent,
@@ -320,6 +321,13 @@ export default function AdminPartidoDetailPage({ params }: PageProps) {
           </div>
         </form>
       </section>
+
+      <MatchPredictionsSection
+        matchId={match.id}
+        matchStatus={match.status}
+        matchScoreHome={match.scoreHome}
+        matchScoreAway={match.scoreAway}
+      />
 
       <section className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5 md:p-6">
         <h2 className="font-[family-name:var(--font-landing-display)] text-2xl uppercase tracking-tight text-[var(--color-landing-text)]">

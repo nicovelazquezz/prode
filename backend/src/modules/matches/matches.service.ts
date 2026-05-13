@@ -10,7 +10,7 @@ import {
   MatchStatus,
   Phase,
 } from '../../../generated/prisma/enums.js';
-import type { Match } from '../../../generated/prisma/client.js';
+import type { Match, Prisma } from '../../../generated/prisma/client.js';
 
 /**
  * Default page size for `GET /matches`. Covers a single matchday (12 group
@@ -535,5 +535,218 @@ export class MatchesService {
     );
 
     return match;
+  }
+
+  /**
+   * Lista paginada de predicciones de un partido, con stats agregadas
+   * sobre el partido entero (no sobre la página). Pensado para la
+   * sección "Predicciones" en `/admin/partidos/[id]`.
+   *
+   * Pre-checkea existencia via `findOne()` (que ya tira NotFoundException
+   * cuando no existe).
+   *
+   * Stats: una sola `groupBy` por outcomeType sobre el partido entero.
+   * Data: findMany filtrada + paginada con orderBy según `sort`.
+   *
+   * `outcome=PENDING` filtra `outcomeType: null`; cualquier otro valor
+   * mapea 1:1 al enum.
+   *
+   * Performance: a 500 entries/match el orderBy sin índice corre
+   * en milisegundos. No vale cachear ni indexar prematuramente.
+   */
+  async listPredictions(
+    matchId: string,
+    params: {
+      page?: number;
+      pageSize?: number;
+      outcome?: string;
+      search?: string;
+      sort?: string;
+    },
+  ): Promise<{
+    stats: {
+      totalPredictions: number;
+      evaluatedCount: number;
+      exactCount: number;
+      winnerAndDiffCount: number;
+      drawDifferentCount: number;
+      winnerOnlyCount: number;
+      missCount: number;
+      pointsDistributed: number;
+    };
+    data: Array<{
+      predictionId: string;
+      entryId: string;
+      userId: string;
+      userDni: string;
+      userFirstName: string;
+      userLastName: string;
+      entryAlias: string | null;
+      scoreHome: number;
+      scoreAway: number;
+      outcomeType: string | null;
+      basePoints: number;
+      multiplier: number;
+      pointsEarned: number;
+      evaluatedAt: string | null;
+      updatedAt: string;
+    }>;
+    page: number;
+    pageSize: number;
+    total: number;
+  }> {
+    // 1) Existence check — heredamos el 404 de findOne sin código extra.
+    await this.findOne(matchId);
+
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.min(200, Math.max(1, params.pageSize ?? 50));
+
+    // 2) Where para `data` y `count` (incluye filtros del view).
+    const dataWhere: Prisma.PredictionWhereInput = { matchId };
+
+    if (params.outcome === 'PENDING') {
+      dataWhere.outcomeType = null;
+    } else if (params.outcome) {
+      dataWhere.outcomeType = params.outcome as
+        | 'EXACT'
+        | 'WINNER_AND_DIFF'
+        | 'DRAW_DIFFERENT'
+        | 'WINNER_ONLY'
+        | 'MISS';
+    }
+
+    const searchTrim = params.search?.trim();
+    if (searchTrim && searchTrim.length > 0) {
+      dataWhere.entry = {
+        user: {
+          OR: [
+            { firstName: { contains: searchTrim, mode: 'insensitive' } },
+            { lastName: { contains: searchTrim, mode: 'insensitive' } },
+            { dni: { contains: searchTrim } },
+          ],
+        },
+      };
+    }
+
+    // 3) orderBy mapping.
+    const sortKey = params.sort ?? 'points_desc';
+    const orderBy: Array<Record<string, unknown>> = (() => {
+      switch (sortKey) {
+        case 'points_asc':
+          return [
+            { pointsEarned: 'asc' },
+            { outcomeType: 'asc' },
+            { entry: { user: { lastName: 'asc' } } },
+          ];
+        case 'name_asc':
+          return [
+            { entry: { user: { lastName: 'asc' } } },
+            { entry: { user: { firstName: 'asc' } } },
+          ];
+        case 'name_desc':
+          return [
+            { entry: { user: { lastName: 'desc' } } },
+            { entry: { user: { firstName: 'desc' } } },
+          ];
+        case 'prediction':
+          return [{ scoreHome: 'asc' }, { scoreAway: 'asc' }];
+        case 'points_desc':
+        default:
+          return [
+            { pointsEarned: 'desc' },
+            { outcomeType: 'asc' },
+            { entry: { user: { lastName: 'asc' } } },
+          ];
+      }
+    })();
+
+    // 4) Queries en paralelo: stats sobre el match entero (sin filtros),
+    //    data filtrada + paginada, total con los mismos filtros que data.
+    const findManyArgs = {
+      where: dataWhere,
+      include: { entry: { include: { user: true } } },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: orderBy as Prisma.PredictionOrderByWithRelationInput[],
+    } satisfies Prisma.PredictionFindManyArgs;
+
+    const [rows, total, statsGroups] = await Promise.all([
+      this.prisma.prediction.findMany(findManyArgs),
+      this.prisma.prediction.count({ where: dataWhere }),
+      this.prisma.prediction.groupBy({
+        by: ['outcomeType'],
+        where: { matchId },
+        _count: { _all: true },
+        _sum: { pointsEarned: true },
+      }),
+    ]);
+
+    // 5) Aggregate stats from groupBy buckets.
+    let totalPredictions = 0;
+    let pointsDistributed = 0;
+    let exactCount = 0;
+    let winnerAndDiffCount = 0;
+    let drawDifferentCount = 0;
+    let winnerOnlyCount = 0;
+    let missCount = 0;
+    let pendingCount = 0;
+    for (const g of statsGroups) {
+      totalPredictions += g._count._all;
+      pointsDistributed += g._sum.pointsEarned ?? 0;
+      switch (g.outcomeType) {
+        case 'EXACT':
+          exactCount = g._count._all;
+          break;
+        case 'WINNER_AND_DIFF':
+          winnerAndDiffCount = g._count._all;
+          break;
+        case 'DRAW_DIFFERENT':
+          drawDifferentCount = g._count._all;
+          break;
+        case 'WINNER_ONLY':
+          winnerOnlyCount = g._count._all;
+          break;
+        case 'MISS':
+          missCount = g._count._all;
+          break;
+        case null:
+          pendingCount = g._count._all;
+          break;
+      }
+    }
+    const evaluatedCount = totalPredictions - pendingCount;
+
+    return {
+      stats: {
+        totalPredictions,
+        evaluatedCount,
+        exactCount,
+        winnerAndDiffCount,
+        drawDifferentCount,
+        winnerOnlyCount,
+        missCount,
+        pointsDistributed,
+      },
+      data: rows.map((r) => ({
+        predictionId: r.id,
+        entryId: r.entryId,
+        userId: r.entry.userId,
+        userDni: r.entry.user.dni,
+        userFirstName: r.entry.user.firstName,
+        userLastName: r.entry.user.lastName,
+        entryAlias: r.entry.alias ?? null,
+        scoreHome: r.scoreHome,
+        scoreAway: r.scoreAway,
+        outcomeType: r.outcomeType,
+        basePoints: r.basePoints,
+        multiplier: Number(r.multiplier),
+        pointsEarned: r.pointsEarned,
+        evaluatedAt: r.evaluatedAt ? r.evaluatedAt.toISOString() : null,
+        updatedAt: r.updatedAt.toISOString(),
+      })),
+      page,
+      pageSize,
+      total,
+    };
   }
 }

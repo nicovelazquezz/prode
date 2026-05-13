@@ -3,6 +3,7 @@ import { normalizeArgentinePhone } from "../utils/normalize-phone";
 import type {
   Match,
   MatchStatus,
+  OutcomeType,
   Paginated,
   Payment,
   Phase,
@@ -300,6 +301,74 @@ export async function recalculateMatch(
     .json<{ ok: true; predictionsAffected: number }>();
 }
 
+/**
+ * Listado paginado de predicciones de un partido para auditoría admin.
+ * Feed de la sección "Predicciones" en `/admin/partidos/[id]`. Devuelve
+ * `stats` agregadas sobre el match entero (sin filtros) + `data` filtrada
+ * y paginada.
+ *
+ * `outcome="PENDING"` es el sentinel para predicciones aún sin evaluar
+ * (`outcomeType IS NULL` en DB) — no es un valor del enum `OutcomeType`.
+ */
+export interface MatchPredictionsQuery {
+  page?: number;
+  pageSize?: number;
+  outcome?: OutcomeType | "PENDING";
+  search?: string;
+  sort?:
+    | "points_desc"
+    | "points_asc"
+    | "name_asc"
+    | "name_desc"
+    | "prediction";
+}
+
+export interface MatchPredictionRow {
+  predictionId: string;
+  entryId: string;
+  userId: string;
+  userDni: string;
+  userFirstName: string;
+  userLastName: string;
+  entryAlias: string | null;
+  scoreHome: number;
+  scoreAway: number;
+  outcomeType: OutcomeType | null;
+  basePoints: number;
+  multiplier: number;
+  pointsEarned: number;
+  evaluatedAt: string | null;
+  updatedAt: string;
+}
+
+export interface MatchPredictionsResponse {
+  stats: {
+    totalPredictions: number;
+    evaluatedCount: number;
+    exactCount: number;
+    winnerAndDiffCount: number;
+    drawDifferentCount: number;
+    winnerOnlyCount: number;
+    missCount: number;
+    pointsDistributed: number;
+  };
+  data: MatchPredictionRow[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export async function getMatchPredictions(
+  matchId: string,
+  query?: MatchPredictionsQuery,
+): Promise<MatchPredictionsResponse> {
+  return api
+    .get(`admin/matches/${matchId}/predictions`, {
+      searchParams: cleanParams(query as Record<string, string | number | undefined>),
+    })
+    .json<MatchPredictionsResponse>();
+}
+
 // ── Phases ──────────────────────────────────────────────────────
 
 export async function closePhase(
@@ -562,8 +631,6 @@ export async function updateConfig(
 }
 
 // ── Scoring & Phase Multiplier rules ────────────────────────────
-
-import type { OutcomeType } from "./types";
 
 export interface ScoringRuleEntry {
   outcomeType: OutcomeType;
