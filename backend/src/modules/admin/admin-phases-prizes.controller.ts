@@ -109,7 +109,12 @@ export class AdminPhasesPrizesController {
         const winner = winnersByPhase.get(phase);
         const closed = !!winner;
 
-        const { rows } = await this.leaderboard.getByPhase(phase, 1, 10);
+        // Top 5 — número pequeño y digerible. El query devuelve TODAS las
+        // entries activas (incluso con 0 puntos en la fase) ordenadas por
+        // total_points DESC, así que limitamos acá. Cuando la fase no tiene
+        // partidos finalizados, el frontend igual oculta la tabla en favor
+        // de "Aún sin resultados".
+        const { rows } = await this.leaderboard.getByPhase(phase, 1, 5);
         const topTen: PhaseLeaderRow[] = rows.map((r) => ({
           userId: r.user_id,
           firstName: r.first_name,

@@ -83,7 +83,7 @@ export default function AdminFasesPage() {
 
         </h1>
         <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
-          Cierre de fases con asignacion de premios y top 10 por fase.
+          Cierre de fases con asignacion de premios y top 5 por fase.
         </p>
       </header>
 
@@ -168,15 +168,19 @@ function PhaseCard({ summary }: { summary: PhaseSummary }) {
 
       <div className="mt-4">
         <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
-          Top 10 de la fase
+          Top 5 de la fase
         </p>
-        {summary.topTen.length === 0 ? (
+        {summary.matchesFinished === 0 ? (
+          <p className="mt-2 font-sans text-xs italic text-[var(--color-landing-text-muted)]">
+            Aún sin partidos finalizados en esta fase.
+          </p>
+        ) : summary.topTen.length === 0 ? (
           <p className="mt-2 font-sans text-xs italic text-[var(--color-landing-text-muted)]">
             Sin puntos cargados aun.
           </p>
         ) : (
           <ol className="mt-2 space-y-1">
-            {summary.topTen.slice(0, 10).map((entry, i) => (
+            {summary.topTen.slice(0, 5).map((entry, i) => (
               <li
                 key={entry.userId}
                 className="flex items-center justify-between font-sans text-sm"
