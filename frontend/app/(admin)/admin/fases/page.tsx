@@ -1,28 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { Award, CheckCircle2, Lock, Trophy } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { toast } from "@/components/ui/toaster";
+import { useQuery } from "@tanstack/react-query";
+import { Award, Lock } from "lucide-react";
 import { queryKeys } from "@/lib/api/queryKeys";
 import {
-  closePhase,
   listPhaseSummaries,
   listPrizes,
-  markPrizePaid,
   type AdminPrize,
   type PhaseSummary,
 } from "@/lib/api/admin";
@@ -128,11 +111,6 @@ export default function AdminFasesPage() {
 }
 
 function PhaseCard({ summary }: { summary: PhaseSummary }) {
-  const [open, setOpen] = useState(false);
-  const allFinished =
-    summary.matchesTotal > 0 && summary.matchesFinished === summary.matchesTotal;
-  const canClose = allFinished && !summary.closed;
-
   return (
     <article className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5">
       <header className="flex items-start justify-between gap-3">
@@ -201,112 +179,9 @@ function PhaseCard({ summary }: { summary: PhaseSummary }) {
           </ol>
         )}
       </div>
-
-      <div className="mt-4">
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          disabled={!canClose}
-          onClick={() => setOpen(true)}
-        >
-          <Trophy className="mr-2 h-4 w-4" aria-hidden />
-          {summary.closed ? "Fase ya cerrada" : "Cerrar fase"}
-        </Button>
-      </div>
-
-      <ClosePhaseDialog
-        open={open}
-        onOpenChange={setOpen}
-        summary={summary}
-      />
+      {/* "Cerrar fase" + ClosePhaseDialog removidos en bracket-builder Task 10;
+          el cleanup completo (link "Armar cruces") va en Task 13. */}
     </article>
-  );
-}
-
-function ClosePhaseDialog({
-  open,
-  onOpenChange,
-  summary,
-}: {
-  open: boolean;
-  onOpenChange: (next: boolean) => void;
-  summary: PhaseSummary;
-}) {
-  const qc = useQueryClient();
-  const closeMutation = useMutation({
-    mutationFn: () => closePhase(summary.phase),
-    onSuccess: () => {
-      toast.success(`Fase ${PHASE_LABELS[summary.phase]} cerrada`);
-      qc.invalidateQueries({ queryKey: queryKeys.admin.phases.summary() });
-      qc.invalidateQueries({ queryKey: queryKeys.admin.prizes() });
-      onOpenChange(false);
-    },
-    onError: (err: Error) => {
-      toast.error(err.message ?? "No pudimos cerrar la fase.");
-    },
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Cerrar {PHASE_LABELS[summary.phase]}</DialogTitle>
-          <DialogDescription>
-            Una vez cerrada, el ganador queda registrado y se asigna el
-            premio correspondiente. Las predicciones de esta fase no se
-            pueden recalcular sin reabrir.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-4">
-          <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
-            Ganador propuesto
-          </p>
-          {summary.proposedWinner ? (
-            <>
-              <p className="mt-1 font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight">
-                {summary.proposedWinner.firstName}{" "}
-                {summary.proposedWinner.lastName}
-              </p>
-              <p className="mt-1 font-mono text-sm">
-                {formatNumber(summary.proposedWinner.points)} pts
-              </p>
-            </>
-          ) : (
-            <p className="mt-1 font-sans text-sm italic text-[var(--color-landing-text-muted)]">
-              Sin ganador (empate o sin participantes).
-            </p>
-          )}
-        </div>
-        <p className="rounded-sm bg-[var(--color-landing-surface)] px-3 py-2 font-sans text-sm">
-          Monto del premio:{" "}
-          <span className="font-mono font-bold">
-            {formatARS(summary.prizeAmount)}
-          </span>
-        </p>
-        <p className="font-sans text-xs italic text-[var(--color-landing-text-muted)]">
-          Nota: cerrar la fase dispara la notificacion al ganador (si tiene
-          opt-in WhatsApp).
-        </p>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outlined"
-            onClick={() => onOpenChange(false)}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() => closeMutation.mutate()}
-            disabled={closeMutation.isPending}
-          >
-            {closeMutation.isPending ? "Cerrando..." : "Confirmar cierre"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -317,18 +192,8 @@ function PrizesList({
   prizes: AdminPrize[];
   loading: boolean;
 }) {
-  const qc = useQueryClient();
-  const payMutation = useMutation({
-    mutationFn: (id: string) => markPrizePaid(id),
-    onSuccess: () => {
-      toast.success("Premio marcado como pagado");
-      qc.invalidateQueries({ queryKey: queryKeys.admin.prizes() });
-    },
-    onError: (err: Error) => {
-      toast.error(err.message ?? "No pudimos marcar el premio.");
-    },
-  });
-
+  // "Marcar pagado" + payMutation removidos en bracket-builder Task 10;
+  // cleanup completo de PrizesList va en Task 13.
   if (loading) {
     return (
       <div className="mt-4 space-y-2" role="status" aria-busy="true">
@@ -378,18 +243,7 @@ function PrizesList({
             >
               {p.status}
             </span>
-            {p.status === "PENDING" && p.recipientUserId ? (
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={() => payMutation.mutate(p.id)}
-                disabled={payMutation.isPending}
-              >
-                <CheckCircle2 className="mr-1 h-3 w-3" aria-hidden />
-                Marcar pagado
-              </Button>
-            ) : null}
+            {/* Botón "Marcar pagado" removido en bracket-builder Task 10. */}
           </div>
         </li>
       ))}
