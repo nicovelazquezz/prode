@@ -43,6 +43,7 @@ describe('MatchProgressionService (integration)', () => {
     homeTeamId: string | null;
     awayTeamId: string | null;
     predictionsOpenAt: Date | null;
+    winnerTeamId: string | null;
   };
   const snapshots: MatchSnapshot[] = [];
 
@@ -58,6 +59,7 @@ describe('MatchProgressionService (integration)', () => {
       homeTeamId: m.homeTeamId,
       awayTeamId: m.awayTeamId,
       predictionsOpenAt: m.predictionsOpenAt,
+      winnerTeamId: m.winnerTeamId,
     };
   }
 
@@ -72,6 +74,7 @@ describe('MatchProgressionService (integration)', () => {
         homeTeamId: s.homeTeamId,
         awayTeamId: s.awayTeamId,
         predictionsOpenAt: s.predictionsOpenAt,
+        winnerTeamId: s.winnerTeamId,
       },
     });
   }
@@ -222,5 +225,236 @@ describe('MatchProgressionService (integration)', () => {
     expect(alertsSpy).toHaveBeenCalled();
     const types = alertsSpy.mock.calls.map((c) => (c[0] as { type: string }).type);
     expect(types).toContain('PHASE_PROGRESSION_DRAW_NEEDS_REVIEW');
+  });
+
+  describe('pickTeam with winnerTeamId (knockout ties)', () => {
+    // These tests exercise `pickTeam` indirectly through the public
+    // populator. The matches are forced into a tied state with
+    // `winnerTeamId` set/unset to confirm the populator now respects the
+    // tiebreaker column instead of always alerting on draws.
+
+    it('uses winnerTeamId when scores are tied (winner path: ROUND_32 → ROUND_16)', async () => {
+      alertsSpy.mockClear();
+      const teams = await prisma.team.findMany({ take: 4, orderBy: { fifaCode: 'asc' } });
+
+      // R32 #73: 1-1 with home team flagged as winner.
+      await prisma.match.update({
+        where: { matchNumber: 73 },
+        data: {
+          status: 'FINISHED',
+          scoreHome: 1,
+          scoreAway: 1,
+          finishedAt: new Date(),
+          homeTeamId: teams[0].id,
+          awayTeamId: teams[1].id,
+          winnerTeamId: teams[0].id,
+        },
+      });
+      // R32 #74: 0-0 with AWAY team flagged as winner.
+      await prisma.match.update({
+        where: { matchNumber: 74 },
+        data: {
+          status: 'FINISHED',
+          scoreHome: 0,
+          scoreAway: 0,
+          finishedAt: new Date(),
+          homeTeamId: teams[2].id,
+          awayTeamId: teams[3].id,
+          winnerTeamId: teams[3].id,
+        },
+      });
+      // Reset target so the populator does work.
+      await prisma.match.update({
+        where: { matchNumber: 89 },
+        data: {
+          homeTeamId: null,
+          awayTeamId: null,
+          predictionsOpenAt: null,
+        },
+      });
+
+      await progression.populateRound16Matches();
+
+      const r16 = await prisma.match.findFirstOrThrow({
+        where: { matchNumber: 89 },
+      });
+      // Winner of #73 = teams[0] (home), winner of #74 = teams[3] (away).
+      expect(r16.homeTeamId).toBe(teams[0].id);
+      expect(r16.awayTeamId).toBe(teams[3].id);
+      expect(r16.predictionsOpenAt).toBeInstanceOf(Date);
+      // Critical: no draw alerts should have fired.
+      const types = alertsSpy.mock.calls.map((c) => (c[0] as { type: string }).type);
+      expect(types).not.toContain('PHASE_PROGRESSION_DRAW_NEEDS_REVIEW');
+    });
+
+    it('uses winnerTeamId for loser path (SEMIS → THIRD_PLACE)', async () => {
+      alertsSpy.mockClear();
+      const teams = await prisma.team.findMany({ take: 4, orderBy: { fifaCode: 'asc' } });
+
+      // Snapshot SEMIS (#101, #102) and FINAL (#104) and THIRD_PLACE (#103)
+      // so we can restore them — not added to the outer snapshots list,
+      // we restore inline at the end of this test.
+      const sem101Snap = await snapshot(101);
+      const sem102Snap = await snapshot(102);
+      const thirdSnap = await snapshot(103);
+      const finalSnap = await snapshot(104);
+
+      try {
+        // SEMI #101: 2-2 tie, winnerTeamId = home → loser = away (teams[1]).
+        await prisma.match.update({
+          where: { matchNumber: 101 },
+          data: {
+            status: 'FINISHED',
+            scoreHome: 2,
+            scoreAway: 2,
+            finishedAt: new Date(),
+            homeTeamId: teams[0].id,
+            awayTeamId: teams[1].id,
+            winnerTeamId: teams[0].id,
+          },
+        });
+        // SEMI #102: 0-0 tie, winnerTeamId = away → loser = home (teams[2]).
+        await prisma.match.update({
+          where: { matchNumber: 102 },
+          data: {
+            status: 'FINISHED',
+            scoreHome: 0,
+            scoreAway: 0,
+            finishedAt: new Date(),
+            homeTeamId: teams[2].id,
+            awayTeamId: teams[3].id,
+            winnerTeamId: teams[3].id,
+          },
+        });
+        // Reset targets.
+        await prisma.match.update({
+          where: { matchNumber: 103 },
+          data: { homeTeamId: null, awayTeamId: null, predictionsOpenAt: null },
+        });
+        await prisma.match.update({
+          where: { matchNumber: 104 },
+          data: { homeTeamId: null, awayTeamId: null, predictionsOpenAt: null },
+        });
+
+        await progression.populateFinalMatches();
+
+        const third = await prisma.match.findFirstOrThrow({
+          where: { matchNumber: 103 },
+        });
+        // Loser of #101 = teams[1], loser of #102 = teams[2].
+        expect(third.homeTeamId).toBe(teams[1].id);
+        expect(third.awayTeamId).toBe(teams[2].id);
+
+        const final = await prisma.match.findFirstOrThrow({
+          where: { matchNumber: 104 },
+        });
+        // Winner of #101 = teams[0], winner of #102 = teams[3].
+        expect(final.homeTeamId).toBe(teams[0].id);
+        expect(final.awayTeamId).toBe(teams[3].id);
+
+        const types = alertsSpy.mock.calls.map((c) => (c[0] as { type: string }).type);
+        expect(types).not.toContain('PHASE_PROGRESSION_DRAW_NEEDS_REVIEW');
+      } finally {
+        // Inline restore (in reverse order of mutation).
+        await restoreSnapshot(finalSnap);
+        await restoreSnapshot(thirdSnap);
+        await restoreSnapshot(sem102Snap);
+        await restoreSnapshot(sem101Snap);
+      }
+    });
+
+    it('returns null and alerts when scores are tied AND winnerTeamId is null (legacy)', async () => {
+      alertsSpy.mockClear();
+      const teams = await prisma.team.findMany({ take: 4, orderBy: { fifaCode: 'asc' } });
+
+      // R32 #73: 1-1 with NO winnerTeamId set.
+      await prisma.match.update({
+        where: { matchNumber: 73 },
+        data: {
+          status: 'FINISHED',
+          scoreHome: 1,
+          scoreAway: 1,
+          finishedAt: new Date(),
+          homeTeamId: teams[0].id,
+          awayTeamId: teams[1].id,
+          winnerTeamId: null,
+        },
+      });
+      // R32 #74: 2-1 (regular non-draw to isolate the failure to #73).
+      await prisma.match.update({
+        where: { matchNumber: 74 },
+        data: {
+          status: 'FINISHED',
+          scoreHome: 2,
+          scoreAway: 1,
+          finishedAt: new Date(),
+          homeTeamId: teams[2].id,
+          awayTeamId: teams[3].id,
+          winnerTeamId: null,
+        },
+      });
+      await prisma.match.update({
+        where: { matchNumber: 89 },
+        data: { homeTeamId: null, awayTeamId: null, predictionsOpenAt: null },
+      });
+
+      await progression.populateRound16Matches();
+
+      // The draw alert must fire and the target should remain unassigned.
+      const types = alertsSpy.mock.calls.map((c) => (c[0] as { type: string }).type);
+      expect(types).toContain('PHASE_PROGRESSION_DRAW_NEEDS_REVIEW');
+
+      const r16 = await prisma.match.findFirstOrThrow({
+        where: { matchNumber: 89 },
+      });
+      expect(r16.homeTeamId).toBeNull();
+      expect(r16.awayTeamId).toBeNull();
+    });
+
+    it('ignores winnerTeamId when scores differ (regular result wins)', async () => {
+      alertsSpy.mockClear();
+      const teams = await prisma.team.findMany({ take: 4, orderBy: { fifaCode: 'asc' } });
+
+      // R32 #73: home wins 2-0 BUT winnerTeamId points to away.
+      // The score is authoritative; winnerTeamId is ignored when not tied.
+      await prisma.match.update({
+        where: { matchNumber: 73 },
+        data: {
+          status: 'FINISHED',
+          scoreHome: 2,
+          scoreAway: 0,
+          finishedAt: new Date(),
+          homeTeamId: teams[0].id,
+          awayTeamId: teams[1].id,
+          winnerTeamId: teams[1].id, // pathological — should be ignored
+        },
+      });
+      // R32 #74: away wins 1-3.
+      await prisma.match.update({
+        where: { matchNumber: 74 },
+        data: {
+          status: 'FINISHED',
+          scoreHome: 1,
+          scoreAway: 3,
+          finishedAt: new Date(),
+          homeTeamId: teams[2].id,
+          awayTeamId: teams[3].id,
+          winnerTeamId: null,
+        },
+      });
+      await prisma.match.update({
+        where: { matchNumber: 89 },
+        data: { homeTeamId: null, awayTeamId: null, predictionsOpenAt: null },
+      });
+
+      await progression.populateRound16Matches();
+
+      const r16 = await prisma.match.findFirstOrThrow({
+        where: { matchNumber: 89 },
+      });
+      // Scores differ → score winner wins regardless of winnerTeamId.
+      expect(r16.homeTeamId).toBe(teams[0].id); // home of #73 won 2-0
+      expect(r16.awayTeamId).toBe(teams[3].id); // away of #74 won 1-3
+    });
   });
 });
