@@ -58,6 +58,7 @@ export class ScoringController {
       dto.scoreHome,
       dto.scoreAway,
       user.id,
+      dto.winnerTeamId,
     );
   }
 
@@ -81,6 +82,7 @@ export class ScoringController {
       dto.scoreHome,
       dto.scoreAway,
       user.id,
+      dto.winnerTeamId,
     );
   }
 }

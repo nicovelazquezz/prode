@@ -1,4 +1,4 @@
-import { IsInt, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**
@@ -8,6 +8,12 @@ import { Type } from 'class-transformer';
  * client-side validator can cover both surfaces. The `Type(() => Number)`
  * coercion lets clients send numeric strings without tripping the
  * validator.
+ *
+ * `winnerTeamId` is only consulted when the match is in a knockout phase
+ * (phase !== 'GROUPS') AND `scoreHome === scoreAway`. For every other
+ * combination the service ignores it (the column is forced to null in
+ * the persisted row). When the precondition triggers, the service rejects
+ * the call unless `winnerTeamId` matches one of the two teams playing.
  */
 export class FinishMatchDto {
   @Type(() => Number)
@@ -21,4 +27,8 @@ export class FinishMatchDto {
   @Min(0)
   @Max(99)
   scoreAway!: number;
+
+  @IsOptional()
+  @IsString()
+  winnerTeamId?: string;
 }

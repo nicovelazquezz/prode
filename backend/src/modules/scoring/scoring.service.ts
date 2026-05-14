@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
@@ -73,6 +73,7 @@ export class ScoringService {
     scoreHome: number,
     scoreAway: number,
     adminUserId: string,
+    winnerTeamId?: string,
   ): Promise<Match> {
     // ── Pre-checks (outside TX) ────────────────────────────────────────
     const matchPrev = await this.prisma.match.findUniqueOrThrow({
@@ -87,6 +88,29 @@ export class ScoringService {
     if (phaseWinner?.prizeStatus === 'PAID') {
       throw new PhaseAlreadyPaidException();
     }
+
+    // Knockout tiebreaker: ties (scoreHome === scoreAway) outside the
+    // group stage MUST come with a winnerTeamId so we can populate the
+    // next bracket slot deterministically. The admin selects this via a
+    // dropdown in the finish form. Non-ties ignore the field entirely
+    // (we force-null it on persist below).
+    if (matchPrev.phase !== 'GROUPS' && scoreHome === scoreAway) {
+      if (!winnerTeamId) {
+        throw new BadRequestException(
+          'winnerTeamId requerido para empate en eliminatoria',
+        );
+      }
+      if (
+        winnerTeamId !== matchPrev.homeTeamId &&
+        winnerTeamId !== matchPrev.awayTeamId
+      ) {
+        throw new BadRequestException(
+          'winnerTeamId debe ser uno de los equipos del partido',
+        );
+      }
+    }
+    const effectiveWinnerTeamId =
+      scoreHome === scoreAway ? (winnerTeamId ?? null) : null;
 
     const rules = await this.scoringConfig.getRules();
     const multipliers = await this.scoringConfig.getMultipliers();
@@ -108,6 +132,7 @@ export class ScoringService {
             scoreAway,
             status: 'FINISHED',
             finishedAt: new Date(),
+            winnerTeamId: effectiveWinnerTeamId,
           },
         });
 
@@ -205,6 +230,7 @@ export class ScoringService {
     scoreHome: number,
     scoreAway: number,
     adminUserId: string,
+    winnerTeamId?: string,
   ): Promise<Match> {
     // ── Pre-checks (outside TX) ────────────────────────────────────────
     const matchPrev = await this.prisma.match.findUniqueOrThrow({
@@ -219,6 +245,27 @@ export class ScoringService {
     if (phaseWinner?.prizeStatus === 'PAID') {
       throw new PhaseAlreadyPaidException();
     }
+
+    // Same knockout tie-break invariant as `finishMatchAndScore`. The
+    // admin may correct a 2-1 to 1-1 during recalc, at which point we
+    // need a winnerTeamId to advance the next bracket slot.
+    if (matchPrev.phase !== 'GROUPS' && scoreHome === scoreAway) {
+      if (!winnerTeamId) {
+        throw new BadRequestException(
+          'winnerTeamId requerido para empate en eliminatoria',
+        );
+      }
+      if (
+        winnerTeamId !== matchPrev.homeTeamId &&
+        winnerTeamId !== matchPrev.awayTeamId
+      ) {
+        throw new BadRequestException(
+          'winnerTeamId debe ser uno de los equipos del partido',
+        );
+      }
+    }
+    const effectiveWinnerTeamId =
+      scoreHome === scoreAway ? (winnerTeamId ?? null) : null;
 
     const before = {
       scoreHome: matchPrev.scoreHome,
@@ -240,7 +287,7 @@ export class ScoringService {
         //    outcome — both calls produce valid scoring states.
         updated = await tx.match.update({
           where: { id: matchId },
-          data: { scoreHome, scoreAway },
+          data: { scoreHome, scoreAway, winnerTeamId: effectiveWinnerTeamId },
         });
 
         // 2. Re-score every prediction with the new result. The prior
