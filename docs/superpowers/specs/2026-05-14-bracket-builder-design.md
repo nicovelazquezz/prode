@@ -137,18 +137,20 @@ class GroupStandingsService {
 - Ordena: `PTS DESC → DG DESC → GF DESC`.
 - Equipos sin partidos jugados aparecen igual con todo en 0 (para que el builder los muestre desde el día 1).
 
-**Cache:** 60s TTL en Redis con key `groups:standings:all`. Invalidar desde `scoring.service.ts` cuando se finaliza un match de GROUPS.
+**Cache:** 60s TTL en Redis con key `groups:standings:all` — un solo blob con los 12 grupos. Invalidar desde `scoring.service.ts` (en `finishMatchAndScore` y `recalculateMatch`) cuando el match tocado tiene `phase === 'GROUPS'`. Una sola finalización invalida los 12 (no hay cache por-grupo); es aceptable porque el blob entero es pequeño y la siguiente lectura lo regenera en ~1 query agregada.
 
 ### 5.2 `FinishMatchDto` extensión
 
 **Ubicación:** `backend/src/modules/scoring/dto/finish-match.dto.ts`
 
-Agregar campo opcional:
+Agregar campo opcional. El archivo actual solo importa `IsInt, Max, Min` — hay que sumar `IsOptional, IsString`:
 
 ```typescript
+import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+
 export class FinishMatchDto {
-  @IsInt() @Min(0) scoreHome: number;
-  @IsInt() @Min(0) scoreAway: number;
+  @IsInt() @Min(0) @Max(99) scoreHome: number;
+  @IsInt() @Min(0) @Max(99) scoreAway: number;
   @IsOptional() @IsString() winnerTeamId?: string;
 }
 ```
@@ -171,6 +173,8 @@ if (matchPrev.phase !== 'GROUPS' && scoreHome === scoreAway) {
 Si scores son distintos, `winnerTeamId` se ignora (no se persiste, queda null). Si fase es GROUPS, idem (los grupos no tienen ganador por penales).
 
 **Idéntica validación para `recalculateMatch`** — el admin puede corregir el ganador después.
+
+> **Nota colateral:** hoy el frontend en `/admin/partidos/[id]` llama a `recalculateMatch(matchId)` sin body (ver `frontend/lib/api/admin.ts` línea ~298). Eso es bug pre-existente y queda fuera del alcance de este spec — pero al agregar `winnerTeamId` al path de recalculate, el bug se vuelve más visible. Si lo arreglamos, hay que mandar `{ scoreHome, scoreAway, winnerTeamId? }`. Lo dejo como **out-of-scope explícito** salvo que descubramos durante implementación que rompe algo.
 
 ### 5.3 `MatchProgressionService.pickTeam` actualizado
 
@@ -207,20 +211,22 @@ GROUPS → R32 path sigue intacto (el populador de R32 sigue siendo "manda alert
 
 **`GET /admin/fases/builder/:phase`** (admin)
 
-Devuelve el estado actual del builder más la referencia para la fase:
+Devuelve el estado actual del builder más la referencia para la fase. **Solo acepta 5 valores de `phase`**: `ROUND_32`, `ROUND_16`, `QUARTERS`, `SEMIS`, `FINAL`. THIRD_PLACE NO es una opción válida del param — sus dos matches (#103 3er puesto y #104 final) se manejan ambos dentro del builder con `phase === 'FINAL'`. Llamar `GET /admin/fases/builder/THIRD_PLACE` → 400 Bad Request con mensaje *"THIRD_PLACE se administra junto con FINAL"*.
 
 ```typescript
+type BuilderPhase = 'ROUND_32' | 'ROUND_16' | 'QUARTERS' | 'SEMIS' | 'FINAL';
+
 interface BuilderState {
-  phase: Exclude<Phase, 'GROUPS'>;
-  // Los N matches de la fase (16, 8, 4, 2 o 2 — la última agrupa
-  // THIRD_PLACE + FINAL si phase === 'FINAL').
+  phase: BuilderPhase;
+  // Los N matches de la fase: 16, 8, 4, 2 o 2 (cuando phase === 'FINAL'
+  // este array incluye los dos matches: #103 THIRD_PLACE y #104 FINAL).
   matches: Array<{
     matchId: string;
     matchNumber: number;
-    label: string;           // ej. "Mejor R32 H1" del seed
+    matchPhase: Phase;       // útil para distinguir THIRD_PLACE vs FINAL en la respuesta de phase=FINAL
     homeTeamId: string | null;
     awayTeamId: string | null;
-    homeTeamLabel: string | null;
+    homeTeamLabel: string | null;   // ej. "Mejor R32 H1" del seed — slot semántico
     awayTeamLabel: string | null;
     kickoffAt: string;       // ISO
     venue: string | null;
@@ -249,7 +255,7 @@ type Reference =
     };
 ```
 
-**Para `phase === 'FINAL'`** la respuesta incluye los 2 matches (#103 3er puesto y #104 final). La referencia es `PREVIOUS_ROUND` con los 2 matches de SEMIS, y el builder lo trata como caso especial (mostrar `winner` para final y `loser` para 3er).
+**Para `phase === 'FINAL'`** la respuesta incluye los 2 matches (#103 3er puesto y #104 final). La referencia es `PREVIOUS_ROUND` con los 2 matches de SEMIS, y el builder lo trata como caso especial (mostrar `winner` para final y `loser` para 3er). El frontend distingue ambos matches con `matchPhase` (`THIRD_PLACE` o `FINAL`) y los renderiza en dos secciones diferenciadas dentro de la misma pantalla.
 
 **`POST /admin/fases/builder/:phase`** (admin)
 
@@ -277,9 +283,9 @@ interface BuilderApplyDto {
 - Single transaction.
 - Para cada match: si `homeTeamId` Y `awayTeamId` quedan no-null Y antes alguno era null → setea `predictionsOpenAt = now()`. Esto abre predicciones automáticamente.
 - Si el match ya tenía sus equipos y se está sobreescribiendo, **no** se resetea `predictionsOpenAt` (el admin está corrigiendo, no inicializando).
-- Audit log: `action: 'phase.builder.applied'`, `entity: 'phase'`, `entityId: <phase>`, `changes: { matches: [<antes/después por match>] }`.
+- Audit log: `action: 'phase.builder.applied'`, `entity: 'phase'`, `entityId: <phase>`, `changes: { matches: [<antes/después por match>] }`. **Solo se loguean diffs reales** — si el admin manda el body pero ningún match cambia (home/away iguales a los actuales), no se escribe audit log. La response sí refleja esto en `matchesUpdated`.
 
-Response: `{ ok: true, matchesUpdated: number }`.
+Response: `{ ok: true, matchesUpdated: number }`. `matchesUpdated` es la cantidad de matches que efectivamente cambiaron (0 si fue un no-op).
 
 ### 5.5 Endpoints muertos del cliente
 
@@ -382,28 +388,41 @@ Cuando `scoreHome !== scoreAway` o fase es `GROUPS`, el select se oculta y `winn
 
 **Agregar:**
 
-- En cada `PhaseCard` cuya fase sea eliminatoria, un link/botón **"Armar cruces"** que lleva a `/admin/fases/builder/[phase]`.
+- En cada `PhaseCard` cuya fase sea eliminatoria **excepto THIRD_PLACE**, un link/botón **"Armar cruces"** que lleva a `/admin/fases/builder/[phase]`.
   - Habilitado si la fase anterior está cerrada (PhaseWinner row existe), o si phase === 'ROUND_32' y GROUPS está cerrada.
   - Si está deshabilitado, tooltip *"Esperá a que cierre la fase anterior"*.
+- La card de THIRD_PLACE no muestra "Armar cruces" — su match (#103) se administra desde el builder de FINAL.
 - El badge "Cerrada" sigue mostrándose como hoy cuando hay PhaseWinner row.
 
 **Lo que queda en la página:** vista read-only del progreso de cada fase, top 5, ganador propuesto/registrado, lista de premios (PhaseWinner rows con su monto cuando esté seteado — hoy queda en 0 porque nadie lo setea, pero la sección queda como está para no perder la vista).
 
 ### 6.6 Vista pública del partido empatado
 
-**Archivos a tocar** (a identificar durante implementación; lo más probable):
+**Plumbing del backend (obligatorio antes que el frontend):**
 
-- `frontend/components/match-card.tsx` o equivalente que renderiza un partido.
-- `frontend/app/(app)/partidos/[id]/page.tsx` si existe el detalle.
+`backend/src/modules/matches/matches.service.ts` hace `include: { homeTeam: true, awayTeam: true }` en cuatro lugares (líneas 132, 159, 172, 183 — list, upcoming, byPhase, findOne). En esos cuatro lugares hay que sumar `winnerTeam: true`. Esto hace que la response de:
 
-Cuando `match.status === 'FINISHED'` y `match.winnerTeamId !== null`:
+- `GET /matches` (listado paginado)
+- `GET /matches/upcoming`
+- `GET /matches/by-phase/:phase`
+- `GET /matches/:id`
+
+incluya `winnerTeam` resuelto (null o el objeto Team completo).
+
+**Frontend — archivos a identificar durante implementación.** Lo más probable:
+
+- `frontend/components/match-card.tsx` o equivalente que renderiza un partido en listados.
+- `frontend/app/(app)/partidos/[id]/page.tsx` o donde se muestre detalle.
+- Tipos en `frontend/lib/api/types.ts` o equivalente para incluir `winnerTeam`.
+
+Cuando `match.status === 'FINISHED'` y `match.winnerTeam !== null`:
 
 ```
 Argentina  1 — 1  Polonia
            Pasa Argentina
 ```
 
-Solo eso. Sin "(por penales)" — no modelamos penales explícitos. El campo `winnerTeam` ya viene resuelto desde backend en la response de `/matches/:id`.
+Solo eso. Sin "(por penales)" — no modelamos penales explícitos.
 
 ## 7. Tests
 
@@ -471,19 +490,23 @@ Solo eso. Sin "(por penales)" — no modelamos penales explícitos. El campo `wi
 
 ## 8. Plan de rollout
 
-1. **Migration** (additive, sin downtime). Aplicada con dokploy normal.
+**Orden obligatorio** (cada paso ship-and-deploy antes del siguiente):
+
+1. **Migration de la columna** (additive, sin downtime). Aplicada con dokploy normal. La columna debe existir en DB antes de que cualquier código intente leerla — Prisma se rompe si lee `winnerTeamId` y la columna no existe.
 2. **Backend:**
    - `GroupStandingsService` + endpoint público.
-   - `pickTeam` actualizado + validación en finish/recalculate.
+   - `pickTeam` actualizado + validación en finish/recalculate (lee `winnerTeamId`).
    - Endpoints del builder.
+   - `include: { winnerTeam: true }` en los 4 sitios de matches.service.ts.
 3. **Frontend:**
+   - Tipos actualizados para incluir `winnerTeam`.
    - Página builder.
    - Select "Ganador" en form de finish.
    - Cleanup de /admin/fases + link al builder.
-4. **Vista pública:** línea "Pasa X" en match.
-5. **Smoke test en staging** con fixture de torneo terminado.
+   - Vista pública: línea "Pasa X" en match.
+4. **Smoke test en staging** con fixture de torneo terminado.
 
-Ordening: la migration y el backend deben mergearse antes del frontend para que las llamadas no fallen.
+Si el frontend ship antes que el backend, las llamadas fallan con 404 (endpoints no existen). Si el backend lee `winnerTeamId` antes que la migration corra, Prisma rompe en el `findUnique`. El orden 1 → 2 → 3 es estricto.
 
 ## 9. YAGNI (explícitos)
 
