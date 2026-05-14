@@ -1,11 +1,17 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Param,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator.js';
+import {
+  CurrentUser,
+  type AuthenticatedUser,
+} from '../../common/decorators/current-user.decorator.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import {
@@ -13,6 +19,7 @@ import {
   type GroupStanding,
 } from '../scoring/group-standings.service.js';
 import { Phase, type MatchStatus } from '../../../generated/prisma/enums.js';
+import { BuilderApplyDto } from './dto/builder-apply.dto.js';
 
 /**
  * GET /admin/fases/builder/:phase — devuelve los matches de la fase pedida
@@ -166,6 +173,150 @@ export class AdminFasesBuilderController {
       ),
       reference,
     };
+  }
+
+  /**
+   * POST /admin/fases/builder/:phase — aplica las asignaciones de equipos
+   * para los matches de la fase. Body: `{ matches: [{matchId, homeTeamId?,
+   * awayTeamId?}] }`.
+   *
+   * Reglas:
+   *   - Cada equipo puede aparecer SÓLO una vez dentro del request
+   *     (cross-match uniqueness, excluyendo nulls).
+   *   - Dentro de un mismo match, home !== away (cuando ambos son
+   *     no-null).
+   *   - El matchId debe pertenecer a la fase (para FINAL aceptamos los
+   *     dos matches de THIRD_PLACE + FINAL).
+   *   - Si una asignación cambia un match de (null, null) a (X, Y) con
+   *     ambos seteados, se setea `predictionsOpenAt = now()` (abre
+   *     pronósticos). Si ya estaba seteado, NO se resetea.
+   *   - El auditLog se escribe sólo cuando hay diffs reales.
+   *   - Idempotente: re-posting del mismo body devuelve
+   *     `matchesUpdated: 0` y NO escribe audit log.
+   */
+  @Post(':phase')
+  async applyBuilder(
+    @Param('phase') phase: string,
+    @Body() dto: BuilderApplyDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ ok: true; matchesUpdated: number }> {
+    if (!VALID_PHASES.includes(phase as BuilderPhase)) {
+      throw new BadRequestException(
+        phase === 'THIRD_PLACE'
+          ? 'THIRD_PLACE se administra junto con FINAL'
+          : `phase ${phase} no es válida para el builder`,
+      );
+    }
+
+    const builderPhase = phase as BuilderPhase;
+
+    // 1) Validaciones in-memory: home !== away por match, y uniqueness
+    //    cross-match (excluyendo null).
+    const seen = new Set<string>();
+    for (const m of dto.matches) {
+      const home = m.homeTeamId ?? null;
+      const away = m.awayTeamId ?? null;
+      if (home !== null && away !== null && home === away) {
+        throw new BadRequestException(
+          `Match ${m.matchId}: homeTeamId no puede ser igual a awayTeamId`,
+        );
+      }
+      for (const tid of [home, away]) {
+        if (tid === null) continue;
+        if (seen.has(tid)) {
+          throw new BadRequestException(
+            `Equipo ${tid} aparece en más de un cruce`,
+          );
+        }
+        seen.add(tid);
+      }
+    }
+
+    // 2) Verificar que los matchIds pertenecen a la fase. Para FINAL
+    //    aceptamos THIRD_PLACE + FINAL.
+    const matchPhases: Phase[] =
+      builderPhase === 'FINAL'
+        ? [Phase.THIRD_PLACE, Phase.FINAL]
+        : [builderPhase as Phase];
+    const phaseMatches = await this.prisma.match.findMany({
+      where: { phase: { in: matchPhases } },
+      select: { id: true },
+    });
+    const validMatchIds = new Set(phaseMatches.map((m) => m.id));
+    for (const m of dto.matches) {
+      if (!validMatchIds.has(m.matchId)) {
+        throw new BadRequestException(
+          `Match ${m.matchId} no pertenece a la fase ${phase}`,
+        );
+      }
+    }
+
+    // 3) Aplicar dentro de una sola transacción. Calcular diffs y
+    //    decidir predictionsOpenAt por match.
+    const now = new Date();
+    let matchesUpdated = 0;
+    const diffs: Array<{
+      matchId: string;
+      before: { homeTeamId: string | null; awayTeamId: string | null };
+      after: { homeTeamId: string | null; awayTeamId: string | null };
+    }> = [];
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const m of dto.matches) {
+        const current = await tx.match.findUniqueOrThrow({
+          where: { id: m.matchId },
+          select: {
+            homeTeamId: true,
+            awayTeamId: true,
+            predictionsOpenAt: true,
+          },
+        });
+        const nextHome = m.homeTeamId ?? null;
+        const nextAway = m.awayTeamId ?? null;
+        if (
+          current.homeTeamId === nextHome &&
+          current.awayTeamId === nextAway
+        ) {
+          continue;
+        }
+        // Abrir pronósticos sólo si antes estaba sin abrir y ahora
+        // ambos teams están definidos.
+        const shouldOpenPredictions =
+          current.predictionsOpenAt === null &&
+          nextHome !== null &&
+          nextAway !== null;
+        await tx.match.update({
+          where: { id: m.matchId },
+          data: {
+            homeTeamId: nextHome,
+            awayTeamId: nextAway,
+            ...(shouldOpenPredictions ? { predictionsOpenAt: now } : {}),
+          },
+        });
+        diffs.push({
+          matchId: m.matchId,
+          before: {
+            homeTeamId: current.homeTeamId,
+            awayTeamId: current.awayTeamId,
+          },
+          after: { homeTeamId: nextHome, awayTeamId: nextAway },
+        });
+        matchesUpdated++;
+      }
+      if (matchesUpdated > 0) {
+        await tx.auditLog.create({
+          data: {
+            userId: user.id,
+            action: 'phase.builder.applied',
+            entity: 'phase',
+            entityId: builderPhase,
+            changes: { matches: diffs },
+          },
+        });
+      }
+    });
+
+    return { ok: true, matchesUpdated };
   }
 }
 
