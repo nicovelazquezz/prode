@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Award, Lock } from "lucide-react";
 import { queryKeys } from "@/lib/api/queryKeys";
@@ -24,17 +25,44 @@ const PHASE_LABELS: Record<Phase, string> = {
 };
 
 const PRIZE_LABELS: Record<AdminPrize["type"], string> = {
-  GENERAL_FIRST: "1ro general",
-  GENERAL_SECOND: "2do general",
-  GENERAL_THIRD: "3ro general",
   PHASE_WINNER: "Ganador de fase",
 };
 
 /**
+ * Fases de eliminatoria que aceptan el builder. THIRD_PLACE queda
+ * afuera porque sus dos matches viven dentro del builder de FINAL
+ * (#103 3er puesto + #104 final).
+ */
+const KNOCKOUT_PHASES = [
+  "ROUND_32",
+  "ROUND_16",
+  "QUARTERS",
+  "SEMIS",
+  "FINAL",
+] as const satisfies readonly Phase[];
+
+type KnockoutPhase = (typeof KNOCKOUT_PHASES)[number];
+
+/**
+ * Mapa fase → fase anterior, para decidir si el admin ya puede entrar
+ * al builder de una fase (la anterior tiene que estar `closed`).
+ * ROUND_32 depende de GROUPS. FINAL depende de SEMIS (el match de
+ * 3er puesto vive adentro del builder de FINAL).
+ */
+const PREVIOUS_PHASE: Record<KnockoutPhase, Phase> = {
+  ROUND_32: "GROUPS",
+  ROUND_16: "ROUND_32",
+  QUARTERS: "ROUND_16",
+  SEMIS: "QUARTERS",
+  FINAL: "SEMIS",
+};
+
+/**
  * /admin/fases (spec §6.11). Por cada fase: card con count de
- * matches finalizados/totales, top 10, y boton "Cerrar fase"
- * habilitado SOLO si todos los matches estan FINISHED. Modal con
- * ganador propuesto + monto + nota. Lista de premios abajo.
+ * matches finalizados/totales, top 5, y link "Armar cruces" para
+ * las fases de eliminatoria que ya tengan la fase anterior cerrada.
+ * Premios listados read-only abajo (la asignación final la hace el
+ * admin por fuera del sistema).
  *
  * Mobile responsive: cards se apilan en columna en mobile.
  */
@@ -66,7 +94,7 @@ export default function AdminFasesPage() {
 
         </h1>
         <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
-          Cierre de fases con asignacion de premios y top 5 por fase.
+          Progreso y top 5 por fase. Desde cada eliminatoria entrás al builder para armar los cruces.
         </p>
       </header>
 
@@ -80,9 +108,16 @@ export default function AdminFasesPage() {
         aria-label="Resumen por fase"
         className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
       >
-        {(summariesQuery.data ?? defaultSummaries()).map((s) => (
-          <PhaseCard key={s.phase} summary={s} />
-        ))}
+        {(() => {
+          const summaries = summariesQuery.data ?? defaultSummaries();
+          return summaries.map((s) => (
+            <PhaseCard
+              key={s.phase}
+              summary={s}
+              allSummaries={summaries}
+            />
+          ));
+        })()}
       </section>
 
       <section
@@ -110,7 +145,29 @@ export default function AdminFasesPage() {
   );
 }
 
-function PhaseCard({ summary }: { summary: PhaseSummary }) {
+function PhaseCard({
+  summary,
+  allSummaries,
+}: {
+  summary: PhaseSummary;
+  allSummaries: PhaseSummary[];
+}) {
+  const showBuilderLink = (
+    KNOCKOUT_PHASES as readonly Phase[]
+  ).includes(summary.phase);
+
+  // Para habilitar el builder pedimos que la fase anterior esté `closed`.
+  // ROUND_32 → GROUPS cerrada; el resto → su predecesora inmediata. Si
+  // por algún motivo no encontramos la summary previa (placeholder
+  // inicial), tratamos como NO habilitado (más seguro).
+  const previousPhase = showBuilderLink
+    ? PREVIOUS_PHASE[summary.phase as KnockoutPhase]
+    : null;
+  const previousSummary = previousPhase
+    ? allSummaries.find((s) => s.phase === previousPhase)
+    : null;
+  const canEnterBuilder = !!previousSummary?.closed;
+
   return (
     <article className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5">
       <header className="flex items-start justify-between gap-3">
@@ -179,8 +236,36 @@ function PhaseCard({ summary }: { summary: PhaseSummary }) {
           </ol>
         )}
       </div>
-      {/* "Cerrar fase" + ClosePhaseDialog removidos en bracket-builder Task 10;
-          el cleanup completo (link "Armar cruces") va en Task 13. */}
+
+      {showBuilderLink ? (
+        <div className="mt-5 border-t border-[var(--color-landing-line)] pt-4">
+          <Link
+            href={
+              canEnterBuilder
+                ? `/admin/fases/builder/${summary.phase}`
+                : "#"
+            }
+            aria-disabled={!canEnterBuilder}
+            tabIndex={canEnterBuilder ? undefined : -1}
+            className={cn(
+              "inline-flex w-full items-center justify-center rounded-sm bg-[var(--color-landing-red)] px-4 py-2.5 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] md:w-auto",
+              !canEnterBuilder &&
+                "pointer-events-none cursor-not-allowed opacity-50",
+            )}
+          >
+            Armar cruces
+          </Link>
+          {!canEnterBuilder ? (
+            <p className="mt-2 font-sans text-xs italic text-[var(--color-landing-text-muted)]">
+              Esperá a que cierre la fase anterior
+              {previousPhase
+                ? ` (${PHASE_LABELS[previousPhase]})`
+                : ""}
+              .
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </article>
   );
 }

@@ -538,11 +538,13 @@ export async function applyBuilder(
 
 export interface AdminPrize {
   id: string;
-  type:
-    | "GENERAL_FIRST"
-    | "GENERAL_SECOND"
-    | "GENERAL_THIRD"
-    | "PHASE_WINNER";
+  /**
+   * Backend's `/admin/prizes` solo emite `PHASE_WINNER` (un premio por
+   * cada fase de eliminatoria). Los premios generales del torneo
+   * (1°/2°/3°) los maneja el admin por fuera del sistema y no se
+   * modelan acá. Ver `admin-phases-prizes.controller.ts`.
+   */
+  type: "PHASE_WINNER";
   phase: Phase | null;
   amount: number;
   recipientUserId: string | null;
