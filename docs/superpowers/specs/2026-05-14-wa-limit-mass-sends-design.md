@@ -1,14 +1,14 @@
 # WhatsApp: apagar envíos masivos automáticos
 
 Date: 2026-05-14
-Status: pending spec review + user review
+Status: pending user review (spec review loop completed)
 
 ## Context
 
 El gateway `wa-backend` (Baileys) usa un número de WhatsApp **nuevo**.
 Los números nuevos son mucho más sensibles al rate-limit / shadowban de
 WhatsApp que un número con historia. Cualquier ráfaga sostenida puede
-activar bloqueo, lo que tiraría abajo todo el canal —  incluyendo
+activar bloqueo, lo que tiraría abajo todo el canal — incluyendo
 flujos críticos como recuperar contraseña, alertas al admin y el botón
 manual de "avisar al pago pendiente".
 
@@ -54,19 +54,42 @@ quién y cuándo).
 Nueva variable de entorno booleana, parseada en
 `backend/src/config/env.ts`. Default: **`false`**.
 
+**Parser**: `env.ts` hoy no tiene ninguna env booleana (solo strings,
+números coercionados, enums). `z.coerce.boolean()` es trampa porque
+trata cualquier string no vacío como `true` (incluido `"false"`).
+Definir el campo como:
+
+```ts
+WA_MASS_NOTIFS_ENABLED: z
+  .enum(['true', 'false'])
+  .default('false')
+  .transform((v) => v === 'true'),
+```
+
+Esto deja el tipo inferido como `boolean` y rechaza valores que no sean
+exactamente `"true"` o `"false"`, evitando ambigüedad.
+
 Cuando es `false`:
 
 - `MatchRemindersCron.sendReminders()` hace early return después del
   log de entrada, sin tocar la query de matches ni encolar nada.
   El cron sigue corriendo (no se desactiva el `@Cron`), solo no produce
-  trabajo.
+  trabajo. El cron ya lee `loadEnv()` en el constructor, así que el
+  guard es `if (!this.env.WA_MASS_NOTIFS_ENABLED) return 0;`.
 - `scoring.service.finishMatchAndScore()` y `recalculateMatch()` saltean
   la línea `notificationsQueue.add(MATCH_RESULT_JOB, { matchId })`.
   El resto del side-effect (refresh de leaderboard MV,
   `maybeClosePhase`, audit log) se ejecuta normalmente.
 
+  **Dónde lee el flag `scoring.service`**: hoy no inyecta env de
+  ninguna forma. Se sigue el mismo patrón del cron — invocar
+  `loadEnv()` en el constructor y guardar en `this.env`. Esto evita
+  acoplar el módulo scoring a un `ConfigService` global que el resto
+  del backend no usa. La env se cachea por instancia (singleton del
+  módulo), no hay penalty.
+
 Cuando es `true`: comportamiento idéntico al actual. Tests existentes
-de cron y scoring siguen pasando.
+de cron y scoring siguen pasando si se setea explícitamente.
 
 **Justificación de "early return vs deshabilitar `@Cron` dinámicamente"**:
 mantener el cron corriendo (con un guard interno) es más simple que
@@ -92,54 +115,79 @@ permanente (no automatizar la notificación al ganador). Si en algún
 futuro se quiere reactivar, se vuelve a agregar la línea explícitamente
 en otro spec.
 
-El `PhaseWinnerProcessor` queda como código vivo pero sin caller. Se
-**no se borra** para no acoplar este spec a un cleanup más amplio del
-módulo notifications.
+El `PhaseWinnerProcessor` queda como código vivo pero sin caller. No
+se borra para no acoplar este spec a un cleanup más amplio del módulo
+notifications.
 
 ### 3. Variables de entorno y configuración
 
-| Var                          | Tipo    | Default | Dónde                                  |
+| Var                          | Tipo    | Default | Dónde se define                        |
 | ---------------------------- | ------- | ------- | -------------------------------------- |
-| `WA_MASS_NOTIFS_ENABLED`     | boolean | `false` | `backend/src/config/env.ts`, `dokploy/docker-compose.yml`, `.env.example` |
+| `WA_MASS_NOTIFS_ENABLED`     | boolean | `false` | `backend/src/config/env.ts` + `.env.example` |
 
-Documentar en `docs/deployment.md` qué controla la flag.
+**Producción** (Dokploy): el repo ya no tiene `docker-compose.yml` —
+cada servicio es una Dokploy Application separada con env vars
+gestionadas desde la UI. Setear `WA_MASS_NOTIFS_ENABLED=false` en la
+Application `prode-backend` → Environment.
+
+Documentar el flag en `docs/deployment.md` (qué controla, cómo
+activarlo si se decide reactivar masivos).
 
 ## Tests
 
-### Backend
+### Backend — verificaciones nuevas
 
-- ✅ `MatchRemindersCron.sendReminders` con `WA_MASS_NOTIFS_ENABLED=false`
-  → retorna `0`, **no encola** ni una sola Notification. Verificable
-  con un spy sobre `NotificationsService.enqueue`.
-- ✅ Mismo cron con flag `=true` → comportamiento idéntico a hoy (los
-  tests existentes del cron deben seguir pasando sin cambios cuando la
-  flag de test se setea a true).
-- ✅ `finishMatchAndScore` con flag `=false` → la fila Match queda en
-  FINISHED, predictions evaluadas, leaderboard refresh encolado, **pero**
-  `notificationsQueue.add` NUNCA es llamado con `MATCH_RESULT_JOB`.
-- ✅ `recalculateMatch` con flag `=false` → idem.
+- ✅ `MatchRemindersCron.sendReminders` con flag `=false` → retorna `0`,
+  **no encola** ni una sola Notification. Verificable con un spy sobre
+  `NotificationsService.enqueue`.
+- ✅ `MatchRemindersCron.sendReminders` con flag `=true` y datos seed
+  (matches en ventana 2hs + users sin predicción) → encola la cantidad
+  esperada. Este test **es la cobertura del happy path original** —
+  asegura que el guard no oculta el comportamiento.
+- ✅ `finishMatchAndScore` con flag `=false` → match queda FINISHED,
+  predictions evaluadas, leaderboard refresh encolado, **pero**
+  `notificationsQueue.add` NUNCA se llama con `MATCH_RESULT_JOB`.
+- ✅ `finishMatchAndScore` con flag `=true` → `MATCH_RESULT_JOB` se
+  encola exactamente una vez. Happy path original preservado.
+- ✅ `recalculateMatch` con flag `=false` y `=true` → mismos dos casos.
 - ✅ `maybeClosePhase` cuando todos los matches de la fase terminan →
-  `PhaseWinner` row creada + audit log emitido, **pero** `PHASE_WINNER_JOB`
-  **no** se encola (independiente de la flag).
+  `PhaseWinner` row creada + audit log emitido, **pero**
+  `PHASE_WINNER_JOB` **no** se encola. Independiente de la flag.
 
-### Tests de regresión
+### Specs existentes a actualizar (no borrar)
 
-- Test e2e existente que asserta que después de finalizar un match se
-  encolaba `MATCH_RESULT_JOB` debe **actualizarse** (no borrarse) para
-  pasar la flag explícitamente.
-- Test e2e existente de `maybeClosePhase` que asserta encolado de
-  `PHASE_WINNER_JOB` debe actualizarse: el job ya no se encola, pero la
-  `PhaseWinner` row sí.
+Estos specs asertaban encolado de jobs que ahora se gatean o se quitan.
+**Actualizar**, no borrar, para no perder cobertura:
+
+- `backend/src/modules/scoring/scoring.service.integration.spec.ts` —
+  cualquier assert sobre `MATCH_RESULT_JOB` se desdobla en dos casos
+  (flag true vs false).
+- `backend/src/modules/scoring/phase.service.integration.spec.ts` —
+  remover el assert de `PHASE_WINNER_JOB` y agregar uno explícito de
+  `not.toHaveBeenCalledWith(PHASE_WINNER_JOB, ...)`.
+- `backend/src/test/e2e/prediction-scoring.e2e.spec.ts` — idem
+  scoring.
+- `backend/src/test/e2e/phase-close.e2e.spec.ts` — idem phase.
+- `backend/src/test/e2e/admin-recalculate.e2e.spec.ts` — idem
+  recalculate.
+
+### Specs existentes que NO se tocan
+
+`backend/src/modules/notifications/match-result.processor.spec.ts` y
+`phase-winner.processor.spec.ts` invocan los processors directamente
+con jobs sintéticos y siguen pasando como están. Los processors quedan
+vivos pero sin caller (ver §2). No editar.
 
 ## Migración a producción
 
-- Setear `WA_MASS_NOTIFS_ENABLED=false` en `dokploy/docker-compose.yml`
-  para el servicio backend.
+- Setear `WA_MASS_NOTIFS_ENABLED=false` en Dokploy Application
+  `prode-backend` → Environment, y agregar la línea al `.env.example`
+  del repo.
 - Pushear cambios. Verificar en logs del backend que después del próximo
   cron tick (`*/15`) aparezca el log de early-return sin haber encolado
   jobs.
-- Verificar en producción que al cerrar un partido el log de scoring
-  sale OK pero `MATCH_RESULT_JOB` no aparece en BullMQ.
+- Verificar al cerrar un partido que el log de scoring sale OK pero
+  `MATCH_RESULT_JOB` no aparece en BullMQ.
 
 ## Out of scope
 
