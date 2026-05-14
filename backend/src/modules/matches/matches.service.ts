@@ -129,7 +129,7 @@ export class MatchesService {
         orderBy: { kickoffAt: 'asc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: { homeTeam: true, awayTeam: true },
+        include: { homeTeam: true, awayTeam: true, winnerTeam: true },
       }),
       this.prisma.match.count({ where }),
     ]);
@@ -156,7 +156,7 @@ export class MatchesService {
       },
       orderBy: { kickoffAt: 'asc' },
       take: 10,
-      include: { homeTeam: true, awayTeam: true },
+      include: { homeTeam: true, awayTeam: true, winnerTeam: true },
     });
   }
 
@@ -169,7 +169,7 @@ export class MatchesService {
     return this.prisma.match.findMany({
       where: { phase },
       orderBy: { kickoffAt: 'asc' },
-      include: { homeTeam: true, awayTeam: true },
+      include: { homeTeam: true, awayTeam: true, winnerTeam: true },
     });
   }
 
@@ -180,7 +180,7 @@ export class MatchesService {
   async findOne(id: string): Promise<Match> {
     const match = await this.prisma.match.findUnique({
       where: { id },
-      include: { homeTeam: true, awayTeam: true },
+      include: { homeTeam: true, awayTeam: true, winnerTeam: true },
     });
     if (!match) {
       throw new NotFoundException(`Match ${id} not found`);
