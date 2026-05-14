@@ -11,6 +11,7 @@ import {
   PhaseAlreadyPaidException,
 } from '../../common/exceptions/domain.exceptions.js';
 import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
+import { loadEnv, type Env } from '../../config/env.js';
 import type { Match } from '../../../generated/prisma/client.js';
 
 /**
@@ -55,13 +56,17 @@ export const MATCH_RESULT_JOB = 'match-result';
 export class ScoringService {
   private readonly logger = new Logger(ScoringService.name);
 
+  private readonly env: Env;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly scoringConfig: ScoringConfigService,
     private readonly phaseService: PhaseService,
     @InjectQueue(NOTIFICATIONS_QUEUE)
     private readonly notificationsQueue: Queue,
-  ) {}
+  ) {
+    this.env = loadEnv();
+  }
 
   async finishMatchAndScore(
     matchId: string,
@@ -158,8 +163,11 @@ export class ScoringService {
     // BullMQ-level dedup: two finishes in quick succession share one
     // pending refresh.
     await this.enqueueLeaderboardRefresh();
-    // Fan-out match-result notifications (Phase 11 worker).
-    await this.notificationsQueue.add(MATCH_RESULT_JOB, { matchId });
+    // Fan-out match-result notifications (Phase 11 worker). Gated by
+    // feature flag — see spec 2026-05-14-wa-limit-mass-sends-design.md.
+    if (this.env.WA_MASS_NOTIFS_ENABLED) {
+      await this.notificationsQueue.add(MATCH_RESULT_JOB, { matchId });
+    }
     // Phase progression hook (full impl arrives in Task 8.7).
     await this.phaseService.maybeClosePhase(matchPrev.phase);
 
@@ -282,7 +290,9 @@ export class ScoringService {
 
     // ── POST-COMMIT side effects ──────────────────────────────────────
     await this.enqueueLeaderboardRefresh();
-    await this.notificationsQueue.add(MATCH_RESULT_JOB, { matchId });
+    if (this.env.WA_MASS_NOTIFS_ENABLED) {
+      await this.notificationsQueue.add(MATCH_RESULT_JOB, { matchId });
+    }
     // maybeClosePhase is idempotent (skips if PhaseWinner already exists),
     // but it MUST run for the rare case where recalculating swapped the
     // outcome from "phase still pending" to "everyone finished".

@@ -147,4 +147,38 @@ describe('loadEnv', () => {
       expect(env.NODE_ENV).toBe('development');
     });
   });
+
+  describe('WA_MASS_NOTIFS_ENABLED', () => {
+    it('defaults to false when absent', () => {
+      delete (process.env as Record<string, string | undefined>)
+        .WA_MASS_NOTIFS_ENABLED;
+      const env = loadEnv();
+      expect(env.WA_MASS_NOTIFS_ENABLED).toBe(false);
+    });
+
+    it('parses "true" as boolean true', () => {
+      process.env.WA_MASS_NOTIFS_ENABLED = 'true';
+      const env = loadEnv();
+      expect(env.WA_MASS_NOTIFS_ENABLED).toBe(true);
+    });
+
+    it('parses "false" as boolean false', () => {
+      process.env.WA_MASS_NOTIFS_ENABLED = 'false';
+      const env = loadEnv();
+      expect(env.WA_MASS_NOTIFS_ENABLED).toBe(false);
+    });
+
+    it('aborts when value is not exactly "true" or "false"', () => {
+      process.env.WA_MASS_NOTIFS_ENABLED = '1';
+      const exitSpy = jest
+        .spyOn(process, 'exit')
+        .mockImplementation(((_code?: number) => {
+          throw new Error('process.exit called');
+        }) as never);
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => loadEnv()).toThrow('process.exit called');
+      expect(exitSpy).toHaveBeenCalledWith(1);
+    });
+  });
 });

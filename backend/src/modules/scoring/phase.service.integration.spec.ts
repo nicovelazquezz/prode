@@ -213,10 +213,11 @@ describe('PhaseService.maybeClosePhase (integration)', () => {
     // GROUPS → ROUND_32 populator called.
     expect(progressionSpies.r32).toHaveBeenCalledTimes(1);
 
-    // Notification job enqueued — payload now carries entryId.
+    // El WhatsApp automático al ganador de fase fue eliminado (decisión
+    // permanente — spec 2026-05-14-wa-limit-mass-sends-design.md), así
+    // que `phase-winner` ya NO se encola.
     const notifCalls = queueAddSpy.mock.calls.filter((c) => c[0] === 'phase-winner');
-    expect(notifCalls).toHaveLength(1);
-    expect(notifCalls[0][1]).toEqual({ phase: 'GROUPS', entryId: entryIds[0] });
+    expect(notifCalls).toHaveLength(0);
   });
 
   it('is idempotent: a second call after closure no-ops', async () => {

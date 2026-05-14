@@ -19,7 +19,8 @@ import {
  * The seam under test is the chain
  *   ScoringService.finishMatchAndScore  →
  *   classifyOutcome (EXACT branch)       →
- *   notifications queue (`leaderboard.refresh` + `match-result`) →
+ *   notifications queue (`leaderboard.refresh`; `match-result` is
+ *     gated by WA_MASS_NOTIFS_ENABLED and OFF by default) →
  *   LeaderboardRefreshProcessor          →
  *   `REFRESH MATERIALIZED VIEW` + cache invalidate →
  *   /leaderboard/global cache miss with the new value.

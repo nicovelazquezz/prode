@@ -19,6 +19,21 @@ const envSchema = z.object({
   WHATSAPP_API_TOKEN: z.string().min(1),
   ADMIN_WHATSAPP_NUMBER: z.string().regex(/^\d{10,15}$/),
 
+  /**
+   * Master switch for automatic mass WhatsApp sends (pre-match reminders
+   * cron + "sumaste X pts" fan-out on match finish/recalc). Default
+   * `false` to protect the gateway number, which is new and sensitive to
+   * WhatsApp rate-limit / shadowban.
+   *
+   * `z.coerce.boolean()` is unsafe (treats "false" as truthy). The enum
+   * + transform pattern below rejects any value that isn't literally
+   * "true" or "false".
+   */
+  WA_MASS_NOTIFS_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+
   EMAIL_FROM: z.string().email(),
   RESEND_API_KEY: z.string().min(1).optional(),
 

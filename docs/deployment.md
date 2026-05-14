@@ -283,3 +283,21 @@ Los iconos actuales en `frontend/public/icon-*.png` son **placeholders sólidos 
 - **Cookies cross-subdomain**: el backend ya emite el refresh cookie con `Domain=.prodeplus.com` y `SameSite=Lax`. Eso permite que `prodeplus.com` y `api.prodeplus.com` compartan sesión sin trampolines de CORS.
 - **Cloudflare Turnstile**: la `SITE_KEY` (pública) vive en el frontend, la `SECRET_KEY` (server-side) en el backend. Configurar el dominio `prodeplus.com` en el panel de Turnstile como hostname permitido.
 - **Sentry**: si `SENTRY_DSN_FRONTEND` está vacío, el SDK queda no-op (ver `sentry.*.config.ts`). En prod, configuralo siempre — los errores SSR y de cliente caen al mismo proyecto Sentry.
+
+
+## F9. Feature flag: `WA_MASS_NOTIFS_ENABLED`
+
+Controla los envíos masivos automáticos de WhatsApp:
+
+- **`false`** (default): se apagan el cron de recordatorios pre-partido (`MatchRemindersCron`) y el fan-out de "sumaste X pts en el partido" al cargar/recalcular un resultado (`ScoringService.finishMatchAndScore` y `recalculateMatch`). Esta es la configuración de producción porque el número del gateway Baileys es nuevo y sensible al rate-limit / shadowban de WhatsApp.
+- **`true`**: comportamiento histórico — el cron encola recordatorios y el scoring encola un job por cada entry que sumó puntos.
+
+**Cómo cambiarlo en prod (Dokploy)**:
+
+1. Dokploy → Application `prode-backend` → **Environment**.
+2. Setear `WA_MASS_NOTIFS_ENABLED=true` o `false` (string literal, no se admite `1`, `yes`, etc.).
+3. **Redeploy** del servicio backend.
+
+**Nota**: el WhatsApp automático al ganador de fase se eliminó de forma **permanente** (no gated por este flag). Si se quiere reactivar, hay que volver a agregar la línea en `phase.service.maybeClosePhase` con un spec nuevo. La `PhaseWinner` row se sigue creando para audit y cálculo de premios — solo la notificación WA está desactivada.
+
+Ver spec en `docs/superpowers/specs/2026-05-14-wa-limit-mass-sends-design.md`.

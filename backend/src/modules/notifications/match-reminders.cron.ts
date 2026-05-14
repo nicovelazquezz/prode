@@ -44,6 +44,12 @@ export class MatchRemindersCron {
    */
   @Cron('*/15 * * * *')
   async sendReminders(): Promise<number> {
+    if (!this.env.WA_MASS_NOTIFS_ENABLED) {
+      this.logger.debug(
+        'Match reminders skipped: WA_MASS_NOTIFS_ENABLED=false',
+      );
+      return 0;
+    }
     const now = new Date();
     const horizon = new Date(now.getTime() + MatchRemindersCron.LOOKAHEAD_MS);
 

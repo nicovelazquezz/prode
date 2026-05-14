@@ -55,6 +55,11 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
+    // Asserts históricos sobre el encolado de `match-result` viven
+    // detrás de la flag WA_MASS_NOTIFS_ENABLED. Setearla en `true` acá
+    // preserva el happy path original; los tests de la rama `=false`
+    // mutan `this.env` del service en runtime (al final del archivo).
+    process.env.WA_MASS_NOTIFS_ENABLED = 'true';
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -441,6 +446,57 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
       expect(jobNames).toContain('leaderboard.refresh');
       expect(jobNames).toContain('match-result');
       expect(phaseSpy).toHaveBeenCalledWith('GROUPS');
+    });
+  });
+
+  describe('with WA_MASS_NOTIFS_ENABLED=false', () => {
+    // El servicio se construyó arriba con la flag en `true`. Para
+    // ejercitar la rama gated, mutamos `this.env` del service en
+    // runtime — los demás tests del archivo no comparten estado de
+    // queueAddSpy (lo resetean en beforeEach), así que es seguro.
+    function setFlag(value: boolean) {
+      (scoring as unknown as { env: { WA_MASS_NOTIFS_ENABLED: boolean } })
+        .env.WA_MASS_NOTIFS_ENABLED = value;
+    }
+
+    beforeEach(() => {
+      setFlag(false);
+      queueAddSpy.mockReset();
+      phaseSpy.mockReset();
+      phaseSpy.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+      setFlag(true);
+    });
+
+    it('finishMatchAndScore does NOT enqueue MATCH_RESULT_JOB when flag is off', async () => {
+      // Reset al match a SCHEDULED para poder finalizarlo de nuevo.
+      await prisma.phaseWinner.deleteMany({ where: { phase: 'GROUPS' } });
+      await prisma.match.update({
+        where: { id: matchId },
+        data: {
+          status: 'SCHEDULED',
+          scoreHome: null,
+          scoreAway: null,
+          finishedAt: null,
+        },
+      });
+
+      await scoring.finishMatchAndScore(matchId, RESULT_HOME, RESULT_AWAY, adminId);
+
+      const jobNames = queueAddSpy.mock.calls.map((c) => c[0]);
+      expect(jobNames).toContain('leaderboard.refresh'); // sigue encolándose
+      expect(jobNames).not.toContain('match-result'); // gated
+    }, 60_000);
+
+    it('recalculateMatch does NOT enqueue MATCH_RESULT_JOB when flag is off', async () => {
+      // El match ya quedó FINISHED por el test anterior — recalculamos.
+      await scoring.recalculateMatch(matchId, 1, 0, adminId);
+
+      const jobNames = queueAddSpy.mock.calls.map((c) => c[0]);
+      expect(jobNames).toContain('leaderboard.refresh');
+      expect(jobNames).not.toContain('match-result');
     });
   });
 });

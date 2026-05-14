@@ -135,13 +135,11 @@ export class PhaseService {
     if (phase === 'SEMIS') await this.progression.populateFinalMatches();
     // THIRD_PLACE / FINAL have no follow-up to populate.
 
-    // ── Notify the winner (Phase 11 worker handles the actual WhatsApp).
-    // Payload carries entryId; the processor resolves the human user via
-    // Entry.userId.
-    await this.notificationsQueue.add(PHASE_WINNER_JOB, {
-      phase,
-      entryId: winner.entryId,
-    });
+    // Note: el WhatsApp automático al ganador de fase se eliminó
+    // intencionalmente (decisión permanente, no gated por flag — ver
+    // spec 2026-05-14-wa-limit-mass-sends-design.md). El admin contacta
+    // a los ganadores desde su WhatsApp personal. La PhaseWinner row
+    // sigue siendo creada para audit y cálculo de premios.
   }
 
   /**

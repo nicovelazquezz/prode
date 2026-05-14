@@ -240,35 +240,22 @@ describe('E2E flow #3: phase close (FINAL)', () => {
     expect(changes.winner.entryId).toBe(winnerEntryId);
     expect(changes.winner.points).toBe(25);
 
-    // ── 4. The `phase-winner` BullMQ job was enqueued. We can't easily
-    //      observe a single in-flight job because the worker may have
-    //      already consumed it; instead, look for the dedup'd
-    //      Notification row that the processor writes (or, if the worker
-    //      hasn't fired yet, accept the queue side). Either way, exactly
-    //      one of the two artifacts must exist.
-    const deadline = Date.now() + 5_000;
-    let saw = false;
-    while (Date.now() < deadline) {
-      const notif = await h.prisma.notification.findUnique({
-        where: { dedupKey: `phase-winner:FINAL:${winnerEntryId}` },
-      });
-      if (notif) {
-        saw = true;
-        break;
-      }
-      const jobs = await queue.getJobs([
-        'waiting',
-        'active',
-        'delayed',
-        'completed',
-      ]);
-      if (jobs.some((j) => j && j.name === 'phase-winner')) {
-        saw = true;
-        break;
-      }
-      await new Promise((r) => setTimeout(r, 200));
-    }
-    expect(saw).toBe(true);
+    // ── 4. El WhatsApp automático al ganador de fase se eliminó de
+    //      forma permanente (spec 2026-05-14-wa-limit-mass-sends-design.md).
+    //      Ya NO se encola `phase-winner` ni se escribe la Notification
+    //      con dedupKey `phase-winner:FINAL:...`.
+    await new Promise((r) => setTimeout(r, 500));
+    const noNotif = await h.prisma.notification.findUnique({
+      where: { dedupKey: `phase-winner:FINAL:${winnerEntryId}` },
+    });
+    expect(noNotif).toBeNull();
+    const jobs = await queue.getJobs([
+      'waiting',
+      'active',
+      'delayed',
+      'completed',
+    ]);
+    expect(jobs.some((j) => j && j.name === 'phase-winner')).toBe(false);
 
     // ── 5. Re-triggering maybeClosePhase manually is idempotent — same
     //      PhaseWinner row, no second audit log written.
