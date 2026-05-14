@@ -42,7 +42,15 @@ describe('MatchRemindersCron.sendReminders (integration)', () => {
   };
   let matchSnapshot: MatchSnapshot | null = null;
 
+  const ORIGINAL_MASS_FLAG = process.env.WA_MASS_NOTIFS_ENABLED;
+
   beforeAll(async () => {
+    // The cron skips work when WA_MASS_NOTIFS_ENABLED=false (spec
+    // 2026-05-14-wa-limit-mass-sends-design.md). Force-enable here so the
+    // test exercises the real reminder logic; afterAll restores the prior
+    // value so other suites see whatever default they expect.
+    process.env.WA_MASS_NOTIFS_ENABLED = 'true';
+
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -190,6 +198,11 @@ describe('MatchRemindersCron.sendReminders (integration)', () => {
       }
     }
     if (app) await app.close();
+    if (ORIGINAL_MASS_FLAG === undefined) {
+      delete process.env.WA_MASS_NOTIFS_ENABLED;
+    } else {
+      process.env.WA_MASS_NOTIFS_ENABLED = ORIGINAL_MASS_FLAG;
+    }
   }, 60_000);
 
   it('enqueues a Notification for the eligible user only', async () => {
