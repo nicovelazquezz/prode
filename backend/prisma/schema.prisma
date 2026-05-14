@@ -181,6 +181,7 @@ model Team {
 
   matchesAsHome   Match[]             @relation("HomeTeam")
   matchesAsAway   Match[]             @relation("AwayTeam")
+  matchesAsWinner Match[]             @relation("MatchWinner")
   championPicks   SpecialPrediction[] @relation("ChampionPick")
   runnerUpPicks   SpecialPrediction[] @relation("RunnerUpPick")
   thirdPlacePicks SpecialPrediction[] @relation("ThirdPlacePick")
@@ -216,6 +217,9 @@ model Match {
   homeTeam   Team?   @relation("HomeTeam", fields: [homeTeamId], references: [id])
   awayTeamId String?
   awayTeam   Team?   @relation("AwayTeam", fields: [awayTeamId], references: [id])
+
+  winnerTeamId String?
+  winnerTeam   Team?   @relation("MatchWinner", fields: [winnerTeamId], references: [id], onDelete: SetNull)
 
   homeTeamLabel String?
   awayTeamLabel String?
