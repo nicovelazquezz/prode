@@ -1,6 +1,8 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from '@nestjs/cache-manager';
 import { PrismaService } from '../../shared/prisma/prisma.service.js';
 import { ScoringConfigService } from './scoring-config.service.js';
 import { PhaseService } from './phase.service.js';
@@ -30,6 +32,13 @@ export const LEADERBOARD_REFRESH_JOB = 'leaderboard.refresh';
 export const LEADERBOARD_REFRESH_DEDUP_KEY = 'leaderboard:refresh';
 export const LEADERBOARD_REFRESH_JOB_ID = 'leaderboard_refresh';
 export const MATCH_RESULT_JOB = 'match-result';
+
+/**
+ * Cache key invalidated when a GROUPS-phase match is finalized or
+ * recalculated. Must match the key written by `GroupsController` —
+ * keep these in sync if either side moves.
+ */
+const GROUPS_STANDINGS_CACHE_KEY = 'groups:standings:all';
 
 /**
  * Orchestrates the "admin loaded a result" flow described in spec 6.3.
@@ -64,6 +73,7 @@ export class ScoringService {
     private readonly phaseService: PhaseService,
     @InjectQueue(NOTIFICATIONS_QUEUE)
     private readonly notificationsQueue: Queue,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {
     this.env = loadEnv();
   }
@@ -195,6 +205,13 @@ export class ScoringService {
     }
     // Phase progression hook (full impl arrives in Task 8.7).
     await this.phaseService.maybeClosePhase(matchPrev.phase);
+    // Bust the `GET /groups/standings` cache whenever a GROUPS match is
+    // finalized so the bracket-builder reference panel and any public
+    // standings view reflect the new result on the next request rather
+    // than waiting for the 60s TTL to expire.
+    if (matchPrev.phase === 'GROUPS') {
+      await this.cache.del(GROUPS_STANDINGS_CACHE_KEY);
+    }
 
     this.logger.log(
       `Match ${matchId} finished: scored ${predictionsScored} predictions, multiplier=${multiplier}`,
@@ -344,6 +361,13 @@ export class ScoringService {
     // but it MUST run for the rare case where recalculating swapped the
     // outcome from "phase still pending" to "everyone finished".
     await this.phaseService.maybeClosePhase(matchPrev.phase);
+    // Same standings-cache bust as `finishMatchAndScore`: a recalc on a
+    // GROUPS match changes goals-for / against and possibly the table
+    // ordering, so we drop the cached aggregate and let the next call
+    // recompute.
+    if (matchPrev.phase === 'GROUPS') {
+      await this.cache.del(GROUPS_STANDINGS_CACHE_KEY);
+    }
 
     this.logger.log(
       `Match ${matchId} recalculated: re-scored ${predictionsScored} predictions, ` +
