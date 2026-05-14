@@ -513,6 +513,11 @@ function CenterCol({
           scoreAway={match.scoreAway}
           highlight={finishedOutcome === "exact"}
         />
+        {match.status === "FINISHED" && match.winnerTeam ? (
+          <p className="mt-1 font-[family-name:var(--font-landing-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
+            Pasa {match.winnerTeam.name}
+          </p>
+        ) : null}
         <YourPrediction
           prediction={prediction}
           finishedOutcome={finishedOutcome}

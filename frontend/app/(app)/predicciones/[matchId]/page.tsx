@@ -339,6 +339,11 @@ export default function MatchDetailPage({ params }: PageProps) {
                     scoreAway={match.scoreAway}
                     highlight={outcomeVisual?.tone === "gold"}
                   />
+                  {match.status === "FINISHED" && match.winnerTeam ? (
+                    <p className="mt-1 font-[family-name:var(--font-landing-mono)] text-[12px] uppercase tracking-[0.18em] text-[var(--color-landing-text-muted)]">
+                      Pasa {match.winnerTeam.name}
+                    </p>
+                  ) : null}
                   {prediction ? (
                     <DetailYourPrediction
                       prediction={prediction}
