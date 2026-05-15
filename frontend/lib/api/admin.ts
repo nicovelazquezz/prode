@@ -283,10 +283,17 @@ export async function cancelMatch(id: string): Promise<Match> {
 /**
  * Carga el resultado final + dispara cascada de scoring (recalc
  * de todas las predictions del match + leaderboard refresh).
+ *
+ * `winnerTeamId` es opcional y sólo se acepta cuando la fase es de
+ * eliminatoria (no GROUPS) y los scores empatan — define al ganador
+ * por penales/decisión sin impactar el cómputo de puntos. El backend
+ * rechaza 400 si se manda fuera de ese caso o con un teamId ajeno al
+ * match. Ver `backend/.../admin-matches.controller.ts` y la spec del
+ * bracket builder (`docs/superpowers/specs/2026-05-14-bracket-builder-design.md`).
  */
 export async function finishMatch(
   id: string,
-  dto: { scoreHome: number; scoreAway: number },
+  dto: { scoreHome: number; scoreAway: number; winnerTeamId?: string },
 ): Promise<{ ok: true }> {
   return api
     .post(`admin/matches/${id}/finish`, { json: dto })
@@ -371,14 +378,6 @@ export async function getMatchPredictions(
 
 // ── Phases ──────────────────────────────────────────────────────
 
-export async function closePhase(
-  phase: Phase,
-): Promise<{ ok: true; winnerUserId: string | null; amount: number }> {
-  return api
-    .post(`admin/phases/${phase}/close`)
-    .json<{ ok: true; winnerUserId: string | null; amount: number }>();
-}
-
 /**
  * Resumen por fase: total partidos, finalizados, top 10 puntos en
  * la fase, ganador propuesto si la fase esta lista para cerrar.
@@ -411,15 +410,141 @@ export async function listPhaseSummaries(): Promise<PhaseSummary[]> {
   return api.get("admin/phases/summary").json<PhaseSummary[]>();
 }
 
+// ── Bracket builder ─────────────────────────────────────────────
+
+/**
+ * Standing por equipo dentro de un grupo. Espeja el shape devuelto por
+ * `backend/.../group-standings.service.ts` (`getAllGroupStandings`):
+ * fila por equipo con stats agregadas y `position` 1..N asignado tras
+ * ordenar por PTS DESC → DG DESC → GF DESC. Lo consume tanto la
+ * referencia del builder de ROUND_32 como `/groups/standings` público.
+ */
+export interface GroupStanding {
+  teamId: string;
+  teamName: string;
+  teamShortName: string;
+  teamFlagUrl: string;
+  pj: number;
+  pg: number;
+  pe: number;
+  pp: number;
+  gf: number;
+  gc: number;
+  dg: number;
+  pts: number;
+  position: number;
+}
+
+/**
+ * Fases válidas como param de `/admin/fases/builder/:phase`. THIRD_PLACE
+ * no es opción — sus dos matches viven dentro del builder de FINAL (#103
+ * 3er puesto + #104 final), distinguidos por `BuilderMatch.matchPhase`.
+ * GROUPS tampoco aplica.
+ */
+export type BuilderPhase =
+  | "ROUND_32"
+  | "ROUND_16"
+  | "QUARTERS"
+  | "SEMIS"
+  | "FINAL";
+
+export interface BuilderMatch {
+  matchId: string;
+  matchNumber: number;
+  /** Para el builder de FINAL puede ser THIRD_PLACE o FINAL. */
+  matchPhase: Phase;
+  homeTeamId: string | null;
+  awayTeamId: string | null;
+  homeTeamLabel: string | null;
+  awayTeamLabel: string | null;
+  kickoffAt: string;
+  venue: string | null;
+}
+
+/**
+ * Team ref reducida que devuelve el builder en la referencia de fase
+ * anterior — sólo lo mínimo para renderizar (id + nombre + flag).
+ */
+export interface BuilderTeamRef {
+  id: string;
+  name: string;
+  flagUrl: string;
+}
+
+/**
+ * Match de la fase anterior tal como lo devuelve el backend en la
+ * referencia `PREVIOUS_ROUND` (ver `admin-fases-builder.controller.ts`,
+ * función `toPrevRef`). `winner`/`loser` se computan server-side a
+ * partir de scores (o `winnerTeamId` cuando hay empate por penales);
+ * si el match no terminó, ambos quedan en null.
+ */
+export interface PreviousRoundMatch {
+  matchNumber: number;
+  homeTeam: BuilderTeamRef | null;
+  awayTeam: BuilderTeamRef | null;
+  scoreHome: number | null;
+  scoreAway: number | null;
+  winner: BuilderTeamRef | null;
+  loser: BuilderTeamRef | null;
+  status: MatchStatus;
+}
+
+/**
+ * Referencia que el builder muestra al admin para decidir los cruces.
+ * ROUND_32 usa las tablas de los 12 grupos; el resto usa los matches
+ * de la fase inmediatamente anterior con winner/loser ya resueltos.
+ */
+export type Reference =
+  | { type: "GROUPS"; standings: Record<string, GroupStanding[]> }
+  | {
+      type: "PREVIOUS_ROUND";
+      previousPhase: Phase;
+      matches: PreviousRoundMatch[];
+    };
+
+export interface BuilderState {
+  phase: BuilderPhase;
+  matches: BuilderMatch[];
+  reference: Reference;
+}
+
+export async function getBuilderState(
+  phase: BuilderPhase,
+): Promise<BuilderState> {
+  return api.get(`admin/fases/builder/${phase}`).json<BuilderState>();
+}
+
+/**
+ * Aplica las asignaciones de equipos para los matches de la fase. El
+ * backend valida home !== away por match y uniqueness cross-match
+ * (excluyendo nulls). Idempotente: si nada cambió devuelve
+ * `matchesUpdated: 0`. La primera vez que un match queda con ambos
+ * equipos seteados, el backend setea `predictionsOpenAt = now()`.
+ */
+export async function applyBuilder(
+  phase: BuilderPhase,
+  matches: Array<{
+    matchId: string;
+    homeTeamId: string | null;
+    awayTeamId: string | null;
+  }>,
+): Promise<{ ok: true; matchesUpdated: number }> {
+  return api
+    .post(`admin/fases/builder/${phase}`, { json: { matches } })
+    .json<{ ok: true; matchesUpdated: number }>();
+}
+
 // ── Prizes ──────────────────────────────────────────────────────
 
 export interface AdminPrize {
   id: string;
-  type:
-    | "GENERAL_FIRST"
-    | "GENERAL_SECOND"
-    | "GENERAL_THIRD"
-    | "PHASE_WINNER";
+  /**
+   * Backend's `/admin/prizes` solo emite `PHASE_WINNER` (un premio por
+   * cada fase de eliminatoria). Los premios generales del torneo
+   * (1°/2°/3°) los maneja el admin por fuera del sistema y no se
+   * modelan acá. Ver `admin-phases-prizes.controller.ts`.
+   */
+  type: "PHASE_WINNER";
   phase: Phase | null;
   amount: number;
   recipientUserId: string | null;
@@ -432,12 +557,6 @@ export async function listPrizes(): Promise<AdminPrize[]> {
   // TODO(backend): GET /admin/prizes — devuelve todos los premios
   // (3 generales + 6 de fase + final) con su estado.
   return api.get("admin/prizes").json<AdminPrize[]>();
-}
-
-export async function markPrizePaid(id: string): Promise<AdminPrize> {
-  // TODO(backend): POST /admin/prizes/:id/pay — marca como pagado y
-  // registra audit log.
-  return api.post(`admin/prizes/${id}/pay`).json<AdminPrize>();
 }
 
 // ── Leaderboard ─────────────────────────────────────────────────

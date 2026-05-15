@@ -568,13 +568,20 @@ function ScoreModal({
 }) {
   const [scoreHome, setScoreHome] = useState<number | null>(null);
   const [scoreAway, setScoreAway] = useState<number | null>(null);
+  const [winnerTeamId, setWinnerTeamId] = useState<string | null>(null);
   const [confirmStep, setConfirmStep] = useState(false);
+
+  const isKnockout = match.phase !== "GROUPS";
+  const isTied =
+    scoreHome !== null && scoreAway !== null && scoreHome === scoreAway;
+  const requiresWinner = isKnockout && isTied;
 
   const finishMutation = useMutation({
     mutationFn: () =>
       finishMatch(match.id, {
         scoreHome: scoreHome ?? 0,
         scoreAway: scoreAway ?? 0,
+        winnerTeamId: requiresWinner ? winnerTeamId ?? undefined : undefined,
       }),
     onSuccess: () => {
       toast.success("Resultado cargado y puntos calculados");
@@ -590,10 +597,14 @@ function ScoreModal({
   const reset = () => {
     setScoreHome(null);
     setScoreAway(null);
+    setWinnerTeamId(null);
     setConfirmStep(false);
   };
 
-  const canSubmit = scoreHome !== null && scoreAway !== null;
+  const canSubmit =
+    scoreHome !== null &&
+    scoreAway !== null &&
+    (!requiresWinner || winnerTeamId !== null);
 
   return (
     <Dialog
@@ -649,6 +660,27 @@ function ScoreModal({
             </div>
           </div>
         </div>
+
+        {requiresWinner && match.homeTeam && match.awayTeam ? (
+          <div className="mt-4">
+            <label
+              htmlFor="winner-team-select"
+              className="block font-sans text-xs uppercase tracking-wider text-[var(--color-landing-text-muted)]"
+            >
+              Ganador (definicion por penales/decision)
+            </label>
+            <select
+              id="winner-team-select"
+              value={winnerTeamId ?? ""}
+              onChange={(e) => setWinnerTeamId(e.target.value || null)}
+              className="mt-1 w-full rounded-sm border-2 border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] px-3 py-2 font-sans text-sm uppercase tracking-tight text-[var(--color-landing-text)] focus:border-[var(--color-landing-accent)] focus:outline-none"
+            >
+              <option value="">— elegir —</option>
+              <option value={match.homeTeam.id}>{match.homeTeam.name}</option>
+              <option value={match.awayTeam.id}>{match.awayTeam.name}</option>
+            </select>
+          </div>
+        ) : null}
 
         {confirmStep ? (
           <div className="mt-4 rounded-sm border-2 border-[var(--color-landing-red)] bg-[var(--color-landing-surface)] p-3">

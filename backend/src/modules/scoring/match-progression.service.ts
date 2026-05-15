@@ -252,13 +252,24 @@ export class MatchProgressionService {
   }
 
   /**
-   * Returns the winning (or losing) teamId of a finished match. `null`
-   * when the match was a draw (the schema doesn't model penalties; the
-   * admin assigns the surviving team manually in that case).
+   * Returns the winning (or losing) teamId of a finished match.
+   *
+   * When scores are tied, the match's `winnerTeamId` column (set by the
+   * admin when finishing a knockout-stage draw) is the tiebreaker. If
+   * the column is null on a tied match, returns `null` and the caller
+   * pings AdminAlerts (legacy behaviour preserved for backward compat).
    */
   private pickTeam(match: Match, fromLoser: boolean): string | null {
     if (match.scoreHome === null || match.scoreAway === null) return null;
-    if (match.scoreHome === match.scoreAway) return null;
+    if (match.scoreHome === match.scoreAway) {
+      if (!match.winnerTeamId) return null;
+      if (fromLoser) {
+        return match.winnerTeamId === match.homeTeamId
+          ? match.awayTeamId
+          : match.homeTeamId;
+      }
+      return match.winnerTeamId;
+    }
     const homeWon = match.scoreHome > match.scoreAway;
     if (fromLoser) {
       return homeWon ? match.awayTeamId : match.homeTeamId;

@@ -6,7 +6,9 @@ import { ScoringConfigService } from './scoring-config.service.js';
 import { ScoringService } from './scoring.service.js';
 import { PhaseService } from './phase.service.js';
 import { MatchProgressionService } from './match-progression.service.js';
+import { GroupStandingsService } from './group-standings.service.js';
 import { ScoringController } from './scoring.controller.js';
+import { GroupsController } from './groups.controller.js';
 import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js';
 
 /**
@@ -30,18 +32,20 @@ import { NOTIFICATIONS_QUEUE } from '../notifications/notifications.constants.js
     CacheModule.register(),
     BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE }),
   ],
-  controllers: [ScoringController],
+  controllers: [ScoringController, GroupsController],
   providers: [
     ScoringConfigService,
     ScoringService,
     PhaseService,
     MatchProgressionService,
+    GroupStandingsService,
   ],
   exports: [
     ScoringConfigService,
     ScoringService,
     PhaseService,
     MatchProgressionService,
+    GroupStandingsService,
   ],
 })
 export class ScoringModule {}

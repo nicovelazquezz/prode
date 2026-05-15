@@ -92,6 +92,15 @@ export const queryKeys = {
   users: {
     publicProfile: (id: string) => ["users", id, "public-profile"] as const,
   },
+  /**
+   * Public group standings — consume el endpoint `/groups/standings` que
+   * cachea por 60s en backend. La key vive bajo `groups` (top-level) para
+   * que `invalidateQueries({ queryKey: ['groups'] })` desde admin (cuando
+   * cierra/abre matches de fase de grupos) limpie todo el dominio.
+   */
+  groups: {
+    standings: () => ["groups", "standings"] as const,
+  },
   admin: {
     metrics: () => ["admin", "metrics"] as const,
     users: {
@@ -110,6 +119,16 @@ export const queryKeys = {
     },
     phases: {
       summary: () => ["admin", "phases", "summary"] as const,
+    },
+    /**
+     * Bracket builder keys (Task 10 del plan bracket-builder). `summary`
+     * apunta al mismo endpoint que `phases.summary` — se deja en ambos
+     * lados durante la transición; Task 13 retira el alias viejo.
+     */
+    fases: {
+      builder: (phase: string) =>
+        ["admin", "fases", "builder", phase] as const,
+      summary: () => ["admin", "fases", "summary"] as const,
     },
     prizes: () => ["admin", "prizes"] as const,
     audit: (filters?: Record<string, unknown>) =>

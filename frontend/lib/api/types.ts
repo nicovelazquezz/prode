@@ -126,6 +126,16 @@ export interface Match {
   scoreHome: number | null;
   scoreAway: number | null;
   venue?: string | null;
+  /**
+   * Ganador del partido cuando la definición no surge de los scores
+   * (empate de eliminatoria resuelto por penales/decisión). Sólo se
+   * setea desde `/admin/matches/:id/finish` cuando la fase es de
+   * knockout y `scoreHome === scoreAway`. Para grupos o partidos con
+   * diferencia de gol, queda en null y el ganador se infiere del
+   * marcador.
+   */
+  winnerTeam?: Team | null;
+  winnerTeamId?: string | null;
 }
 
 /**

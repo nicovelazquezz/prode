@@ -1,28 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { Award, CheckCircle2, Lock, Trophy } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { toast } from "@/components/ui/toaster";
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { Award, Lock } from "lucide-react";
 import { queryKeys } from "@/lib/api/queryKeys";
 import {
-  closePhase,
   listPhaseSummaries,
   listPrizes,
-  markPrizePaid,
   type AdminPrize,
   type PhaseSummary,
 } from "@/lib/api/admin";
@@ -41,17 +25,44 @@ const PHASE_LABELS: Record<Phase, string> = {
 };
 
 const PRIZE_LABELS: Record<AdminPrize["type"], string> = {
-  GENERAL_FIRST: "1ro general",
-  GENERAL_SECOND: "2do general",
-  GENERAL_THIRD: "3ro general",
   PHASE_WINNER: "Ganador de fase",
 };
 
 /**
+ * Fases de eliminatoria que aceptan el builder. THIRD_PLACE queda
+ * afuera porque sus dos matches viven dentro del builder de FINAL
+ * (#103 3er puesto + #104 final).
+ */
+const KNOCKOUT_PHASES = [
+  "ROUND_32",
+  "ROUND_16",
+  "QUARTERS",
+  "SEMIS",
+  "FINAL",
+] as const satisfies readonly Phase[];
+
+type KnockoutPhase = (typeof KNOCKOUT_PHASES)[number];
+
+/**
+ * Mapa fase → fase anterior, para decidir si el admin ya puede entrar
+ * al builder de una fase (la anterior tiene que estar `closed`).
+ * ROUND_32 depende de GROUPS. FINAL depende de SEMIS (el match de
+ * 3er puesto vive adentro del builder de FINAL).
+ */
+const PREVIOUS_PHASE: Record<KnockoutPhase, Phase> = {
+  ROUND_32: "GROUPS",
+  ROUND_16: "ROUND_32",
+  QUARTERS: "ROUND_16",
+  SEMIS: "QUARTERS",
+  FINAL: "SEMIS",
+};
+
+/**
  * /admin/fases (spec §6.11). Por cada fase: card con count de
- * matches finalizados/totales, top 10, y boton "Cerrar fase"
- * habilitado SOLO si todos los matches estan FINISHED. Modal con
- * ganador propuesto + monto + nota. Lista de premios abajo.
+ * matches finalizados/totales, top 5, y link "Armar cruces" para
+ * las fases de eliminatoria que ya tengan la fase anterior cerrada.
+ * Premios listados read-only abajo (la asignación final la hace el
+ * admin por fuera del sistema).
  *
  * Mobile responsive: cards se apilan en columna en mobile.
  */
@@ -83,7 +94,7 @@ export default function AdminFasesPage() {
 
         </h1>
         <p className="mt-1 font-sans text-sm text-[var(--color-landing-text-muted)]">
-          Cierre de fases con asignacion de premios y top 5 por fase.
+          Progreso y top 5 por fase. Desde cada eliminatoria entrás al builder para armar los cruces.
         </p>
       </header>
 
@@ -97,9 +108,16 @@ export default function AdminFasesPage() {
         aria-label="Resumen por fase"
         className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
       >
-        {(summariesQuery.data ?? defaultSummaries()).map((s) => (
-          <PhaseCard key={s.phase} summary={s} />
-        ))}
+        {(() => {
+          const summaries = summariesQuery.data ?? defaultSummaries();
+          return summaries.map((s) => (
+            <PhaseCard
+              key={s.phase}
+              summary={s}
+              allSummaries={summaries}
+            />
+          ));
+        })()}
       </section>
 
       <section
@@ -127,11 +145,28 @@ export default function AdminFasesPage() {
   );
 }
 
-function PhaseCard({ summary }: { summary: PhaseSummary }) {
-  const [open, setOpen] = useState(false);
-  const allFinished =
-    summary.matchesTotal > 0 && summary.matchesFinished === summary.matchesTotal;
-  const canClose = allFinished && !summary.closed;
+function PhaseCard({
+  summary,
+  allSummaries,
+}: {
+  summary: PhaseSummary;
+  allSummaries: PhaseSummary[];
+}) {
+  const showBuilderLink = (
+    KNOCKOUT_PHASES as readonly Phase[]
+  ).includes(summary.phase);
+
+  // Para habilitar el builder pedimos que la fase anterior esté `closed`.
+  // ROUND_32 → GROUPS cerrada; el resto → su predecesora inmediata. Si
+  // por algún motivo no encontramos la summary previa (placeholder
+  // inicial), tratamos como NO habilitado (más seguro).
+  const previousPhase = showBuilderLink
+    ? PREVIOUS_PHASE[summary.phase as KnockoutPhase]
+    : null;
+  const previousSummary = previousPhase
+    ? allSummaries.find((s) => s.phase === previousPhase)
+    : null;
+  const canEnterBuilder = !!previousSummary?.closed;
 
   return (
     <article className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-5">
@@ -202,111 +237,36 @@ function PhaseCard({ summary }: { summary: PhaseSummary }) {
         )}
       </div>
 
-      <div className="mt-4">
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          disabled={!canClose}
-          onClick={() => setOpen(true)}
-        >
-          <Trophy className="mr-2 h-4 w-4" aria-hidden />
-          {summary.closed ? "Fase ya cerrada" : "Cerrar fase"}
-        </Button>
-      </div>
-
-      <ClosePhaseDialog
-        open={open}
-        onOpenChange={setOpen}
-        summary={summary}
-      />
-    </article>
-  );
-}
-
-function ClosePhaseDialog({
-  open,
-  onOpenChange,
-  summary,
-}: {
-  open: boolean;
-  onOpenChange: (next: boolean) => void;
-  summary: PhaseSummary;
-}) {
-  const qc = useQueryClient();
-  const closeMutation = useMutation({
-    mutationFn: () => closePhase(summary.phase),
-    onSuccess: () => {
-      toast.success(`Fase ${PHASE_LABELS[summary.phase]} cerrada`);
-      qc.invalidateQueries({ queryKey: queryKeys.admin.phases.summary() });
-      qc.invalidateQueries({ queryKey: queryKeys.admin.prizes() });
-      onOpenChange(false);
-    },
-    onError: (err: Error) => {
-      toast.error(err.message ?? "No pudimos cerrar la fase.");
-    },
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Cerrar {PHASE_LABELS[summary.phase]}</DialogTitle>
-          <DialogDescription>
-            Una vez cerrada, el ganador queda registrado y se asigna el
-            premio correspondiente. Las predicciones de esta fase no se
-            pueden recalcular sin reabrir.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="rounded-sm border border-[var(--color-landing-line-strong)] bg-[var(--color-landing-surface)] p-4">
-          <p className="font-sans text-xs font-bold uppercase tracking-wider text-[var(--color-landing-text-muted)]">
-            Ganador propuesto
-          </p>
-          {summary.proposedWinner ? (
-            <>
-              <p className="mt-1 font-[family-name:var(--font-landing-display)] text-xl uppercase tracking-tight">
-                {summary.proposedWinner.firstName}{" "}
-                {summary.proposedWinner.lastName}
-              </p>
-              <p className="mt-1 font-mono text-sm">
-                {formatNumber(summary.proposedWinner.points)} pts
-              </p>
-            </>
-          ) : (
-            <p className="mt-1 font-sans text-sm italic text-[var(--color-landing-text-muted)]">
-              Sin ganador (empate o sin participantes).
+      {showBuilderLink ? (
+        <div className="mt-5 border-t border-[var(--color-landing-line)] pt-4">
+          <Link
+            href={
+              canEnterBuilder
+                ? `/admin/fases/builder/${summary.phase}`
+                : "#"
+            }
+            aria-disabled={!canEnterBuilder}
+            tabIndex={canEnterBuilder ? undefined : -1}
+            className={cn(
+              "inline-flex w-full items-center justify-center rounded-sm bg-[var(--color-landing-red)] px-4 py-2.5 font-[family-name:var(--font-landing-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-landing-text)] transition-colors hover:bg-[var(--color-landing-red-hover)] md:w-auto",
+              !canEnterBuilder &&
+                "pointer-events-none cursor-not-allowed opacity-50",
+            )}
+          >
+            Armar cruces
+          </Link>
+          {!canEnterBuilder ? (
+            <p className="mt-2 font-sans text-xs italic text-[var(--color-landing-text-muted)]">
+              Esperá a que cierre la fase anterior
+              {previousPhase
+                ? ` (${PHASE_LABELS[previousPhase]})`
+                : ""}
+              .
             </p>
-          )}
+          ) : null}
         </div>
-        <p className="rounded-sm bg-[var(--color-landing-surface)] px-3 py-2 font-sans text-sm">
-          Monto del premio:{" "}
-          <span className="font-mono font-bold">
-            {formatARS(summary.prizeAmount)}
-          </span>
-        </p>
-        <p className="font-sans text-xs italic text-[var(--color-landing-text-muted)]">
-          Nota: cerrar la fase dispara la notificacion al ganador (si tiene
-          opt-in WhatsApp).
-        </p>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outlined"
-            onClick={() => onOpenChange(false)}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() => closeMutation.mutate()}
-            disabled={closeMutation.isPending}
-          >
-            {closeMutation.isPending ? "Cerrando..." : "Confirmar cierre"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      ) : null}
+    </article>
   );
 }
 
@@ -317,18 +277,8 @@ function PrizesList({
   prizes: AdminPrize[];
   loading: boolean;
 }) {
-  const qc = useQueryClient();
-  const payMutation = useMutation({
-    mutationFn: (id: string) => markPrizePaid(id),
-    onSuccess: () => {
-      toast.success("Premio marcado como pagado");
-      qc.invalidateQueries({ queryKey: queryKeys.admin.prizes() });
-    },
-    onError: (err: Error) => {
-      toast.error(err.message ?? "No pudimos marcar el premio.");
-    },
-  });
-
+  // "Marcar pagado" + payMutation removidos en bracket-builder Task 10;
+  // cleanup completo de PrizesList va en Task 13.
   if (loading) {
     return (
       <div className="mt-4 space-y-2" role="status" aria-busy="true">
@@ -378,18 +328,7 @@ function PrizesList({
             >
               {p.status}
             </span>
-            {p.status === "PENDING" && p.recipientUserId ? (
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={() => payMutation.mutate(p.id)}
-                disabled={payMutation.isPending}
-              >
-                <CheckCircle2 className="mr-1 h-3 w-3" aria-hidden />
-                Marcar pagado
-              </Button>
-            ) : null}
+            {/* Botón "Marcar pagado" removido en bracket-builder Task 10. */}
           </div>
         </li>
       ))}

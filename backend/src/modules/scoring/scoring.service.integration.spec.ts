@@ -500,3 +500,302 @@ describe('ScoringService.finishMatchAndScore (integration)', () => {
     });
   });
 });
+
+/**
+ * winnerTeamId validation on knockout ties (Task 3 of bracket-builder plan).
+ *
+ * Uses two dedicated matches so the setup is independent from the suite
+ * above: matchNumber 75 (ROUND_32) for knockout cases and matchNumber 61
+ * (GROUPS) for the "GROUPS exempt" case. Both are reset to SCHEDULED on
+ * setup so the suite is re-runnable.
+ */
+describe('ScoringService winnerTeamId validation (integration)', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  let scoring: ScoringService;
+  let phaseSpy: ReturnType<typeof jest.spyOn>;
+
+  let adminId: string;
+  let knockoutMatchId: string;
+  let knockoutHomeTeamId: string;
+  let knockoutAwayTeamId: string;
+  let knockoutPhase: string;
+  let groupsMatchId: string;
+  let randomOtherTeamId: string;
+
+  beforeAll(async () => {
+    process.env.NODE_ENV = 'test';
+    process.env.WA_MASS_NOTIFS_ENABLED = 'false';
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    prisma = app.get(PrismaService);
+    scoring = app.get(ScoringService);
+
+    const phaseService = app.get(PhaseService);
+    phaseSpy = jest.spyOn(phaseService, 'maybeClosePhase');
+    phaseSpy.mockResolvedValue(undefined);
+
+    // Pick a ROUND_32 match (knockout) and a GROUPS match. Reset both.
+    const knockout = await prisma.match.findFirstOrThrow({ where: { matchNumber: 75 } });
+    knockoutMatchId = knockout.id;
+    knockoutPhase = knockout.phase;
+
+    // Assign real teams to the knockout match (seed leaves them null
+    // because the bracket isn't drawn yet). Pick two teams from groups A/B.
+    const teams = await prisma.team.findMany({
+      where: { groupCode: { in: ['A', 'B'] } },
+      orderBy: { id: 'asc' },
+      take: 3,
+    });
+    if (teams.length < 3) {
+      throw new Error('Need at least 3 teams in groups A/B for the test fixture');
+    }
+    knockoutHomeTeamId = teams[0].id;
+    knockoutAwayTeamId = teams[1].id;
+    randomOtherTeamId = teams[2].id;
+
+    await prisma.prediction.deleteMany({ where: { matchId: knockoutMatchId } });
+    await prisma.match.update({
+      where: { id: knockoutMatchId },
+      data: {
+        homeTeamId: knockoutHomeTeamId,
+        awayTeamId: knockoutAwayTeamId,
+        status: 'SCHEDULED',
+        scoreHome: null,
+        scoreAway: null,
+        finishedAt: null,
+        winnerTeamId: null,
+      },
+    });
+
+    const groups = await prisma.match.findFirstOrThrow({ where: { matchNumber: 61 } });
+    groupsMatchId = groups.id;
+    await prisma.prediction.deleteMany({ where: { matchId: groupsMatchId } });
+    await prisma.match.update({
+      where: { id: groupsMatchId },
+      data: {
+        status: 'SCHEDULED',
+        scoreHome: null,
+        scoreAway: null,
+        finishedAt: null,
+        winnerTeamId: null,
+      },
+    });
+
+    await prisma.phaseWinner.deleteMany({
+      where: { phase: { in: [knockoutPhase as 'GROUPS', 'GROUPS'] } },
+    });
+
+    // Admin user for audit trail.
+    const stamp = Date.now() % 80_000_000;
+    const admin = await prisma.user.create({
+      data: {
+        dni: String(40_000_000 + stamp).slice(-8),
+        firstName: 'Winner',
+        lastName: 'Admin',
+        whatsapp: `549${String(4_000_000_000 + stamp).slice(-9)}`.slice(0, 13),
+        passwordHash: 'unused-hash',
+        role: 'ADMIN',
+      },
+    });
+    adminId = admin.id;
+  }, 60_000);
+
+  afterAll(async () => {
+    if (prisma) {
+      await prisma.prediction.deleteMany({ where: { matchId: knockoutMatchId } });
+      await prisma.prediction.deleteMany({ where: { matchId: groupsMatchId } });
+      await prisma.auditLog.deleteMany({
+        where: {
+          OR: [
+            { entity: 'match', entityId: knockoutMatchId },
+            { entity: 'match', entityId: groupsMatchId },
+            { userId: adminId },
+          ],
+        },
+      });
+      await prisma.phaseWinner.deleteMany({
+        where: { phase: { in: [knockoutPhase as 'GROUPS', 'GROUPS'] } },
+      });
+      await prisma.user.delete({ where: { id: adminId } }).catch(() => undefined);
+      await prisma.match.update({
+        where: { id: knockoutMatchId },
+        data: {
+          homeTeamId: null,
+          awayTeamId: null,
+          status: 'SCHEDULED',
+          scoreHome: null,
+          scoreAway: null,
+          finishedAt: null,
+          winnerTeamId: null,
+        },
+      });
+      await prisma.match.update({
+        where: { id: groupsMatchId },
+        data: {
+          status: 'SCHEDULED',
+          scoreHome: null,
+          scoreAway: null,
+          finishedAt: null,
+          winnerTeamId: null,
+        },
+      });
+    }
+    if (phaseSpy) phaseSpy.mockRestore();
+    if (app) await app.close();
+  }, 30_000);
+
+  async function resetKnockout() {
+    await prisma.phaseWinner.deleteMany({ where: { phase: knockoutPhase as 'GROUPS' } });
+    await prisma.match.update({
+      where: { id: knockoutMatchId },
+      data: {
+        status: 'SCHEDULED',
+        scoreHome: null,
+        scoreAway: null,
+        finishedAt: null,
+        winnerTeamId: null,
+      },
+    });
+  }
+
+  async function resetGroups() {
+    await prisma.phaseWinner.deleteMany({ where: { phase: 'GROUPS' } });
+    await prisma.match.update({
+      where: { id: groupsMatchId },
+      data: {
+        status: 'SCHEDULED',
+        scoreHome: null,
+        scoreAway: null,
+        finishedAt: null,
+        winnerTeamId: null,
+      },
+    });
+  }
+
+  describe('finishMatchAndScore', () => {
+    it('rejects tied knockout without winnerTeamId', async () => {
+      await resetKnockout();
+      await expect(
+        scoring.finishMatchAndScore(knockoutMatchId, 1, 1, adminId),
+      ).rejects.toThrow(/winnerTeamId/i);
+      // Match was NOT touched.
+      const after = await prisma.match.findUniqueOrThrow({ where: { id: knockoutMatchId } });
+      expect(after.status).toBe('SCHEDULED');
+      expect(after.winnerTeamId).toBeNull();
+    });
+
+    it('rejects tied knockout when winnerTeamId is not one of the two teams', async () => {
+      await resetKnockout();
+      await expect(
+        scoring.finishMatchAndScore(knockoutMatchId, 1, 1, adminId, randomOtherTeamId),
+      ).rejects.toThrow(/winnerTeamId/i);
+      const after = await prisma.match.findUniqueOrThrow({ where: { id: knockoutMatchId } });
+      expect(after.status).toBe('SCHEDULED');
+      expect(after.winnerTeamId).toBeNull();
+    });
+
+    it('accepts tied knockout with winnerTeamId === homeTeamId and persists the field', async () => {
+      await resetKnockout();
+      const updated = await scoring.finishMatchAndScore(
+        knockoutMatchId,
+        1,
+        1,
+        adminId,
+        knockoutHomeTeamId,
+      );
+      expect(updated.status).toBe('FINISHED');
+      expect(updated.scoreHome).toBe(1);
+      expect(updated.scoreAway).toBe(1);
+      expect(updated.winnerTeamId).toBe(knockoutHomeTeamId);
+    });
+
+    it('ignores winnerTeamId on a non-tie (column stays null)', async () => {
+      await resetKnockout();
+      const updated = await scoring.finishMatchAndScore(
+        knockoutMatchId,
+        2,
+        1,
+        adminId,
+        knockoutHomeTeamId,
+      );
+      expect(updated.status).toBe('FINISHED');
+      expect(updated.scoreHome).toBe(2);
+      expect(updated.scoreAway).toBe(1);
+      expect(updated.winnerTeamId).toBeNull();
+    });
+
+    it('does not require winnerTeamId on GROUPS even when the score is tied', async () => {
+      await resetGroups();
+      const updated = await scoring.finishMatchAndScore(groupsMatchId, 1, 1, adminId);
+      expect(updated.status).toBe('FINISHED');
+      expect(updated.scoreHome).toBe(1);
+      expect(updated.scoreAway).toBe(1);
+      expect(updated.winnerTeamId).toBeNull();
+    });
+  });
+
+  describe('recalculateMatch', () => {
+    it('rejects re-finish of a tied knockout without winnerTeamId', async () => {
+      // Bring match to FINISHED via a legitimate finish first.
+      await resetKnockout();
+      await scoring.finishMatchAndScore(knockoutMatchId, 2, 0, adminId);
+      // Now try to recalc to a tie without providing winnerTeamId.
+      await expect(
+        scoring.recalculateMatch(knockoutMatchId, 1, 1, adminId),
+      ).rejects.toThrow(/winnerTeamId/i);
+      const after = await prisma.match.findUniqueOrThrow({ where: { id: knockoutMatchId } });
+      // Score stays at the original 2-0.
+      expect(after.scoreHome).toBe(2);
+      expect(after.scoreAway).toBe(0);
+      expect(after.winnerTeamId).toBeNull();
+    });
+
+    it('rejects recalc when winnerTeamId is not one of the two teams', async () => {
+      await expect(
+        scoring.recalculateMatch(knockoutMatchId, 1, 1, adminId, randomOtherTeamId),
+      ).rejects.toThrow(/winnerTeamId/i);
+      const after = await prisma.match.findUniqueOrThrow({ where: { id: knockoutMatchId } });
+      expect(after.winnerTeamId).toBeNull();
+    });
+
+    it('accepts recalc to a tie with a valid winnerTeamId and persists it', async () => {
+      const updated = await scoring.recalculateMatch(
+        knockoutMatchId,
+        1,
+        1,
+        adminId,
+        knockoutAwayTeamId,
+      );
+      expect(updated.scoreHome).toBe(1);
+      expect(updated.scoreAway).toBe(1);
+      expect(updated.winnerTeamId).toBe(knockoutAwayTeamId);
+    });
+
+    it('ignores winnerTeamId on non-tie recalc (column reset to null)', async () => {
+      const updated = await scoring.recalculateMatch(
+        knockoutMatchId,
+        3,
+        2,
+        adminId,
+        knockoutHomeTeamId,
+      );
+      expect(updated.scoreHome).toBe(3);
+      expect(updated.scoreAway).toBe(2);
+      expect(updated.winnerTeamId).toBeNull();
+    });
+
+    it('does not require winnerTeamId on GROUPS recalc even when tied', async () => {
+      await resetGroups();
+      await scoring.finishMatchAndScore(groupsMatchId, 2, 0, adminId);
+      const updated = await scoring.recalculateMatch(groupsMatchId, 1, 1, adminId);
+      expect(updated.scoreHome).toBe(1);
+      expect(updated.scoreAway).toBe(1);
+      expect(updated.winnerTeamId).toBeNull();
+    });
+  });
+});
