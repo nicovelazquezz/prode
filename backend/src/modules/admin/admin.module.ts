@@ -12,6 +12,7 @@ import { AdminTournamentResultsController } from './admin-tournament-results.con
 import { AdminPhasesPrizesController } from './admin-phases-prizes.controller.js';
 import { AdminNotificationsController } from './admin-notifications.controller.js';
 import { AdminFasesBuilderController } from './admin-fases-builder.controller.js';
+import { AdminDevSeedController } from './admin-dev-seed.controller.js';
 
 /**
  * Hosts admin-only endpoints que no encajan en un feature module. Hoy:
@@ -51,6 +52,7 @@ import { AdminFasesBuilderController } from './admin-fases-builder.controller.js
     AdminPhasesPrizesController,
     AdminNotificationsController,
     AdminFasesBuilderController,
+    AdminDevSeedController,
   ],
 })
 export class AdminModule {}
