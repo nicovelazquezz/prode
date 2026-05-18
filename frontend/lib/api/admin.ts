@@ -827,6 +827,65 @@ export async function updateSpecialPrizeRule(
     .json<SpecialPrizeRuleEntry>();
 }
 
+// ── Dev seed ────────────────────────────────────────────────────
+//
+// Endpoints `/admin/dev/seed/*` para correr los scripts `prisma/seed-*.ts`
+// en environments productivos donde `npx tsx` no es viable (Dokploy
+// terminal, npm cache restringido). Guardados por @Roles('ADMIN').
+//
+// Los shapes acá espejan EXACTAMENTE lo que devuelve
+// `backend/.../admin-dev-seed.controller.ts`: notar que `seedConfig`
+// retorna campos planos (no `{ count: number }`) y `seedDemo.users` no
+// trae `lastName`.
+
+export interface SeedTeamsResponse {
+  count: number;
+  inserted: number;
+  updated: number;
+}
+
+export async function seedTeams(): Promise<SeedTeamsResponse> {
+  return api.post("admin/dev/seed/teams").json<SeedTeamsResponse>();
+}
+
+export interface SeedConfigResponse {
+  scoringRules: number;
+  phaseMultipliers: number;
+  specialPrizeRules: number;
+  appConfig: number;
+}
+
+export async function seedConfig(): Promise<SeedConfigResponse> {
+  return api.post("admin/dev/seed/config").json<SeedConfigResponse>();
+}
+
+export interface SeedMatchesResponse {
+  count: number;
+  inserted: number;
+  updated: number;
+}
+
+export async function seedMatches(): Promise<SeedMatchesResponse> {
+  return api.post("admin/dev/seed/matches").json<SeedMatchesResponse>();
+}
+
+export interface SeedDemoUser {
+  dni: string;
+  firstName: string;
+  predictions: number;
+  personal?: boolean;
+}
+
+export interface SeedDemoResponse {
+  compressedMatches: number;
+  users: SeedDemoUser[];
+  credentials: string;
+}
+
+export async function seedDemo(): Promise<SeedDemoResponse> {
+  return api.post("admin/dev/seed/demo").json<SeedDemoResponse>();
+}
+
 function cleanParams(
   params?: Record<string, string | number | boolean | undefined>,
 ): Record<string, string> {
