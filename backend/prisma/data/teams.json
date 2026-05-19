@@ -3,7 +3,7 @@
     "fifaCode": "CZE",
     "name": "República Checa",
     "shortName": "CZE",
-    "flagUrl": "https://flagcdn.com/cz.svg",
+    "flagUrl": "/flags/CZE.svg",
     "confederation": "UEFA",
     "groupCode": "A",
     "fifaRanking": null
@@ -12,7 +12,7 @@
     "fifaCode": "MEX",
     "name": "México",
     "shortName": "MEX",
-    "flagUrl": "https://flagcdn.com/mx.svg",
+    "flagUrl": "/flags/MEX.svg",
     "confederation": "CONCACAF",
     "groupCode": "A",
     "fifaRanking": 19
@@ -21,7 +21,7 @@
     "fifaCode": "RSA",
     "name": "Sudáfrica",
     "shortName": "RSA",
-    "flagUrl": "https://flagcdn.com/za.svg",
+    "flagUrl": "/flags/RSA.svg",
     "confederation": "CAF",
     "groupCode": "A",
     "fifaRanking": null
@@ -30,7 +30,7 @@
     "fifaCode": "KOR",
     "name": "Corea del Sur",
     "shortName": "KOR",
-    "flagUrl": "https://flagcdn.com/kr.svg",
+    "flagUrl": "/flags/KOR.svg",
     "confederation": "AFC",
     "groupCode": "A",
     "fifaRanking": 22
@@ -39,7 +39,7 @@
     "fifaCode": "SUI",
     "name": "Suiza",
     "shortName": "SUI",
-    "flagUrl": "https://flagcdn.com/ch.svg",
+    "flagUrl": "/flags/SUI.svg",
     "confederation": "UEFA",
     "groupCode": "B",
     "fifaRanking": 17
@@ -48,7 +48,7 @@
     "fifaCode": "BIH",
     "name": "Bosnia-Herzegovina",
     "shortName": "BIH",
-    "flagUrl": "https://flagcdn.com/ba.svg",
+    "flagUrl": "/flags/BIH.svg",
     "confederation": "UEFA",
     "groupCode": "B",
     "fifaRanking": null
@@ -57,7 +57,7 @@
     "fifaCode": "CAN",
     "name": "Canadá",
     "shortName": "CAN",
-    "flagUrl": "https://flagcdn.com/ca.svg",
+    "flagUrl": "/flags/CAN.svg",
     "confederation": "CONCACAF",
     "groupCode": "B",
     "fifaRanking": 31
@@ -66,7 +66,7 @@
     "fifaCode": "QAT",
     "name": "Catar",
     "shortName": "QAT",
-    "flagUrl": "https://flagcdn.com/qa.svg",
+    "flagUrl": "/flags/QAT.svg",
     "confederation": "AFC",
     "groupCode": "B",
     "fifaRanking": 58
@@ -75,7 +75,7 @@
     "fifaCode": "SCO",
     "name": "Escocia",
     "shortName": "SCO",
-    "flagUrl": "https://flagcdn.com/gb-sct.svg",
+    "flagUrl": "/flags/SCO.svg",
     "confederation": "UEFA",
     "groupCode": "C",
     "fifaRanking": null
@@ -84,7 +84,7 @@
     "fifaCode": "BRA",
     "name": "Brasil",
     "shortName": "BRA",
-    "flagUrl": "https://flagcdn.com/br.svg",
+    "flagUrl": "/flags/BRA.svg",
     "confederation": "CONMEBOL",
     "groupCode": "C",
     "fifaRanking": 5
@@ -93,7 +93,7 @@
     "fifaCode": "HAI",
     "name": "Haití",
     "shortName": "HAI",
-    "flagUrl": "https://flagcdn.com/ht.svg",
+    "flagUrl": "/flags/HAI.svg",
     "confederation": "CONCACAF",
     "groupCode": "C",
     "fifaRanking": null
@@ -102,7 +102,7 @@
     "fifaCode": "MAR",
     "name": "Marruecos",
     "shortName": "MAR",
-    "flagUrl": "https://flagcdn.com/ma.svg",
+    "flagUrl": "/flags/MAR.svg",
     "confederation": "CAF",
     "groupCode": "C",
     "fifaRanking": 13
@@ -111,7 +111,7 @@
     "fifaCode": "TUR",
     "name": "Turquía",
     "shortName": "TUR",
-    "flagUrl": "https://flagcdn.com/tr.svg",
+    "flagUrl": "/flags/TUR.svg",
     "confederation": "UEFA",
     "groupCode": "D",
     "fifaRanking": 28
@@ -120,7 +120,7 @@
     "fifaCode": "PAR",
     "name": "Paraguay",
     "shortName": "PAR",
-    "flagUrl": "https://flagcdn.com/py.svg",
+    "flagUrl": "/flags/PAR.svg",
     "confederation": "CONMEBOL",
     "groupCode": "D",
     "fifaRanking": 41
@@ -129,7 +129,7 @@
     "fifaCode": "USA",
     "name": "EE. UU.",
     "shortName": "USA",
-    "flagUrl": "https://flagcdn.com/us.svg",
+    "flagUrl": "/flags/USA.svg",
     "confederation": "CONCACAF",
     "groupCode": "D",
     "fifaRanking": 16
@@ -138,7 +138,7 @@
     "fifaCode": "AUS",
     "name": "Australia",
     "shortName": "AUS",
-    "flagUrl": "https://flagcdn.com/au.svg",
+    "flagUrl": "/flags/AUS.svg",
     "confederation": "AFC",
     "groupCode": "D",
     "fifaRanking": 26
@@ -147,7 +147,7 @@
     "fifaCode": "GER",
     "name": "Alemania",
     "shortName": "GER",
-    "flagUrl": "https://flagcdn.com/de.svg",
+    "flagUrl": "/flags/GER.svg",
     "confederation": "UEFA",
     "groupCode": "E",
     "fifaRanking": 9
@@ -156,7 +156,7 @@
     "fifaCode": "ECU",
     "name": "Ecuador",
     "shortName": "ECU",
-    "flagUrl": "https://flagcdn.com/ec.svg",
+    "flagUrl": "/flags/ECU.svg",
     "confederation": "CONMEBOL",
     "groupCode": "E",
     "fifaRanking": 23
@@ -165,7 +165,7 @@
     "fifaCode": "CIV",
     "name": "Costa de Marfil",
     "shortName": "CIV",
-    "flagUrl": "https://flagcdn.com/ci.svg",
+    "flagUrl": "/flags/CIV.svg",
     "confederation": "CAF",
     "groupCode": "E",
     "fifaRanking": 38
@@ -174,7 +174,7 @@
     "fifaCode": "CUW",
     "name": "Curazao",
     "shortName": "CUW",
-    "flagUrl": "https://flagcdn.com/cw.svg",
+    "flagUrl": "/flags/CUW.svg",
     "confederation": "CONCACAF",
     "groupCode": "E",
     "fifaRanking": null
@@ -183,7 +183,7 @@
     "fifaCode": "SWE",
     "name": "Suecia",
     "shortName": "SWE",
-    "flagUrl": "https://flagcdn.com/se.svg",
+    "flagUrl": "/flags/SWE.svg",
     "confederation": "UEFA",
     "groupCode": "F",
     "fifaRanking": null
@@ -192,7 +192,7 @@
     "fifaCode": "NED",
     "name": "Países Bajos",
     "shortName": "NED",
-    "flagUrl": "https://flagcdn.com/nl.svg",
+    "flagUrl": "/flags/NED.svg",
     "confederation": "UEFA",
     "groupCode": "F",
     "fifaRanking": 7
@@ -201,7 +201,7 @@
     "fifaCode": "TUN",
     "name": "Túnez",
     "shortName": "TUN",
-    "flagUrl": "https://flagcdn.com/tn.svg",
+    "flagUrl": "/flags/TUN.svg",
     "confederation": "CAF",
     "groupCode": "F",
     "fifaRanking": 42
@@ -210,7 +210,7 @@
     "fifaCode": "JPN",
     "name": "Japón",
     "shortName": "JPN",
-    "flagUrl": "https://flagcdn.com/jp.svg",
+    "flagUrl": "/flags/JPN.svg",
     "confederation": "AFC",
     "groupCode": "F",
     "fifaRanking": 15
@@ -219,7 +219,7 @@
     "fifaCode": "BEL",
     "name": "Bélgica",
     "shortName": "BEL",
-    "flagUrl": "https://flagcdn.com/be.svg",
+    "flagUrl": "/flags/BEL.svg",
     "confederation": "UEFA",
     "groupCode": "G",
     "fifaRanking": 8
@@ -228,7 +228,7 @@
     "fifaCode": "EGY",
     "name": "Egipto",
     "shortName": "EGY",
-    "flagUrl": "https://flagcdn.com/eg.svg",
+    "flagUrl": "/flags/EGY.svg",
     "confederation": "CAF",
     "groupCode": "G",
     "fifaRanking": 32
@@ -237,7 +237,7 @@
     "fifaCode": "IRN",
     "name": "Irán",
     "shortName": "IRN",
-    "flagUrl": "https://flagcdn.com/ir.svg",
+    "flagUrl": "/flags/IRN.svg",
     "confederation": "AFC",
     "groupCode": "G",
     "fifaRanking": 18
@@ -246,7 +246,7 @@
     "fifaCode": "NZL",
     "name": "Nueva Zelanda",
     "shortName": "NZL",
-    "flagUrl": "https://flagcdn.com/nz.svg",
+    "flagUrl": "/flags/NZL.svg",
     "confederation": "OFC",
     "groupCode": "G",
     "fifaRanking": 89
@@ -255,7 +255,7 @@
     "fifaCode": "ESP",
     "name": "España",
     "shortName": "ESP",
-    "flagUrl": "https://flagcdn.com/es.svg",
+    "flagUrl": "/flags/ESP.svg",
     "confederation": "UEFA",
     "groupCode": "H",
     "fifaRanking": 3
@@ -264,7 +264,7 @@
     "fifaCode": "URU",
     "name": "Uruguay",
     "shortName": "URU",
-    "flagUrl": "https://flagcdn.com/uy.svg",
+    "flagUrl": "/flags/URU.svg",
     "confederation": "CONMEBOL",
     "groupCode": "H",
     "fifaRanking": 11
@@ -273,7 +273,7 @@
     "fifaCode": "CPV",
     "name": "Cabo Verde",
     "shortName": "CPV",
-    "flagUrl": "https://flagcdn.com/cv.svg",
+    "flagUrl": "/flags/CPV.svg",
     "confederation": "CAF",
     "groupCode": "H",
     "fifaRanking": null
@@ -282,7 +282,7 @@
     "fifaCode": "KSA",
     "name": "Arabia Saudí",
     "shortName": "KSA",
-    "flagUrl": "https://flagcdn.com/sa.svg",
+    "flagUrl": "/flags/KSA.svg",
     "confederation": "AFC",
     "groupCode": "H",
     "fifaRanking": 56
@@ -291,7 +291,7 @@
     "fifaCode": "FRA",
     "name": "Francia",
     "shortName": "FRA",
-    "flagUrl": "https://flagcdn.com/fr.svg",
+    "flagUrl": "/flags/FRA.svg",
     "confederation": "UEFA",
     "groupCode": "I",
     "fifaRanking": 2
@@ -300,7 +300,7 @@
     "fifaCode": "NOR",
     "name": "Noruega",
     "shortName": "NOR",
-    "flagUrl": "https://flagcdn.com/no.svg",
+    "flagUrl": "/flags/NOR.svg",
     "confederation": "UEFA",
     "groupCode": "I",
     "fifaRanking": null
@@ -309,7 +309,7 @@
     "fifaCode": "SEN",
     "name": "Senegal",
     "shortName": "SEN",
-    "flagUrl": "https://flagcdn.com/sn.svg",
+    "flagUrl": "/flags/SEN.svg",
     "confederation": "CAF",
     "groupCode": "I",
     "fifaRanking": 20
@@ -318,7 +318,7 @@
     "fifaCode": "IRQ",
     "name": "Irak",
     "shortName": "IRQ",
-    "flagUrl": "https://flagcdn.com/iq.svg",
+    "flagUrl": "/flags/IRQ.svg",
     "confederation": "AFC",
     "groupCode": "I",
     "fifaRanking": null
@@ -327,7 +327,7 @@
     "fifaCode": "AUT",
     "name": "Austria",
     "shortName": "AUT",
-    "flagUrl": "https://flagcdn.com/at.svg",
+    "flagUrl": "/flags/AUT.svg",
     "confederation": "UEFA",
     "groupCode": "J",
     "fifaRanking": 25
@@ -336,7 +336,7 @@
     "fifaCode": "ARG",
     "name": "Argentina",
     "shortName": "ARG",
-    "flagUrl": "https://flagcdn.com/ar.svg",
+    "flagUrl": "/flags/ARG.svg",
     "confederation": "CONMEBOL",
     "groupCode": "J",
     "fifaRanking": 1
@@ -345,7 +345,7 @@
     "fifaCode": "ALG",
     "name": "Argelia",
     "shortName": "ALG",
-    "flagUrl": "https://flagcdn.com/dz.svg",
+    "flagUrl": "/flags/ALG.svg",
     "confederation": "CAF",
     "groupCode": "J",
     "fifaRanking": 36
@@ -354,7 +354,7 @@
     "fifaCode": "JOR",
     "name": "Jordania",
     "shortName": "JOR",
-    "flagUrl": "https://flagcdn.com/jo.svg",
+    "flagUrl": "/flags/JOR.svg",
     "confederation": "AFC",
     "groupCode": "J",
     "fifaRanking": 70
@@ -363,7 +363,7 @@
     "fifaCode": "POR",
     "name": "Portugal",
     "shortName": "POR",
-    "flagUrl": "https://flagcdn.com/pt.svg",
+    "flagUrl": "/flags/POR.svg",
     "confederation": "UEFA",
     "groupCode": "K",
     "fifaRanking": 6
@@ -372,7 +372,7 @@
     "fifaCode": "COL",
     "name": "Colombia",
     "shortName": "COL",
-    "flagUrl": "https://flagcdn.com/co.svg",
+    "flagUrl": "/flags/COL.svg",
     "confederation": "CONMEBOL",
     "groupCode": "K",
     "fifaRanking": 14
@@ -381,7 +381,7 @@
     "fifaCode": "COD",
     "name": "RD Congo",
     "shortName": "COD",
-    "flagUrl": "https://flagcdn.com/cd.svg",
+    "flagUrl": "/flags/COD.svg",
     "confederation": "CAF",
     "groupCode": "K",
     "fifaRanking": null
@@ -390,7 +390,7 @@
     "fifaCode": "UZB",
     "name": "Uzbekistán",
     "shortName": "UZB",
-    "flagUrl": "https://flagcdn.com/uz.svg",
+    "flagUrl": "/flags/UZB.svg",
     "confederation": "AFC",
     "groupCode": "K",
     "fifaRanking": 57
@@ -399,7 +399,7 @@
     "fifaCode": "CRO",
     "name": "Croacia",
     "shortName": "CRO",
-    "flagUrl": "https://flagcdn.com/hr.svg",
+    "flagUrl": "/flags/CRO.svg",
     "confederation": "UEFA",
     "groupCode": "L",
     "fifaRanking": 10
@@ -408,7 +408,7 @@
     "fifaCode": "ENG",
     "name": "Inglaterra",
     "shortName": "ENG",
-    "flagUrl": "https://flagcdn.com/gb-eng.svg",
+    "flagUrl": "/flags/ENG.svg",
     "confederation": "UEFA",
     "groupCode": "L",
     "fifaRanking": 4
@@ -417,7 +417,7 @@
     "fifaCode": "GHA",
     "name": "Ghana",
     "shortName": "GHA",
-    "flagUrl": "https://flagcdn.com/gh.svg",
+    "flagUrl": "/flags/GHA.svg",
     "confederation": "CAF",
     "groupCode": "L",
     "fifaRanking": 70
@@ -426,7 +426,7 @@
     "fifaCode": "PAN",
     "name": "Panamá",
     "shortName": "PAN",
-    "flagUrl": "https://flagcdn.com/pa.svg",
+    "flagUrl": "/flags/PAN.svg",
     "confederation": "CONCACAF",
     "groupCode": "L",
     "fifaRanking": 39
